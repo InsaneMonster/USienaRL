@@ -1,9 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 name: str = "usienarl"
-version: str = "0.1.4"
+version: str = "0.1.5"
 requirements: [] = ["tensorflow-gpu>=1.8.0,<=1.13.1", "numpy>=1.14.5", "scipy>=1.2.1"]
-packages: [] = ["usienarl"]
+packages: [] = find_packages()
 url: str = "https://github.com/InsaneMonster/USienaRL"
 lic: str = "Creative Commons CC-BY 3.0"
 author: str = "Luca Pasqualini"
