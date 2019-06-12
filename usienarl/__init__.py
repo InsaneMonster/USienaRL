@@ -10,12 +10,6 @@
 # work.  If not, see <http://creativecommons.org/licenses/by-sa/3.0/>.
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Experiments
-
-from .experiment import Experiment
-from .experiments.policy_optimization_experiment import PolicyOptimizationExperiment
-from .experiments.q_learning_experiment import QLearningExperiment
-
 # Environment and space types
 
 from .environment import Environment
@@ -51,6 +45,12 @@ from .explorers.boltzmann import BoltzmannExplorer
 from .memory import Memory
 from .memories.experience_replay import ExperienceReplay
 from .memories.prioritized_experience_replay import PrioritizedExperienceReplay
+
+# Experiments
+
+from .experiment import Experiment
+from .experiments.policy_optimization_experiment import PolicyOptimizationExperiment
+from .experiments.q_learning_experiment import QLearningExperiment
 
 # Visualizer
 
