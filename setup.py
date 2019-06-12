@@ -2,7 +2,7 @@ from setuptools import setup
 
 name: str = "usienarl"
 version: str = "0.1.2"
-requirements: [] = ["tensorflow-gpu>=1.9.0", "numpy>=1.14.5", "scipy>=1.2.1"]
+requirements: [] = ["tensorflow-gpu==1.8.0, tensorflow-gpu==1.9.0, tensorflow-gpu==1.10.0, tensorflow-gpu==1.10.1, tensorflow-gpu==1.11.0, tensorflow-gpu==1.12.0, tensorflow-gpu==1.12.2, tensorflow-gpu==1.13.1", "numpy>=1.14.5", "scipy>=1.2.1"]
 packages: [] = ["usienarl"]
 url: str = "https://github.com/InsaneMonster/USienaRL"
 lic: str = "Creative Commons CC-BY 3.0"
