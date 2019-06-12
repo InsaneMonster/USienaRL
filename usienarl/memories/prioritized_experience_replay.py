@@ -4,11 +4,7 @@ import numpy
 
 # Import required src
 
-from usienarl import Memory
-
-# Import required libs
-
-from usienarl.libs.sumtree import SumTree
+from usienarl import Memory, SumTree
 
 
 class PrioritizedExperienceReplay(Memory):

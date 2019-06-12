@@ -1,7 +1,7 @@
 from setuptools import setup
 
 name: str = "usienarl"
-version: str = "0.1.3"
+version: str = "0.1.4"
 requirements: [] = ["tensorflow-gpu>=1.8.0,<=1.13.1", "numpy>=1.14.5", "scipy>=1.2.1"]
 packages: [] = ["usienarl"]
 url: str = "https://github.com/InsaneMonster/USienaRL"

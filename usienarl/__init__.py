@@ -10,6 +10,10 @@
 # work.  If not, see <http://creativecommons.org/licenses/by-sa/3.0/>.
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+# Import libraries
+
+from .libs.sumtree import SumTree
+
 # Environment and space types
 
 from .environment import Environment
@@ -24,6 +28,7 @@ from .config import Config
 
 from .models.policy_optimization_model import PolicyOptimizationModel
 from .models.policy_optimization.vanilla_policy_gradient import VanillaPolicyGradient
+from .models.policy_optimization.trust_region_policy_optimization import TrustRegionPolicyOptimization
 
 # Q-Learning models
 
