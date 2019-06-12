@@ -5,7 +5,7 @@ import logging
 
 # Import required src
 
-from usienarl.environment import SpaceType
+from usienarl import SpaceType
 
 
 class Model:

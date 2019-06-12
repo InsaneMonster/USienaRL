@@ -1,7 +1,7 @@
 # Import required src
 
-from usienarl.environment import Environment
-from usienarl.models.q_learning_model import QLearningModel
+from usienarl import Environment
+from usienarl.models import QLearningModel
 
 
 class Explorer:

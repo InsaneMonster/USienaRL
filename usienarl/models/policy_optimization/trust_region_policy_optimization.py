@@ -6,9 +6,8 @@ import scipy.signal
 
 # Import required src
 
-from usienarl.environment import SpaceType
-from usienarl.config import Config
-from usienarl.models.policy_optimization_model import PolicyOptimizationModel
+from usienarl import SpaceType, Config
+from usienarl.models import PolicyOptimizationModel
 
 
 class Buffer:

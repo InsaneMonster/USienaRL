@@ -6,8 +6,8 @@ import logging
 
 # Import required src
 
-from usienarl.environment import Environment
-from usienarl.model import Model
+from usienarl import Environment
+from usienarl import Model
 
 
 class Experiment:

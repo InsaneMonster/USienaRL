@@ -4,9 +4,8 @@ import numpy
 
 # Import required src
 
-from usienarl.environment import Environment
-from usienarl.explorer import Explorer
-from usienarl.models.q_learning_model import QLearningModel
+from usienarl import Environment, Explorer
+from usienarl.models import QLearningModel
 
 
 class BoltzmannExplorer(Explorer):

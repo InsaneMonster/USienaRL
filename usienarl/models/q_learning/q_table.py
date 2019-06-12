@@ -5,8 +5,8 @@ import numpy
 
 # Import required src
 
-from usienarl.environment import SpaceType
-from usienarl.models.q_learning_model import QLearningModel
+from usienarl import SpaceType
+from usienarl.models import QLearningModel
 
 
 class QTable(QLearningModel):

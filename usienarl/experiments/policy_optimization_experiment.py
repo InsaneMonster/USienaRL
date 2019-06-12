@@ -4,9 +4,8 @@ import logging
 
 # Import required src
 
-from usienarl.experiment import Experiment
-from usienarl.environment import Environment
-from usienarl.models.policy_optimization_model import PolicyOptimizationModel
+from usienarl.experiment import Experiment, Environment
+from usienarl.models import PolicyOptimizationModel
 
 
 class PolicyOptimizationExperiment(Experiment):

@@ -5,9 +5,8 @@ import numpy
 
 # Import required src
 
-from usienarl.environment import SpaceType
-from usienarl.config import Config
-from usienarl.models.q_learning_model import QLearningModel
+from usienarl import SpaceType, Config
+from usienarl.models import QLearningModel
 
 
 class Estimator:

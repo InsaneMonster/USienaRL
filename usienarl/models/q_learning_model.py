@@ -5,8 +5,8 @@ import tensorflow
 
 # Import required src
 
-from usienarl.model import Model
-from usienarl.environment import SpaceType
+from usienarl import Model
+from usienarl import SpaceType
 
 
 class QLearningModel(Model):
