@@ -7,7 +7,7 @@ import logging
 
 # Import required src
 
-from usienarl import Environment, SpaceType
+from usienarl.environment import Environment, SpaceType
 
 
 class Visualizer:

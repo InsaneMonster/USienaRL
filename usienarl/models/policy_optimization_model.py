@@ -5,7 +5,7 @@ import tensorflow
 
 # Import required src
 
-from usienarl import Model
+from usienarl.model import Model
 
 
 class PolicyOptimizationModel(Model):

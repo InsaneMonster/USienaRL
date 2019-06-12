@@ -5,7 +5,7 @@ import numpy
 
 # Import required src
 
-from usienarl import Memory
+from usienarl.memory import Memory
 
 
 class ExperienceReplay(Memory):

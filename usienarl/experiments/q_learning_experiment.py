@@ -4,7 +4,11 @@ import logging
 
 # Import required src
 
-from usienarl import Experiment, Environment, QLearningModel, Memory, Explorer
+from usienarl.experiment import Experiment
+from usienarl.environment import Environment
+from usienarl.models.q_learning_model import QLearningModel
+from usienarl.explorer import Explorer
+from usienarl.memory import Memory
 
 
 class QLearningExperiment(Experiment):

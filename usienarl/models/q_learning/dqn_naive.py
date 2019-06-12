@@ -5,7 +5,9 @@ import numpy
 
 # Import required src
 
-from usienarl import QLearningModel, Config, SpaceType
+from usienarl.environment import SpaceType
+from usienarl.config import Config
+from usienarl.models.q_learning_model import QLearningModel
 
 
 class DQNNaive(QLearningModel):

@@ -4,7 +4,9 @@ import numpy
 
 # Import required src
 
-from usienarl import QLearningModel, Environment, Explorer
+from usienarl.environment import Environment
+from usienarl.explorer import Explorer
+from usienarl.models.q_learning_model import QLearningModel
 
 
 class EpsilonGreedyExplorer(Explorer):
