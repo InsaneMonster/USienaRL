@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 name: str = "usienarl"
-version: str = "0.1.6"
+version: str = "0.1.7"
 requirements: [] = ["tensorflow-gpu>=1.8.0,<=1.13.1", "numpy>=1.14.5", "scipy>=1.2.1"]
 packages: [] = find_packages()
 url: str = "https://github.com/InsaneMonster/USienaRL"
