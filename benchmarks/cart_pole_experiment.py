@@ -2,6 +2,7 @@
 
 import tensorflow
 import logging
+import os
 
 # Import usienarl basics
 
@@ -140,7 +141,10 @@ def _define_policy_optimization_experiment_batch(experiments_data: []) -> []:
 
 if __name__ == "__main__":
     # Parse the command line arguments
-    workspace_path, experiment_iterations_number, render_during_training, render_during_validation, render_during_test = command_line_parse()
+    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
+    # Define the CUDA devices in which to run the experiment
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)

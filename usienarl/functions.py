@@ -30,11 +30,12 @@ def command_line_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument("workspace_directory", type=str)
     parser.add_argument("experiment_iterations", type=_positive_int)
+    parser.add_argument("CUDA_devices", type=str)
     parser.add_argument("-render_during_training", action="store_true")
     parser.add_argument("-render_during_validation", action="store_true")
     parser.add_argument("-render_during_testing", action="store_true")
     args: dict = vars(parser.parse_args())
-    return args["workspace_directory"], args["experiment_iterations"], args["render_during_training"], args["render_during_validation"], args["render_during_testing"]
+    return args["workspace_directory"], args["experiment_iterations"], args["CUDA_devices"], args["render_during_training"], args["render_during_validation"], args["render_during_testing"]
 
 
 def run_experiments(experiments: [], experiment_iterations_number: int,
