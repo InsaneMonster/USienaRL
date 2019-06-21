@@ -5,17 +5,19 @@ import numpy
 
 # Import required src
 
-from usienarl import SpaceType
-from usienarl.models import QLearningModel
+from usienarl import SpaceType, Config
+from usienarl.models import TemporalDifferenceModel
 
 
-class QTable(QLearningModel):
+class DQNNaive(TemporalDifferenceModel):
     """
-    Q-Table model. The weights of the model are the entries of the so called Q-Table and the outputs are computed by
-    multiplication of this matrix elements by the inputs.
+    DQN (Deep Q-Network) Naive model. The model is a deep neural network which hidden layers can be defined by a config
+    parameter. It is called naive since it doesn't use a target network and a q-network to correctly evaluate the expected
+    future reward. It is usually unstable.
 
     Supported observation spaces:
         - discrete
+        - continuous
 
     Supported action spaces:
         - discrete
@@ -23,13 +25,15 @@ class QTable(QLearningModel):
 
     def __init__(self,
                  name: str,
-                 learning_rate: float, discount_factor: float):
-        # Define Q-Table attributes
-        self._q_table = None
+                 learning_rate: float, discount_factor: float,
+                 hidden_layers_config: Config):
+        # Define DQN naive attributes
+        self._hidden_layers_config: Config = hidden_layers_config
         # Generate the base Q-Learning model
         super().__init__(name, learning_rate, discount_factor)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
+        self._supported_observation_space_types.append(SpaceType.continuous)
         self._supported_action_space_types.append(SpaceType.discrete)
 
     def _define(self):
@@ -37,26 +41,23 @@ class QTable(QLearningModel):
         Overridden method of Model class: check its docstring for further information.
         """
         with tensorflow.variable_scope(self._experiment_name + "/" + self.name):
-            # Define inputs of the model as a float adaptable array with size Nx(S) where N is the number of examples and (S) is the shape of the observations space
+            # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self._inputs = tensorflow.placeholder(shape=[None, *self.observation_space_shape], dtype=tensorflow.float32, name="inputs")
-            # Initialize the Q-Table (a weight matrix) of SxA dimensions with random uniform numbers between 0 and 0.1
-            self._q_table = tensorflow.get_variable(
-                                name="q_table",
-                                trainable=True,
-                                initializer=tensorflow.random_uniform([*self.observation_space_shape, *self.action_space_shape], 0, 0.1))
-            # Define the outputs at a given state as a matrix of size NxA given by multiplication of inputs and weights
-            # Define the targets for learning with the same Nx(A) adaptable size
-            # Note: N is the number of examples and (A) the shape of the action space
-            self.outputs = tensorflow.matmul(self._inputs, self._q_table, name="outputs")
+            # Define the estimator network hidden layers from the config
+            hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
+            # Define outputs as an array of neurons of size NxA and with linear activation functions
+            # Define the targets for learning with the same NxA adaptable size
+            # Note: N is the number of examples and A the size of the action space (DQN only supports discrete actions spaces)
+            self.outputs = tensorflow.layers.dense(hidden_layers_output, *self.action_space_shape, name="outputs")
             self._targets = tensorflow.placeholder(shape=[None, *self.action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self._loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
-            # Define the absolute error and its mean
+            # Define the absolute error
             self._absolute_error = tensorflow.abs(self._targets - self.outputs, name="absolute_error")
-            # Define the loss
-            self._loss = tensorflow.reduce_sum(self._loss_weights * tensorflow.squared_difference(self._targets, self.outputs), name="loss")
+            # Define the estimator loss
+            self._loss = tensorflow.reduce_mean(self._loss_weights * tensorflow.squared_difference(self._targets, self.outputs), name="loss")
             # Define the optimizer
-            self._optimizer = tensorflow.train.GradientDescentOptimizer(self.learning_rate).minimize(self._loss)
+            self._optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
             # Define the initializer
             self.initializer = tensorflow.global_variables_initializer()
 

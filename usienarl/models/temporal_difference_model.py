@@ -9,11 +9,11 @@ from usienarl import Model
 from usienarl import SpaceType
 
 
-class QLearningModel(Model):
+class TemporalDifferenceModel(Model):
     """
-    Base class for each Q-Learning model. It should not be used by itself, and should be extended instead.
+    Base class for each Temporal Difference (TD) model. It should not be used by itself, and should be extended instead.
 
-    A Q-Learning model is a model which uses the Q-Value to find the optimal policy.
+    A TD model is a model which uses the Q-value to find the optimal policy at each step by temporal difference.
     It usually supports only discrete action spaces, but it depends on the model.
 
     Attributes:

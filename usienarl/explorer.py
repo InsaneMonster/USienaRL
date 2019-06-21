@@ -1,7 +1,7 @@
 # Import required src
 
 from usienarl import Environment
-from usienarl.models import QLearningModel
+from usienarl.models import TemporalDifferenceModel
 
 
 class Explorer:
@@ -32,7 +32,7 @@ class Explorer:
 
     def get_action(self,
                    exploration_rate: float,
-                   model: QLearningModel, environment: Environment, session, state_current: int) -> []:
+                   model: TemporalDifferenceModel, environment: Environment, session, state_current: int) -> []:
         """
         Get the action according to the exploration rate, the model and the current state of the environment.
 

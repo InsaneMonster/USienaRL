@@ -6,7 +6,7 @@ import numpy
 # Import required src
 
 from usienarl import SpaceType, Config
-from usienarl.models import QLearningModel
+from usienarl.models import TemporalDifferenceModel
 
 
 class Estimator:
@@ -53,7 +53,7 @@ class Estimator:
             self.weight_parameters = sorted(self.weight_parameters, key=lambda parameter: parameter.name)
 
 
-class DuelingDoubleDQN(QLearningModel):
+class DuelingDoubleDQN(TemporalDifferenceModel):
     """
     DDDQN (Dueling Double Deep Q-Network) model. The model is a deep neural network which hidden layers can be defined by a config
     parameter. It uses a target network and a q-network to correctly evaluate the expected future reward in order

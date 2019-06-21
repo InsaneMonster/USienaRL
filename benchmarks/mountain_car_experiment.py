@@ -14,7 +14,7 @@ from usienarl.experiments import PolicyOptimizationExperiment, QLearningExperime
 
 # Import usienarl q-learning models
 
-from usienarl.models.q_learning import DQN, DoubleDQN, DuelingDoubleDQN
+from usienarl.models.temporal_difference import DQN, DoubleDQN, DuelingDoubleDQN
 
 # Import usienarl memories
 

@@ -39,7 +39,7 @@ class Experiment:
     Attributes:
         - name: a string representing the name of the experiment, usually correlated with the name of the environment
         - environment: an environment representing the setting of the experiment (e.g. an OpenAI gym environment)
-        - model: the q_learning model moving the agent operating on the environment
+        - model: the temporal_difference model moving the agent operating on the environment
     """
 
     def __init__(self,

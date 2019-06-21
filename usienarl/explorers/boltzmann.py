@@ -5,7 +5,7 @@ import numpy
 # Import required src
 
 from usienarl import Environment, Explorer
-from usienarl.models import QLearningModel
+from usienarl.models import TemporalDifferenceModel
 
 
 class BoltzmannExplorer(Explorer):
@@ -24,7 +24,7 @@ class BoltzmannExplorer(Explorer):
 
     def get_action(self,
                    exploration_rate_current_value: float,
-                   model: QLearningModel, environment: Environment, session, state_current: int) -> []:
+                   model: TemporalDifferenceModel, environment: Environment, session, state_current: int) -> []:
         """
         Overridden method of Explorer class: check its docstring for further information.
         """

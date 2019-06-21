@@ -5,7 +5,7 @@ import logging
 # Import required src
 
 from usienarl import Experiment, Environment, Explorer, Memory
-from usienarl.models import QLearningModel
+from usienarl.models import TemporalDifferenceModel
 
 
 class QLearningExperiment(Experiment):
@@ -20,10 +20,10 @@ class QLearningExperiment(Experiment):
                  name: str,
                  validation_success_threshold: float, test_success_threshold: float,
                  environment: Environment,
-                 model: QLearningModel,
+                 model: TemporalDifferenceModel,
                  memory: Memory, batch_size: int,
                  explorer: Explorer):
-        # Define q_learning experiment attributes
+        # Define temporal_difference experiment attributes
         # Define the memory: set also the number of pre-training episodes depending on the memory requirements and capacity
         self._memory: Memory = memory
         self._batch_size: int = batch_size
