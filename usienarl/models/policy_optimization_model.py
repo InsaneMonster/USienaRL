@@ -59,33 +59,6 @@ class PolicyOptimizationModel(Model):
         # Empty method, definition should be implemented on a child class basis
         return None
 
-    def get_trainable_variables(self,
-                                scope: str):
-        """
-        Get the trainable variables in the model (useful for saving the model or comparing the weights), given the
-        current experiment scope.
-
-        :param scope: the string scope of the tensorflow graph (usually the name of the experiment)
-        :return: the trainable tensorflow variables.
-        """
-        # Get the training variables of the model under its scope: usually, the training variables of the tensorflow graph
-        return tensorflow.trainable_variables(scope + "/" + self.name + "/")
-
-    def print_trainable_variables(self,
-                                  scope: str,
-                                  session):
-        """
-        Print the trainable variables in the current tensorflow graph, given the current experiment scope.
-
-        :param scope: the string scope of the tensorflow graph (usually the name of the experiment)
-        :param session: the session of tensorflow currently running
-        """
-        # Print the trainable variables of the currently active model
-        trainable_variables = self.get_trainable_variables(scope)
-        for trainable_variable in trainable_variables:
-            print(trainable_variable.name)
-            print(trainable_variable.eval(session=session))
-
     @staticmethod
     def get_categorical_log_likelihood(target_actions_mask, logits):
         """
