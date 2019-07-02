@@ -72,7 +72,7 @@ class TemporalDifferenceModel(Model):
         :param state_next: the next state reached in the environment
         :param action: the action take to transition between the state_current and the next_state
         :param reward: the reward obtained for taking the action at the state_current
-        :param sample_weight: the weight of this sample to modify training
+        :param sample_weight: the weight of this sample
         :return: the loss of the model after training, the absolute error after training and the updated summary
         """
         # Empty method, definition should be implemented on a child class basis
@@ -90,7 +90,7 @@ class TemporalDifferenceModel(Model):
         :param episodes: the total episodes number in the experiment
         :param step: the current step number in the experiment
         :param batch: a batch of samples each one consisting of a tuple like: (state_current, action, reward, state_next)
-        :param sample_weights: the weights of each sample in the batch to modify training
+        :param sample_weights: the weights of each sample in the batch
         :return: the loss of the model after training, the absolute error after training and the updated summary
         """
         # Empty method, definition should be implemented on a child class basis

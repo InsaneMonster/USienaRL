@@ -39,9 +39,11 @@ class Environment:
         self.name: str = name
         self._environment = None
 
-    def setup(self):
+    def setup(self) -> bool:
         """
         Setup the environment.
+
+        :return a boolean flag True if the setup is successful, false otherwise
         """
         # Empty method, it should be implemented on a child class basis
         pass

@@ -6,7 +6,7 @@ import logging
 
 # Import required src
 
-from usienarl import Environment
+from usienarl import Environment, Agent
 from usienarl import Model
 
 
@@ -46,15 +46,14 @@ class Experiment:
                  name: str,
                  validation_success_threshold: float, test_success_threshold: float,
                  environment: Environment,
-                 model: Model,
+                 agent: Agent,
                  pre_train_episodes: int):
         # Define the experiment name
         self.name: str = name
-        # Save the environment
+        # Define environment and agent attributes
         self.environment: Environment = environment
-        # Define the model
-        self.model = model
-        # Define experiment attributes
+        self.agent: Agent = agent
+        # Define experiment internal attributes
         self._validation_success_threshold: float = validation_success_threshold
         self._test_success_threshold: float = test_success_threshold
         self._pre_train_episodes: int = pre_train_episodes
@@ -72,23 +71,19 @@ class Experiment:
         logger.info("Preparing experiment " + self.name + "_" + str(experiment_number) + "...")
         # Reset the tensorflow graph
         tensorflow.reset_default_graph()
-        # Call the reset method implemented in the child class (e.g. to reset any defined child-only components)
-        self._reset()
-        # Execute the setup on the environment (resetting it)
-        self.environment.setup()
-        # Generate the model and return the success/failure state of this generation
-        return self.model.generate(self.name + "_" + str(experiment_number),
-                                   self.environment.observation_space_type, self.environment.observation_space_shape,
-                                   self.environment.action_space_type, self.environment.action_space_shape,
-                                   logger)
+        # Execute the setup on the environment and on the agent and return if not both of them setup correctly
+        if not self.environment.setup():
+            logger.info("Environment setup failed. Cannot setup the experiment!")
+            return False
+        if not self.agent.setup():
+            logger.info("Agent setup failed. Cannot setup the experiment!")
+            return False
 
-    def _reset(self):
-        """
-        Reset all the properties of the experiment when doing setup. It is used to customize the setup according
-        to the experiment type.
-        """
-        # Empty method, definition should be implemented on a child class basis
-        pass
+        # Generate the model and return the success/failure state of this generation
+        # return self.model.generate(self.name + "_" + str(experiment_number),
+        #                            self.environment.observation_space_type, self.environment.observation_space_shape,
+        #                            self.environment.action_space_type, self.environment.action_space_shape,
+        #                            logger)
 
     def _pre_train(self,
                    episodes: int, session,
@@ -229,10 +224,9 @@ class Experiment:
         tensorflow_gpu_config.gpu_options.allow_growth = True
         # Define the session
         with tensorflow.Session(config=tensorflow_gpu_config) as session:
-            # Initialize the model
-            session.run(self.model.initializer)
-            # Initialize the environment
+            # Initialize the environment and the agent
             self.environment.initialize(session)
+            self.agent.initialize(session)
             # Pre-trains if the model requires pre-training
             if self._pre_train_episodes > 0:
                 self._pre_train(self._pre_train_episodes, session, logger)

@@ -26,7 +26,7 @@ class QTable(TemporalDifferenceModel):
                  learning_rate: float, discount_factor: float):
         # Define Q-Table attributes
         self._q_table = None
-        # Generate the base Q-Learning model
+        # Generate the base Temporal Difference model
         super().__init__(name, learning_rate, discount_factor)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
@@ -65,7 +65,7 @@ class QTable(TemporalDifferenceModel):
                       episode: int, episodes: int, step: int,
                       state_current, state_next, action: int, reward: float, sample_weight: float = 1.0):
         """
-        Overridden method of QLearningModel class: check its docstring for further information.
+        Overridden method of TemporalDifferenceModel class: check its docstring for further information.
         """
         # Get the outputs depending on the type of space (discrete is one-hot encoded)
         if self._observation_space_type == SpaceType.discrete:
@@ -117,7 +117,7 @@ class QTable(TemporalDifferenceModel):
                      episode: int, episodes: int, step: int,
                      batch: [], sample_weights: []):
         """
-        Overridden method of QLearningModel class: check its docstring for further information.
+        Overridden method of TemporalDifferenceModel class: check its docstring for further information.
         """
         # Get the outputs depending on the type of space (discrete is one-hot encoded)
         if self._observation_space_type == SpaceType.discrete:
@@ -170,7 +170,7 @@ class QTable(TemporalDifferenceModel):
     @staticmethod
     def get_inputs_name() -> str:
         """
-        Overridden method of QLearningModel class: check its docstring for further information.
+        Overridden method of TemporalDifferenceModel class: check its docstring for further information.
         """
         # Get the name of the inputs of the tensorflow graph
         return "inputs"
@@ -178,7 +178,47 @@ class QTable(TemporalDifferenceModel):
     @staticmethod
     def get_outputs_name() -> str:
         """
-        Overridden method of QLearningModel class: check its docstring for further information.
+        Overridden method of TemporalDifferenceModel class: check its docstring for further information.
         """
         # Get the name of the outputs of the tensorflow graph
         return "outputs"
+
+    @staticmethod
+    def _q_learning_update_rule(state_next, action, q_values_current, q_values_next, reward: float, discount_factor: float):
+        """
+        Update the Q-Values target to be estimated by the model using q-learning update rule for the Bellman equation:
+        Q(s, a) = R + gamma * max_a(Q(s'))
+
+        :param state_next: the next state observed by the agent
+        :param action: the action taken by the agent
+        :param q_values_current: the q-values output of the approximator for the current state (the target to be updated)
+        :param q_values_next: the q-values output of the approximator for the next state
+        :param reward: the reward got by the agent
+        :param discount_factor: the discount factor set for the model (in literature known as gamma)
+        """
+        # Update the q-values for current state (the model target) using Q-Learning Bellman equation
+        if state_next is None:
+            # Only the immediate reward can be assigned at end of the episode
+            q_values_current[action] = reward
+        else:
+            q_values_current[action] = reward + discount_factor * numpy.max(q_values_next)
+
+    @staticmethod
+    def _sarsa_update_rule(state_next, action, q_values_current, q_values_next, reward: float, discount_factor: float):
+        """
+        Update the Q-Values target to be estimated by the model using SARSA update rule for the Bellman equation:
+        Q(s, a) = R + gamma * Q(s', a)
+
+        :param state_next: the next state observed by the agent
+        :param action: the action taken by the agent
+        :param q_values_current: the q-values output of the approximator for the current state (the target to be updated)
+        :param q_values_next: the q-values output of the approximator for the next state
+        :param reward: the reward got by the agent
+        :param discount_factor: the discount factor set for the model (in literature known as gamma)
+        """
+        # Update the q-values for current state (the model target) using SARSA Bellman equation
+        if state_next is None:
+            # Only the immediate reward can be assigned at end of the episode
+            q_values_current[action] = reward
+        else:
+            q_values_current[action] = reward + discount_factor * q_values_next[action]
