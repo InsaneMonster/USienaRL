@@ -23,8 +23,11 @@ class Agent:
     """
 
     def __init__(self,
+                 name: str,
                  environment: Environment,
                  observation_space_type: SpaceType, observation_space_shape):
+        # Define agent name attribute
+        self.name: str = name
         # Define action space attribute
         # Note: action space type and shape are the same as the environment
         self.action_space_type: SpaceType = environment.action_space_type
@@ -35,11 +38,13 @@ class Agent:
         self.observation_space_type: SpaceType = observation_space_type
         self.observation_space_shape = observation_space_shape
 
-    def setup(self) -> bool:
+    def setup(self,
+              experiment_scope: str) -> bool:
         """
         Setup the agent for both training and inference.
         Note: this should generate the model and other components, if any.
 
+        :param experiment_scope: the experiment scope encompassing the agent scope, if any
         :return a boolean flag True if setup is successful, false otherwise
         """
         # Empty method, it should be implemented on a child class basis
@@ -144,6 +149,17 @@ class Agent:
         # Empty method, it should be implemented on a child class basis
         pass
 
+    def save_agent(self,
+                   session,
+                   experiment_scope: str):
+        """
+        Save the agent internal mode, usually its models tensorflow graphs.
+
+        :param session: the session of tensorflow currently running
+        :param experiment_scope: the experiment scope encompassing the agent scope, if any
+        """
+        pass
+
     def _observe(self,
                  session,
                  environment_state_current: numpy.ndarray) -> numpy.ndarray:
@@ -222,15 +238,16 @@ class Agent:
         # Empty method, it should be implemented on a child class basis
         pass
 
-    @property
-    def trainable_variables(self):
+    def get_trainable_variables(self,
+                                experiment_scope: str):
         """
-        Return the trainable variables of the agent (usually of the models of the agents).
+        Get the trainable variables of the agent (usually of the models of the agents).
 
+        :param experiment_scope: the experiment scope encompassing the agent scope, if any
         :return: the trainable variables defined by this agent.
         """
-        # Empty property, it should be implemented on a child class basis
-        return None
+        # Empty method, it should be implemented on a child class basis
+        pass
 
     @property
     def require_pre_train(self):

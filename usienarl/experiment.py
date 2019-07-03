@@ -100,10 +100,7 @@ class Experiment:
         pass
 
     def _train(self,
-               experiment_number: int,
-               summary_writer, model_saver, save_path: str,
                episodes: int, start_step: int, session,
-               logger: logging.Logger,
                render: bool = False):
         """
         Execute an interval of training of the model on the environment with the given parameters.
@@ -111,25 +108,18 @@ class Experiment:
 
         How the training is done depends on the type of experiment.
 
-        :param experiment_number: number to append to the experiment name in all scopes and print statements (if not less than zero). Used to differentiate multiple copies of the same experiment
-        :param summary_writer: the TensorBoard summary writer
-        :param model_saver: the tensorflow model saver
-        :param save_path: the path in which to save the tensorflow models
-        :param episodes: the number of training episodes
+        :param episodes: the length, in episodes, of training
         :param start_step: the last step of the agent in the environment in the last interval (if any)
         :param session: the session of tensorflow currently running
-        :param logger: the logger currently used to print the experiment information, warnings and errors
         :param render: boolean parameter deciding whether or not to render during training
-        :return: the reached performed step in the experiment (sum of step at the end of last interval plus the current performed steps)
+        :return: the float average of the score obtained in the played episodes and the step counter
         """
         # Empty method, definition should be implemented on a child class basis
-        return None
+        pass
 
-    def _exploit(self,
-                 episodes: int, session,
-                 logger: logging.Logger,
-                 validation: bool = True,
-                 render: bool = False):
+    def _inference(self,
+                   episodes: int, session,
+                   render: bool = False):
         """
         Execute the model in inference mode on the environment, to compute the validation score or the test score
         depending on the validation boolean given parameter.
@@ -138,40 +128,77 @@ class Experiment:
 
         :param episodes: the number of episodes in which to exploit the model on the environment
         :param session: the session of tensorflow currently running
-        :param logger: the logger currently used to print the experiment information, warnings and errors
-        :param validation: boolean parameter deciding whether or not it is exploiting for validation or for test
         :param render: boolean parameter deciding whether or not to render during exploitation
-        :return: the float average of the score obtained in the played episodes
+        :return: the float average of the score obtained in the played episodes and the step counter
         """
-        if validation:
-            logger.info("Validating for " + str(episodes) + " episodes...")
-        else:
-            logger.info("Testing for " + str(episodes) + " episodes...")
-        # Define list of rewards
-        rewards = []
-        for episode in range(episodes):
-            # Initialize reward and episode completion flag
-            episode_reward: float = 0
-            episode_done: bool = False
-            # Get the initial state of the episode
-            state_current = self.environment.reset(session)
-            # Execute actions until the episode is completed
-            while not episode_done:
-                # Get the action predicted by the model
-                action = self.model.predict(session, state_current)[0]
-                # Get the next state with relative reward and completion flag
-                state_next, reward, episode_done = self.environment.step(action, session)
-                # Update total reward for this episode
-                episode_reward += reward
-                # Update the current state with the previously next state
-                state_current = state_next
-                # Render if required
-                if render:
-                    self.environment.render(session)
-            # Add the episode reward to the list of rewards
-            rewards.append(episode_reward)
-        # Return average reward over given episodes
-        return sum(rewards) / episodes
+        # Empty method, definition should be implemented on a child class basis
+        pass
+
+    def _train_step(self,
+                    session,
+                    state_current: numpy.ndarray,
+                    render: bool = False):
+        """
+        Execute a train step in the environment.
+
+        :param session: the session of tensorflow currently running
+        :param state_current: the current state of the environment wrapped in a numpy array (ndarray)
+        :param render: a boolean flag stating if the environment should be rendered in the step
+        :return: the next state, the reward and the completion flag
+        """
+        # Get the action decided by the agent with train policy
+        action = self.agent.act_pre_train(session, state_current)
+        # Get the next state with relative reward and completion flag
+        state_next, reward, episode_done = self.environment.step(action, session)
+        # Render if required
+        if render:
+            self.environment.render(session)
+        # Return the next state, the reward and the completion flag
+        return state_next, reward, episode_done
+
+    def _pre_train_step(self,
+                        session,
+                        state_current: numpy.ndarray,
+                        render: bool = False):
+        """
+        Execute a pre-train step in the experiment.
+
+        :param session: the session of tensorflow currently running
+        :param state_current: the current state of the environment wrapped in a numpy array (ndarray)
+        :param render: a boolean flag stating if the environment should be rendered in the step
+        :return: the next state, the reward and the completion flag
+        """
+        # Get the action decided by the agent with pre-train policy
+        action = self.agent.act_pre_train(session, state_current)
+        # Get the next state with relative reward and completion flag
+        state_next, reward, episode_done = self.environment.step(action, session)
+        # Render if required
+        if render:
+            self.environment.render(session)
+        # Return the next state, the reward and the completion flag
+        return state_next, reward, episode_done
+
+    def _inference_step(self,
+                        session,
+                        state_current: numpy.ndarray,
+                        render: bool = False):
+        """
+        Execute an inference step in the environment.
+
+        :param session: the session of tensorflow currently running
+        :param state_current: the current state of the environment wrapped in a numpy array (ndarray)
+        :param render: a boolean flag stating if the environment should be rendered in the step
+        :return: the next state, the reward and the completion flag
+        """
+        # Get the action decided by the agent with inference policy
+        action = self.agent.act_inference(session, state_current)
+        # Get the next state with relative reward and completion flag
+        state_next, reward, episode_done = self.environment.step(action, session)
+        # Render if required
+        if render:
+            self.environment.render(session)
+        # Return the next state, the reward and the completion flag
+        return state_next, reward, episode_done
 
     def conduct(self,
                 training_episodes_per_interval: int, validation_episodes_per_interval: int, max_training_episodes: int,
@@ -215,9 +242,9 @@ class Experiment:
         logger.info("Saved model metagraph path: " + metagraph_path)
         # Prepare the TensorBoard summary writer and the model saver
         if experiment_number >= 0:
-            model_saver = tensorflow.train.Saver(self.model.get_trainable_variables(self.name + "_" + str(experiment_number)))
+            model_saver = tensorflow.train.Saver(self.agent.get_trainable_variables(self.name + "_" + str(experiment_number)))
         else:
-            model_saver = tensorflow.train.Saver(self.model.get_trainable_variables(self.name))
+            model_saver = tensorflow.train.Saver(self.agent.get_trainable_variables(self.name))
         summary_writer = tensorflow.summary.FileWriter(summary_path, graph=tensorflow.get_default_graph())
         # Tensorflow gpu configuration
         tensorflow_gpu_config = tensorflow.ConfigProto()
@@ -227,35 +254,36 @@ class Experiment:
             # Initialize the environment and the agent
             self.environment.initialize(session)
             self.agent.initialize(session)
-            # Pre-trains if the model requires pre-training
-            if self._pre_train_episodes > 0:
-                self._pre_train(self._pre_train_episodes, session, logger)
+            # Execute pre-training if the agent requires pre-training
+            if self.agent.require_pre_train:
+                logger.info("Pre-training for " + str(self._pre_train_episodes) + " episodes...")
+                self._pre_train(self._pre_train_episodes, session)
             # Define experiment variables
             training_episodes_counter: int = 0
-            validation_score: float = 0
-            step_counter: int = 0
-            # Execute training until max training episodes number is reached or the score is above the threshold
-            # Note: at each interval a test session is executed to validate the model
+            training_steps_counter: int = 0
+            # Execute training until max training episodes number is reached or the validation score is above the threshold
             while training_episodes_counter < max_training_episodes:
-                # Train for training interval episodes and increase relative counter
-                step_counter = self._train(experiment_number, summary_writer, model_saver, metagraph_path, training_episodes_per_interval, step_counter, session, logger, render_during_training)
+                # Run train for training interval episodes and get the average score
+                logger.info("Training for " + str(training_episodes_per_interval) + " episodes...")
+                training_score, training_step = self._train(experiment_number, summary_writer, model_saver, metagraph_path, training_episodes_per_interval, training_steps_counter, session, logger, render_during_training)
+                # 
+                # Increase training episodes and steps counter
                 training_episodes_counter += training_episodes_per_interval
-                # Exploit for validation interval episodes and get the average score
-                validation_score = self._exploit(validation_episodes_per_interval, session, logger, True, render_during_validation)
-                # If score is above threshold, the experiment is successful, break here
+                training_steps_counter += training_step
+                # Run inference for validation interval episodes and get the average score
+                logger.info("Validating for " + str(validation_episodes_per_interval) + " episodes...")
+                validation_score, validation_step = self._inference(validation_episodes_per_interval, session, render_during_validation)
                 # Otherwise print intermediate results
                 logger.info("Average score over " + str(validation_episodes_per_interval) + " episodes after " + str(training_episodes_counter) + " training episodes: " + str(validation_score))
-                if validation_score >= self._validation_success_threshold:
+                # Check for validation
+                if self._validate(training_episodes_counter, training_steps_counter, validation_score):
+                    logger.info("Validation of the model is successful")
                     break
-            # If the validation is not successful, the experiment is failed
-            if validation_score < self._validation_success_threshold:
-                logger.info("Validation of the model is not successful")
-            else:
-                logger.info("Validation of the model is successful")
             # Test the model, getting the average score per test and the final average score over all tests
             scores = []
             for test in range(number_of_tests):
-                score: float = self._exploit(episodes_per_test, session, logger, False, render_during_test)
+                logger.info("Testing for " + str(episodes_per_test) + " episodes...")
+                score: float = self._inference(episodes_per_test, session, render_during_test)
                 logger.info("Average score over " + str(episodes_per_test) + " episodes: " + str(score))
                 scores.append(score)
             # Get the final average score over all the test and the best score registered among all tests
@@ -264,10 +292,20 @@ class Experiment:
             # Print final results and outcome of the experiment
             logger.info("Final average score is " + str(final_score) + " with " + str(training_episodes_counter) + " training episodes")
             logger.info("Best average score over " + str(episodes_per_test) + " is: " + str(best_score))
-            if final_score >= self._test_success_threshold and validation_score >= self._validation_success_threshold:
+            if self._test(training_episodes_counter, training_steps_counter, final_score):
                 logger.info("The experiment is successful")
             else:
                 logger.info("The experiment is not successful")
             if print_trainable_variables:
                 self.model.print_trainable_variables(self.name, session)
             return final_score, best_score, training_episodes_counter
+
+    def _validate(self,
+                  total_training_episodes: int, total_training_steps: int,
+                  average_score: float) -> bool:
+        pass
+
+    def _test(self,
+              total_training_episodes: int, total_training_steps: int,
+              average_score: float) -> bool:
+        pass
