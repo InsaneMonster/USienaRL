@@ -10,6 +10,7 @@
 # Import packages
 
 import numpy
+import tensorflow
 
 # Import require src
 
@@ -37,11 +38,14 @@ class Agent:
         # the environment state space type and shape
         self.observation_space_type: SpaceType = observation_space_type
         self.observation_space_shape = observation_space_shape
+        # Define internal agent attributes
+        self._summary_writer:
 
     def setup(self,
               experiment_scope: str) -> bool:
         """
-        Setup the agent for both training and inference.
+        Setup the agent for pre-training, training and inference.
+        It is called before the tensorflow session generation.
         Note: this should generate the model and other components, if any.
 
         :param experiment_scope: the experiment scope encompassing the agent scope, if any
@@ -54,6 +58,7 @@ class Agent:
                    session):
         """
         Initialize the agent before acting in the environment.
+        It is called right after tensorflow session generation.
         Note: this should initialize the model and other components, if any.
 
         :param session: the session of tensorflow currently running, if any
