@@ -32,7 +32,7 @@ class QTable(TemporalDifferenceModel):
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_action_space_types.append(SpaceType.discrete)
 
-    def _define(self):
+    def _define_graph(self):
         """
         Overridden method of Model class: check its docstring for further information.
         """

@@ -60,7 +60,7 @@ class PolicyOptimizationExperiment(Experiment):
                 episode_reward += reward
                 # Store the properties in the model buffer (current state, action and relative reward then all the content
                 # returned by the model during prediction, since they can vary depending on the algorithm)
-                self.model.buffer.store(state_current, action, reward, *result[1:])
+                self.model.buffer.store_train(state_current, action, reward, *result[1:])
                 # If the episode is completed and finalize the path in the model buffer
                 # Else update the current state with the previously next state
                 if episode_done:

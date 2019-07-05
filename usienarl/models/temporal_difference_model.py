@@ -18,7 +18,7 @@ class TemporalDifferenceModel(Model):
 
     Attributes:
         - learning_rate: the lambda of the model in training phase
-        - discount_factor: the discount factor of the discounted future expected reward
+        - _discount_factor: the discount factor of the discounted future expected reward
         - outputs: the outputs of the model (usually one-hot encoded in the size of the action space of the environment)
     """
 
@@ -116,12 +116,12 @@ class TemporalDifferenceModel(Model):
 
     def predict(self,
                 session,
-                state_current) -> []:
+                observation_current) -> []:
         """
         Overridden method of Model class: check its docstring for further information.
         """
         # Return the best predicted action (max output index) given the current state in the shape of a list
-        return [numpy.argmax(self.get_output(session, state_current))]
+        return [numpy.argmax(self.get_output(session, observation_current))]
 
     @staticmethod
     def get_inputs_name() -> str:

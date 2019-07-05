@@ -48,9 +48,9 @@ class Visualizer:
         :return: the best predicted action
         """
         # Return all the predicted actions q-values given the current state depending on the observation space type
-        if self._environment.observation_space_type is SpaceType.discrete:
+        if self._environment.state_space_type is SpaceType.discrete:
             predicted_outputs = session.run(self._outputs,
-                                            feed_dict={self._inputs: [numpy.identity(self._environment.observation_space_shape)[state_current]]})
+                                            feed_dict={self._inputs: [numpy.identity(self._environment.state_space_shape)[state_current]]})
         else:
             predicted_outputs = session.run(self._outputs,
                                             feed_dict={self._inputs: [state_current]})

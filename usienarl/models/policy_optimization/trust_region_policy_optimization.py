@@ -205,7 +205,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         self._supported_action_space_types.append(SpaceType.discrete)
         self._supported_action_space_types.append(SpaceType.continuous)
 
-    def _define(self):
+    def _define_graph(self):
         """
         Overridden method of Model class: check its docstring for further information.
         """
@@ -298,7 +298,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
 
     def predict(self,
                 session,
-                state_current) -> []:
+                observation_current) -> []:
         """
         Overridden method of Model class: check its docstring for further information.
         """
@@ -306,14 +306,14 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         # Also compute value estimate
         if self._observation_space_type == SpaceType.discrete:
             actions, value, log_likelihood_unmasked = session.run([self._actions, self._value, self._log_likelihood_unmasked],
-                                                                  feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[state_current]]})
+                                                                  feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[observation_current]]})
             # Return the predicted action (first one in the distribution) and the estimated value in the shape of a list
             # Also return the log-likelihood unmasked
             return [actions[0], value, log_likelihood_unmasked]
 
         else:
             actions, value, expected_value, log_std = session.run([self._actions, self._value, self._expected_value, self._log_std],
-                                                                  feed_dict={self._inputs: [state_current]})
+                                                                  feed_dict={self._inputs: [observation_current]})
             # Return the predicted action (first one in the distribution) and the estimated value in the shape of a list
             # Also return the expected value and the log-std
             return [actions[0], value, expected_value, log_std]
@@ -437,18 +437,80 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
                 kl, pi_l_new = set_and_eval(step=backtrack_coeff ** j)
                 if kl <= delta and pi_l_new <= pi_l_old:
                     logger.log('Accepting new params at step %d of line search.' % j)
-                    logger.store(BacktrackIters=j)
+                    logger.store_train(BacktrackIters=j)
                     break
 
                 if j == backtrack_iters - 1:
                     logger.log('Line search failed! Keeping old params.')
-                    logger.store(BacktrackIters=j)
+                    logger.store_train(BacktrackIters=j)
                     kl, pi_l_new = set_and_eval(step=0.)
 
         # Value function updates
         for _ in range(train_v_iters):
             sess.run(train_vf, feed_dict=inputs)
         v_l_new = sess.run(v_loss, feed_dict=inputs)
+
+    @staticmethod
+    def get_categorical_log_likelihood(target_actions_mask, logits):
+        """
+        Get log-likelihood for discrete action spaces (using a categorical distribution) on the given logits and with
+        the target action mask.
+        It uses tensorflow and as such should only be called in the _define method.
+
+        :param target_actions_mask: the target actions used to mask the log-likelihood on the logits
+        :param logits: the logits of the neural network
+        :return: the log-likelihood according to categorical distribution
+        """
+        # Define the unmasked likelihood as the log-softmax of the logits
+        log_likelihood_unmasked = tensorflow.nn.log_softmax(logits)
+        # Return the categorical log-likelihood by summing over the first axis of the target action mask multiplied
+        # by the log-likelihood on the logits (unmasked, this is the masking operation) and the unmasked likelihood
+        return tensorflow.reduce_sum(target_actions_mask * log_likelihood_unmasked, axis=1, name="log_likelihood"), log_likelihood_unmasked
+
+    @staticmethod
+    def get_gaussian_log_likelihood(target_actions, expected_value, log_std):
+        """
+        Get log-likelihood for continuous action spaces (using a gaussian distribution) on the given expected value and
+        log-std and with the target actions.
+        It uses tensorflow and as such should only be called in the _define method.
+
+        :param target_actions: the target actions used to compute the log-likelihood tensor
+        :param expected_value: the expected value of the gaussian distribution
+        :param log_std: the log-std of the gaussian distribution
+        :return: the log-likelihood according to gaussian distribution
+        """
+        # Define the log-likelihood tensor for the gaussian distribution on the given target actions
+        log_likelihood_tensor = -0.5 * (((target_actions - expected_value) / (tensorflow.exp(log_std) + 1e-8)) ** 2 + 2 * log_std + numpy.log(2 * numpy.pi))
+        # Return the gaussian log-likelihood by summing over all the elements in the log-likelihood tensor defined above
+        return tensorflow.reduce_sum(log_likelihood_tensor, axis=1, name="log_likelihood")
+
+    @staticmethod
+    def get_diagonal_gaussian_kl(expected_value_a, log_std_a, expected_value_b, log_std_b):
+        """
+        Compute mean KL divergence between two batches of diagonal gaussian distributions,
+        where distributions are specified by means and log-std.
+        """
+        # Define to variable as the exponential of the two log-std multiplied by two
+        var_a, var_b = tensorflow.exp(2 * log_std_a), tensorflow.exp(2 * log_std_b)
+        # Define KL divergences between the two distributions
+        kl_divergences = tensorflow.reduce_sum(0.5 * (((expected_value_b - expected_value_a) ** 2 + var_a) / (var_b + 1e-8) - 1) + log_std_b - log_std_a, axis=1)
+        # Return the mean of the KL divergences
+        return tensorflow.reduce_mean(kl_divergences)
+
+    @staticmethod
+    def get_categorical_kl(log_likelihood_a, log_likelihood_b):
+        """
+        Compute mean KL divergence between two batches of categorical probability distributions,
+        where the distributions are input as log-likelihoods.
+
+        :param log_likelihood_a: the first log-likelihood operand of the KL divergence
+        :param log_likelihood_b: the second log-likelihood operand of the KL divergence
+        :return the mean KL divergence on the operands
+        """
+        # Define KL divergences between the two log-likelihood distributions
+        kl_divergences = tensorflow.reduce_sum(tensorflow.exp(log_likelihood_b) * (log_likelihood_b - log_likelihood_a), axis=1)
+        # Return the mean of the KL divergences
+        return tensorflow.reduce_mean(kl_divergences)
 
     @staticmethod
     def _get_hessian_vector_product(func, parameters):

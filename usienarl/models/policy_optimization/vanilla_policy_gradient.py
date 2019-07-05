@@ -6,8 +6,7 @@ import scipy.signal
 
 # Import required src
 
-from usienarl import SpaceType, Config
-from usienarl.models import PolicyOptimizationModel
+from usienarl import SpaceType, Config, Model
 
 
 class Buffer:
@@ -119,7 +118,7 @@ class Buffer:
         return scipy.signal.lfilter([1], [1, float(-discount)], vector[::-1], axis=0)[::-1]
 
 
-class VanillaPolicyGradient(PolicyOptimizationModel):
+class VanillaPolicyGradient(Model):
     """
     Vanilla Policy Gradient with GAE (Generalized Advantage Estimation).
     The algorithm is on-policy and executes updates every a certain number of episodes.
@@ -156,26 +155,41 @@ class VanillaPolicyGradient(PolicyOptimizationModel):
                  value_steps_for_update: int,
                  hidden_layers_config: Config,
                  lambda_parameter: float):
-        # Define Vanilla Policy Gradient model attributes
+        # Define empty model attributes
+        self._inputs = None
+        self._actions = None
+        self._targets = None
+        self._advantages = None
+        self._rewards = None
+        self._log_likelihood = None
+        self._value = None
+        self._value_stream_loss = None
+        self._policy_stream_loss = None
+        self._value_stream_optimizer = None
+        self._policy_stream_optimizer = None
+        # Define unassigned buffer
+        self.buffer = None
+        # Define model attributes
         self._hidden_layers_config: Config = hidden_layers_config
         self.learning_rate_policy: float = learning_rate_policy
         self.learning_rate_value: float = learning_rate_value
         self._value_steps_for_update: int = value_steps_for_update
         self._lambda_parameter: float = lambda_parameter
-        # Generate the base policy optimization model
-        super().__init__(name, discount_factor)
+        self._discount_factor: float = discount_factor
+        # Generate the base model
+        super(VanillaPolicyGradient, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_observation_space_types.append(SpaceType.continuous)
         self._supported_action_space_types.append(SpaceType.discrete)
         self._supported_action_space_types.append(SpaceType.continuous)
 
-    def _define(self):
+    def _define_graph(self):
         """
         Overridden method of Model class: check its docstring for further information.
         """
         # Define the GAE buffer for the vanilla policy gradient algorithm
-        self.buffer: Buffer = Buffer(self.discount_factor, self._lambda_parameter)
+        self.buffer: Buffer = Buffer(self._discount_factor, self._lambda_parameter)
         # Define the tensorflow model
         with tensorflow.variable_scope(self._experiment_name + "/" + self.name):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
@@ -191,7 +205,7 @@ class VanillaPolicyGradient(PolicyOptimizationModel):
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
                 self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=logits, num_samples=1), axis=1)
                 # Define the log likelihood according to the categorical distribution
-                self._log_likelihood, _ = PolicyOptimizationModel.get_categorical_log_likelihood(self._targets, logits)
+                self._log_likelihood, _ = self.get_categorical_log_likelihood(self._targets, logits)
             else:
                 # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape
                 expected_value = tensorflow.layers.dense(hidden_layers_output, *self.action_space_shape, name="expected_value")
@@ -202,7 +216,7 @@ class VanillaPolicyGradient(PolicyOptimizationModel):
                 # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
                 self._actions = expected_value + tensorflow.random_normal(tensorflow.shape(expected_value)) * std
                 # Define the log likelihood according to the gaussian distribution
-                self._log_likelihood = PolicyOptimizationModel.get_gaussian_log_likelihood(self._targets, expected_value, log_std)
+                self._log_likelihood = self.get_gaussian_log_likelihood(self._targets, expected_value, log_std)
             # Define the value estimator (a deep MLP)
             value_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
             value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None)
@@ -235,7 +249,7 @@ class VanillaPolicyGradient(PolicyOptimizationModel):
 
     def predict(self,
                 session,
-                state_current) -> []:
+                observation_current):
         """
         Overridden method of Model class: check its docstring for further information.
         """
@@ -243,18 +257,19 @@ class VanillaPolicyGradient(PolicyOptimizationModel):
         # Also compute value estimate
         if self._observation_space_type == SpaceType.discrete:
             actions, value = session.run([self._actions, self._value],
-                                         feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[state_current]]})
+                                         feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[observation_current]]})
         else:
             actions, value = session.run([self._actions, self._value],
-                                         feed_dict={self._inputs: [state_current]})
-        # Return the predicted action (first one in the distribution) and the estimated value in the shape of a list
-        return [actions[0], value]
+                                         feed_dict={self._inputs: [observation_current]})
+        # Return the predicted action (first one in the distribution) and the estimated value
+        return actions[0], value
 
     def update(self,
                session,
-               batch: []):
+               current_episode: int, total_episodes: int, current_step: int,
+               batch: [], weights: numpy.ndarray):
         """
-        Overridden method of PolicyOptimizationModel class: check its docstring for further information.
+        Overridden method of Model class: check its docstring for further information.
         """
         # Unpack the batch in the training arrays
         inputs, targets, advantages, rewards = batch[0], batch[1], batch[2], batch[3]
@@ -269,25 +284,59 @@ class VanillaPolicyGradient(PolicyOptimizationModel):
         # Run the policy optimizer of the model in training mode
         session.run(self._policy_stream_optimizer,
                     feed_dict={
-                        self._inputs: inputs,
-                        self._targets: targets,
-                        self._advantages: advantages
-                    })
+                                self._inputs: inputs,
+                                self._targets: targets,
+                                self._advantages: advantages
+                              })
         # Run the value optimizer of the model in training mode for the required amount of steps
         for _ in range(self._value_steps_for_update):
             session.run(self._value_stream_optimizer,
                         feed_dict={
-                            self._inputs: inputs,
-                            self._advantages: advantages,
-                            self._rewards: rewards
-                        })
+                                    self._inputs: inputs,
+                                    self._advantages: advantages,
+                                    self._rewards: rewards
+                                  })
         # Compute the policy loss and value loss of the model after this sequence of training and also compute the summary
         policy_loss, value_loss, summary = session.run([self._policy_stream_loss, self._value_stream_loss, self.summary],
                                                        feed_dict={
-                                                           self._inputs: inputs,
-                                                           self._targets: targets,
-                                                           self._rewards: rewards,
-                                                           self._advantages: advantages
-                                                       })
+                                                                   self._inputs: inputs,
+                                                                   self._targets: targets,
+                                                                   self._rewards: rewards,
+                                                                   self._advantages: advantages
+                                                                 })
         # Return both losses and summary for the update sequence
-        return policy_loss, value_loss, summary
+        return summary, policy_loss, value_loss
+
+    @staticmethod
+    def get_categorical_log_likelihood(target_actions_mask, logits):
+        """
+        Get log-likelihood for discrete action spaces (using a categorical distribution) on the given logits and with
+        the target action mask.
+        It uses tensorflow and as such should only be called in the _define method.
+
+        :param target_actions_mask: the target actions used to mask the log-likelihood on the logits
+        :param logits: the logits of the neural network
+        :return: the log-likelihood according to categorical distribution
+        """
+        # Define the unmasked likelihood as the log-softmax of the logits
+        log_likelihood_unmasked = tensorflow.nn.log_softmax(logits)
+        # Return the categorical log-likelihood by summing over the first axis of the target action mask multiplied
+        # by the log-likelihood on the logits (unmasked, this is the masking operation) and the unmasked likelihood
+        return tensorflow.reduce_sum(target_actions_mask * log_likelihood_unmasked, axis=1, name="log_likelihood"), log_likelihood_unmasked
+
+    @staticmethod
+    def get_gaussian_log_likelihood(target_actions, expected_value, log_std):
+        """
+        Get log-likelihood for continuous action spaces (using a gaussian distribution) on the given expected value and
+        log-std and with the target actions.
+        It uses tensorflow and as such should only be called in the _define method.
+
+        :param target_actions: the target actions used to compute the log-likelihood tensor
+        :param expected_value: the expected value of the gaussian distribution
+        :param log_std: the log-std of the gaussian distribution
+        :return: the log-likelihood according to gaussian distribution
+        """
+        # Define the log-likelihood tensor for the gaussian distribution on the given target actions
+        log_likelihood_tensor = -0.5 * (((target_actions - expected_value) / (tensorflow.exp(log_std) + 1e-8)) ** 2 + 2 * log_std + numpy.log(2 * numpy.pi))
+        # Return the gaussian log-likelihood by summing over all the elements in the log-likelihood tensor defined above
+        return tensorflow.reduce_sum(log_likelihood_tensor, axis=1, name="log_likelihood")

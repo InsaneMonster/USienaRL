@@ -1,5 +1,6 @@
 # Import packages
 
+import numpy
 import tensorflow
 import logging
 
@@ -36,7 +37,7 @@ class Model:
         # Define attributes
         self.name: str = name
         # Initialize environment attributes (they require the model to be generated to be effective)
-        # Those attributes will be reset each time the model is rebuilt in a new environment
+        # Those attributes will be reset each time the model is rebuilt for a new environment
         self._supported_observation_space_types: [] = []
         self._supported_action_space_types: [] = []
         self._experiment_name: str = None
@@ -49,10 +50,10 @@ class Model:
         self.summary = None
 
     def generate(self,
-                 experiment_name: str,
+                 logger: logging.Logger,
+                 scope: str,
                  observation_space_type: SpaceType, observation_space_shape,
-                 action_space_type: SpaceType, action_space_shape,
-                 logger: logging.Logger) -> bool:
+                 action_space_type: SpaceType, action_space_shape) -> bool:
         """
         Generate the tensorflow model with the scope given by the format: experiment_name/model_name
         It calls the define (which is implemented on the child class) and define_summary methods.
@@ -60,7 +61,7 @@ class Model:
         This method should be called each time the model is used in a different environment, since it makes sure
         that the model is rebuilt according to the environment scope, observations and actions spaces.
 
-        :param experiment_name: the str name of experiment to use as a scope for the graph.
+        :param scope: the str name of experiment/agent to use as a scope for the graph
         :param observation_space_type: the type of the environment observation space: discrete or continuous
         :param observation_space_shape: the shape of the environment observation space (it's a size if mono-dimensional)
         :param action_space_type: the type of the environment action space: discrete or continuous
@@ -72,7 +73,7 @@ class Model:
         self.observation_space_shape = observation_space_shape
         self._action_space_type = action_space_type
         self.action_space_shape = action_space_shape
-        self._experiment_name = experiment_name
+        self._experiment_name = scope
         logger.info("Generating model " + self.name + "...")
         # Check whether or not the observation space and the action space types are supported by the model
         observation_space_type_supported: bool = False
@@ -91,40 +92,73 @@ class Model:
         if not action_space_type_supported:
             logger.error("Error during generation of model: action space type not supported")
             return False
-        # Define the tensorflow model graph
         logger.info("Model generation successful")
-        self._define()
+        # Define the tensorflow model graph
+        self._define_graph()
+        # Define the tensorflow summary for tensorboard
         self._define_summary()
+        # Returns True to state success
         return True
 
-    def _define(self):
+    def _define_graph(self):
         """
         Define the tensorflow graph of the model.
 
-        It uses as scope the format: experiment_name/model_name
+        It uses as scope the format: experiment_name/agent_name/model_name
         """
         # Empty method, definition should be implemented on a child class basis
         pass
 
     def _define_summary(self):
         """
-        Define the summary of the tensorflow graph to use with tensorboard.
+        Define the tensorboard summary of the model.
 
-        It uses as scope the format: experiment_name/model_name
+        It uses as scope the format: experiment_name/agent_name/model_name
         """
         # Empty method, definition should be implemented on a child class basis
         pass
 
+    def initialize(self,
+                   logger: logging.Logger,
+                   session):
+        """
+        Initialize the variables of the model given the session.
+        TODO: probably can add here from model already trained somehow
+
+        :param logger: the logger to use to record model generation information
+        :param session: the session of tensorflow currently running
+        """
+        # Initialize the model running the session on the appropriate tensorflow operation
+        session.run(self.initializer)
+
     def predict(self,
                 session,
-                state_current):
+                observation_current: numpy.ndarray):
         """
-        Get the best action predicted by the model according to the action space type from the model predictions
-        using the current policy, at the given current state.
+        Get the best action predicted by the model at the given current observation.
 
         :param session: the session of tensorflow currently running
-        :param state_current: the current state in the environment to get the prediction for
+        :param observation_current: the current state in the environment to get the prediction for
         :return: the best action predicted by the model
+        """
+        # Empty method, definition should be implemented on a child class basis
+        pass
+
+    def update(self,
+               session,
+               current_episode: int, total_episodes: int, current_step: int,
+               batch: [], weights: numpy.ndarray):
+        """
+        Update the model weights (thus training the model) given a batch of samples, relative weights and a set of
+        additional experiment parameters.
+
+        :param session: the session of tensorflow currently running
+        :param current_episode: the current episode number in the experiment
+        :param total_episodes: the total episodes number in the experiment
+        :param current_step: the current step number in the experiment
+        :param batch: a batch of samples each one consisting of a tuple at least comprising: (state_current, action, reward, state_next)
+        :param weights: the weights of each sample in the batch in the shape of a numpy array (ndarray)
+        :return: the updated summary and a set of parameters (losses, errors, etc) depending on the model
         """
         # Empty method, definition should be implemented on a child class basis
         return None
@@ -133,9 +167,9 @@ class Model:
                                 scope: str):
         """
         Get the trainable variables in the model (useful for saving the model or comparing the weights), given the
-        current experiment scope.
+        current experiment/agent scope.
 
-        :param scope: the string scope of the tensorflow graph (usually the name of the experiment)
+        :param scope: the string scope of the tensorflow graph (usually experiment/agent with their respective names)
         :return: the trainable tensorflow variables.
         """
         # Get the training variables of the model under its scope: usually, the training variables of the tensorflow graph
@@ -145,10 +179,10 @@ class Model:
                                   scope: str,
                                   session):
         """
-        Print the trainable variables in the current tensorflow graph, given the current experiment scope.
+        Print the trainable variables in the current tensorflow graph, given the current experiment/agent scope.
 
-        :param scope: the string scope of the tensorflow graph (usually the name of the experiment)
-        :param session: the session fo tensorflow currently running
+        :param scope: the string scope of the tensorflow graph (usually experiment/agent with their respective names)
+        :param session: the session of tensorflow currently running
         """
         # Print the trainable variables of the currently active model
         trainable_variables = self.get_trainable_variables(scope)

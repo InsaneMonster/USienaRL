@@ -2,6 +2,7 @@
 
 from .config import Config, LayerType
 from .environment import Environment, SpaceType
+from .interface import Interface
 from .agent import Agent
 from .model import Model
 from .experiment import Experiment

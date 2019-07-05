@@ -1,6 +1,7 @@
 # Import packages
 
 import gym
+import logging
 
 # Import required src
 
@@ -14,84 +15,93 @@ class OpenAIEnvironment(Environment):
 
     def __init__(self,
                  name: str):
-        # Init the base environment
-        super().__init__(name)
+        # Define environment specific attributes
+        self._gym_environment = None
+        # Generate the base environment
+        super(OpenAIEnvironment, self).__init__(name)
 
-    def setup(self):
+    def setup(self,
+              logger: logging.Logger) -> bool:
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
         # If the environment is already defined, close it first and then make it again (resetting it)
-        if self._environment is not None:
-            self._environment.close()
-        self._environment = gym.make(self.name)
+        if self._gym_environment is not None:
+            self.close(logger)
+        self._gym_environment = gym.make(self.name)
+        return True
 
     def close(self,
+              logger: logging.Logger,
               session=None):
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
-        self._environment.close()
+        self._gym_environment.close()
 
     def reset(self,
+              logger: logging.Logger,
               session=None):
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
-        return self._environment.reset()
+        return self._gym_environment.reset()
 
     def step(self,
-             action: int,
+             action,
+             logger: logging.Logger,
              session=None):
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
-        state_next, reward, episode_done, _ = self._environment.step(action)
+        state_next, reward, episode_done, _ = self._gym_environment.step(action)
         return state_next, reward, episode_done
 
     def render(self,
+               logger: logging.Logger,
                session=None):
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
-        self._environment.render()
+        self._gym_environment.render()
 
     def get_random_action(self,
+                          logger: logging.Logger,
                           session=None):
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
-        return self._environment.action_space.sample()
+        return self._gym_environment.action_space.sample()
 
     @property
-    def observation_space_type(self) -> SpaceType:
+    def state_space_type(self) -> SpaceType:
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
-        # Get the observation space type depending on the gym space type
-        if isinstance(self._environment.observation_space, gym.spaces.Discrete):
+        # Get the state space type depending on the gym space type
+        if isinstance(self._gym_environment.observation_space, gym.spaces.Discrete):
             return SpaceType.discrete
         else:
             return SpaceType.continuous
 
     @property
-    def observation_space_shape(self):
+    def state_space_shape(self):
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
-        # Get the observation space size depending on the gym space type
-        if isinstance(self._environment.observation_space, gym.spaces.Discrete):
-            return (self._environment.observation_space.n, )
+        # Get the state space size depending on the gym space type
+        if isinstance(self._gym_environment.observation_space, gym.spaces.Discrete):
+            return (self._gym_environment.observation_space.n, )
         else:
-            return self._environment.observation_space.high.shape
+            return self._gym_environment.observation_space.high.shape
 
     @property
     def action_space_type(self) -> SpaceType:
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
         # Get the action space type depending on the gym space type
-        if isinstance(self._environment.action_space, gym.spaces.Discrete):
+        if isinstance(self._gym_environment.action_space, gym.spaces.Discrete):
             return SpaceType.discrete
         else:
             return SpaceType.continuous
@@ -99,11 +109,11 @@ class OpenAIEnvironment(Environment):
     @property
     def action_space_shape(self):
         """
-        Overridden method of Experiment class: check its docstring for further information.
+        Overridden method of Environment class: check its docstring for further information.
         """
         # Get the action space size depending on the gym space type
-        if isinstance(self._environment.action_space, gym.spaces.Discrete):
-            return (self._environment.action_space.n, )
+        if isinstance(self._gym_environment.action_space, gym.spaces.Discrete):
+            return (self._gym_environment.action_space.n, )
         else:
-            return self._environment.action_space.high.shape
+            return self._gym_environment.action_space.high.shape
 
