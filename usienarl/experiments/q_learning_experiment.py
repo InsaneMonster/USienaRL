@@ -4,7 +4,7 @@ import logging
 
 # Import required src
 
-from usienarl import Experiment, Environment, Explorer, Memory
+from usienarl import Experiment, Environment, ExplorationPolicy, Memory
 from usienarl.models import TemporalDifferenceModel
 
 
@@ -22,7 +22,7 @@ class QLearningExperiment(Experiment):
                  environment: Environment,
                  model: TemporalDifferenceModel,
                  memory: Memory, batch_size: int,
-                 explorer: Explorer):
+                 explorer: ExplorationPolicy):
         # Define temporal_difference experiment attributes
         # Define the memory: set also the number of pre-training episodes depending on the memory requirements and capacity
         self._memory: Memory = memory
@@ -31,8 +31,8 @@ class QLearningExperiment(Experiment):
         if self._memory is not None and self._memory.pre_train:
             pre_training_episodes = self._memory.capacity
         # Define the explorer and initialize the exploration rate
-        self._explorer: Explorer = explorer
-        self._exploration_rate: float = self._explorer.exploration_rate_start_value
+        self._explorer: ExplorationPolicy = explorer
+        self._exploration_rate: float = self._explorer.exploration_rate_max
         super().__init__(name, validation_success_threshold, test_success_threshold, environment, model, pre_training_episodes)
 
     def _reset(self):
@@ -41,7 +41,7 @@ class QLearningExperiment(Experiment):
         """
         # Reset memory and explorer, if defined
         if self._explorer is not None:
-            self._exploration_rate = self._explorer.exploration_rate_start_value
+            self._exploration_rate = self._explorer.exploration_rate_max
         if self._memory is not None:
             self._memory.reset()
 
@@ -97,7 +97,7 @@ class QLearningExperiment(Experiment):
             state_current = self.environment.reset(session)
             # Update the exploration rate at each episode except the first
             if episode > 0:
-                self._exploration_rate = self._explorer.update_exploration_rate(self._exploration_rate)
+                self._exploration_rate = self._explorer.update(self._exploration_rate)
             # Execute actions (one per step) until the episode is completed
             while not episode_done:
                 # Increment the step counter

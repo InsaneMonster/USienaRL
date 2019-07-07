@@ -18,7 +18,7 @@ class TemporalDifferenceModel(Model):
 
     Attributes:
         - learning_rate: the lambda of the model in training phase
-        - _discount_factor: the discount factor of the discounted future expected reward
+        - discount_factor: the discount factor of the discounted future expected reward
         - outputs: the outputs of the model (usually one-hot encoded in the size of the action space of the environment)
     """
 
@@ -43,7 +43,7 @@ class TemporalDifferenceModel(Model):
         """
         Overridden method of Model class: check its docstring for further information.
         """
-        with tensorflow.variable_scope(self._experiment_name + "/" + self.name):
+        with tensorflow.variable_scope(self.scope + "/" + self.name):
             # Define the summary operation for this graph with loss and absolute error summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
 
@@ -107,7 +107,7 @@ class TemporalDifferenceModel(Model):
         :return: the outputs of the model given the state_current
         """
         # Return all the predicted actions q-values given the current state depending on the observation space type
-        if self._observation_space_type == SpaceType.discrete:
+        if self.observation_space_type == SpaceType.discrete:
             return session.run(self.outputs,
                                feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[state_current]]})
         else:

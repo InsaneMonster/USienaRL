@@ -4,21 +4,21 @@ import numpy
 
 # Import required src
 
-from usienarl import Environment, Explorer
+from usienarl import Environment, ExplorationPolicy
 from usienarl.models import TemporalDifferenceModel
 
 
-class EpsilonGreedyExplorer(Explorer):
+class EpsilonGreedyExplorer(ExplorationPolicy):
     """
     Simple epsilon greedy explorer. It choose a random state if a random number in the interval [0, 1] is
     inferior to the current value of the exploration rate and such rate is also greater than zero.
     """
 
     def __init__(self,
-                 exploration_rate_start_value: float, exploration_rate_end_value: float,
-                 exploration_rate_value_decay: float):
+                 exploration_rate_max: float, exploration_rate_min: float,
+                 exploration_rate_decay: float):
         # Generate the base explorer
-        super().__init__(exploration_rate_start_value, exploration_rate_end_value, exploration_rate_value_decay)
+        super().__init__(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
     def get_action(self,
                    exploration_rate_current_value: float,

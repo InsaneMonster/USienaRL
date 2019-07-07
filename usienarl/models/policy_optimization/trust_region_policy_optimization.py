@@ -212,7 +212,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         # Define the GAE buffer for the vanilla policy gradient algorithm
         self.buffer: Buffer = Buffer(self.discount_factor, self._lambda_parameter)
         # Define the tensorflow model
-        with tensorflow.variable_scope(self._experiment_name + "/" + self.name):
+        with tensorflow.variable_scope(self.scope + "/" + self.name):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self._inputs = tensorflow.placeholder(shape=[None, *self.observation_space_shape], dtype=tensorflow.float32, name="inputs")
             # Define the estimator network hidden layers from the config
@@ -220,7 +220,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
             # Define the targets for learning with the same NxA adaptable size
             self._targets = tensorflow.placeholder(shape=(None, *self.action_space_shape), dtype=tensorflow.float32, name="targets")
             # Change the model definition according to its action space type
-            if self._action_space_type == SpaceType.discrete:
+            if self.action_space_type == SpaceType.discrete:
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
                 logits = tensorflow.layers.dense(hidden_layers_output, *self.action_space_shape, name="logits")
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
@@ -291,7 +291,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         """
         Overridden method of Model class: check its docstring for further information.
         """
-        with tensorflow.variable_scope(self._experiment_name + "/" + self.name):
+        with tensorflow.variable_scope(self.scope + "/" + self.name):
             # Define the summary operation for this graph with losses summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
                                                      tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
@@ -304,7 +304,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         """
         # Return a random action sample given the current state and depending on the observation space type
         # Also compute value estimate
-        if self._observation_space_type == SpaceType.discrete:
+        if self.observation_space_type == SpaceType.discrete:
             actions, value, log_likelihood_unmasked = session.run([self._actions, self._value, self._log_likelihood_unmasked],
                                                                   feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[observation_current]]})
             # Return the predicted action (first one in the distribution) and the estimated value in the shape of a list
@@ -327,18 +327,18 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         # Unpack the batch in the training arrays for necessary values
         inputs, targets, values, rewards = batch[0], batch[1], batch[2], batch[3]
         # Generate a one-hot encoded version of the inputs if observation space type is discrete
-        if self._observation_space_type == SpaceType.discrete:
+        if self.observation_space_type == SpaceType.discrete:
             inputs_array = numpy.array(inputs).reshape(-1)
             inputs = numpy.eye(*self.observation_space_shape)[inputs_array]
         # Generate a one-hot encoded version of the targets if action space type is discrete
-        if self._action_space_type == SpaceType.discrete:
+        if self.action_space_type == SpaceType.discrete:
             targets_array = numpy.array(targets).reshape(-1)
             targets = numpy.eye(*self.action_space_shape)[targets_array]
 
         # TODO: FINISH HERE, CHANGE NAME VALUES TO SOMETHING APPROPRIATE, finish comments
         # Unpack the additional values in the batch depending on the action space type
 
-        if self._action_space_type == SpaceType.discrete:
+        if self.action_space_type == SpaceType.discrete:
             log_likelihoods_unmasked = batch[4]
             h_x = lambda values: session.run(self._hessian_vector_product,
                                              feed_dict={

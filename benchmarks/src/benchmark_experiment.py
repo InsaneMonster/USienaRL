@@ -21,7 +21,7 @@ from .vpg_agent import VPGAgent
 
 class BenchmarkExperiment(Experiment):
     """
-
+    TODO: summary
     """
 
     def __init__(self,
@@ -41,9 +41,6 @@ class BenchmarkExperiment(Experiment):
                    logger: logging.Logger,
                    episodes: int, session,
                    render: bool = False):
-        """
-        Overridden method of Experiment class: check its docstring for further information.
-        """
         for episode in range(episodes):
             # Initialize episode completion flag
             episode_done: bool = False
@@ -67,9 +64,6 @@ class BenchmarkExperiment(Experiment):
                logger: logging.Logger,
                episodes: int, session,
                render: bool = False):
-        """
-        Overridden method of Experiment class: check its docstring for further information.
-        """
         # Choose how to train the agent depending on its type
         if not isinstance(self.agent, VPGAgent):
             scores: numpy.ndarray = self._train_temporal_difference_agents(logger, episodes, session, render)
@@ -155,9 +149,6 @@ class BenchmarkExperiment(Experiment):
                    logger: logging.Logger,
                    episodes: int, session,
                    render: bool = False):
-        """
-        Overridden method of Experiment class: check its docstring for further information.
-        """
         # Define list of scores
         scores: numpy.ndarray = numpy.zeros(episodes, dtype=float)
         for episode in range(episodes):
@@ -186,9 +177,6 @@ class BenchmarkExperiment(Experiment):
     def _is_validated(self,
                       total_training_episodes: int, total_training_steps: int,
                       average_validation_score: float, average_training_score: float) -> bool:
-        """
-        Overridden method of Experiment class: check its docstring for further information.
-        """
         # Check if average validation score is over validation threshold
         if average_validation_score >= self._validation_threshold:
             return True
@@ -197,8 +185,5 @@ class BenchmarkExperiment(Experiment):
     def _is_successful(self,
                        total_training_episodes: int, total_training_steps: int,
                        average_test_score: float, best_test_score: float) -> bool:
-        """
-        Overridden method of Experiment class: check its docstring for further information.
-        """
         # Benchmark are always solved when validated over one-hundred episodes
         return True

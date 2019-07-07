@@ -1,6 +1,6 @@
 # Import scripts
 
-from .q_table import QTable
+from .tabular import Tabular
 from .dqn_naive import DQNNaive
 from .dqn import DQN
 from .double_dqn import DoubleDQN

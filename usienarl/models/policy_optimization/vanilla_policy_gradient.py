@@ -155,7 +155,17 @@ class VanillaPolicyGradient(Model):
                  value_steps_for_update: int,
                  hidden_layers_config: Config,
                  lambda_parameter: float):
-        # Define empty model attributes
+        # Define model attributes
+        self.learning_rate_policy: float = learning_rate_policy
+        self.learning_rate_value: float = learning_rate_value
+        self.discount_factor: float = discount_factor
+        # Define internal model attributes
+        self._hidden_layers_config: Config = hidden_layers_config
+        self._value_steps_for_update: int = value_steps_for_update
+        self._lambda_parameter: float = lambda_parameter
+        # Define vanilla policy gradient empty attributes
+        self.buffer: Buffer = None
+        # Define internal vanilla policy gradient empty attributes
         self._inputs = None
         self._actions = None
         self._targets = None
@@ -167,15 +177,6 @@ class VanillaPolicyGradient(Model):
         self._policy_stream_loss = None
         self._value_stream_optimizer = None
         self._policy_stream_optimizer = None
-        # Define unassigned buffer
-        self.buffer = None
-        # Define model attributes
-        self._hidden_layers_config: Config = hidden_layers_config
-        self.learning_rate_policy: float = learning_rate_policy
-        self.learning_rate_value: float = learning_rate_value
-        self._value_steps_for_update: int = value_steps_for_update
-        self._lambda_parameter: float = lambda_parameter
-        self._discount_factor: float = discount_factor
         # Generate the base model
         super(VanillaPolicyGradient, self).__init__(name)
         # Define the types of allowed observation and action spaces
@@ -188,10 +189,10 @@ class VanillaPolicyGradient(Model):
         """
         Overridden method of Model class: check its docstring for further information.
         """
-        # Define the GAE buffer for the vanilla policy gradient algorithm
-        self.buffer: Buffer = Buffer(self._discount_factor, self._lambda_parameter)
+        # Set the GAE buffer for the vanilla policy gradient algorithm
+        self.buffer: Buffer = Buffer(self.discount_factor, self._lambda_parameter)
         # Define the tensorflow model
-        with tensorflow.variable_scope(self._experiment_name + "/" + self.name):
+        with tensorflow.variable_scope(self.scope + "/" + self.name):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self._inputs = tensorflow.placeholder(shape=[None, *self.observation_space_shape], dtype=tensorflow.float32, name="inputs")
             # Define the estimator network hidden layers from the config
@@ -199,7 +200,7 @@ class VanillaPolicyGradient(Model):
             # Define the targets for learning with the same NxA adaptable size
             self._targets = tensorflow.placeholder(shape=(None, *self.action_space_shape), dtype=tensorflow.float32, name="targets")
             # Change the model definition according to its action space type
-            if self._action_space_type == SpaceType.discrete:
+            if self.action_space_type == SpaceType.discrete:
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
                 logits = tensorflow.layers.dense(hidden_layers_output, *self.action_space_shape, name="logits")
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
@@ -242,26 +243,25 @@ class VanillaPolicyGradient(Model):
         """
         Overridden method of Model class: check its docstring for further information.
         """
-        with tensorflow.variable_scope(self._experiment_name + "/" + self.name):
+        with tensorflow.variable_scope(self.scope + "/" + self.name):
             # Define the summary operation for this graph with losses summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
                                                      tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
 
     def predict(self,
                 session,
-                observation_current):
+                observation_current: numpy.ndarray):
         """
         Overridden method of Model class: check its docstring for further information.
         """
-        # Return a random action sample given the current state and depending on the observation space type
-        # Also compute value estimate
-        if self._observation_space_type == SpaceType.discrete:
-            actions, value = session.run([self._actions, self._value],
-                                         feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[observation_current]]})
+        # Return a random action sample given the current state and depending on the observation space type and also compute value estimate
+        if self.observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self.observation_space_shape)[observation_current]
+            actions, value = session.run([self._actions, self._value], feed_dict={self._inputs: [observation_current_one_hot]})
         else:
-            actions, value = session.run([self._actions, self._value],
-                                         feed_dict={self._inputs: [observation_current]})
-        # Return the predicted action (first one in the distribution) and the estimated value
+            actions, value = session.run([self._actions, self._value], feed_dict={self._inputs: [observation_current]})
+        # Return the predicted action and the estimated value
         return actions[0], value
 
     def update(self,
@@ -271,36 +271,34 @@ class VanillaPolicyGradient(Model):
         """
         Overridden method of Model class: check its docstring for further information.
         """
-        # Unpack the batch in the training arrays
-        inputs, targets, advantages, rewards = batch[0], batch[1], batch[2], batch[3]
-        # Generate a one-hot encoded version of the inputs if observation space type is discrete
-        if self._observation_space_type == SpaceType.discrete:
-            inputs_array = numpy.array(inputs).reshape(-1)
-            inputs = numpy.eye(*self.observation_space_shape)[inputs_array]
-        # Generate a one-hot encoded version of the targets if action space type is discrete
-        if self._action_space_type == SpaceType.discrete:
-            targets_array = numpy.array(targets).reshape(-1)
-            targets = numpy.eye(*self.action_space_shape)[targets_array]
+        # Unpack the batch
+        observations, actions, advantages, rewards = batch[0], batch[1], batch[2], batch[3]
+        # Generate a one-hot encoded version of the observations if observation space type is discrete
+        if self.observation_space_type == SpaceType.discrete:
+            observations: numpy.ndarray = numpy.eye(*self.observation_space_shape)[numpy.array(observations).reshape(-1)]
+        # Generate a one-hot encoded version of the actions if action space type is discrete
+        if self.action_space_type == SpaceType.discrete:
+            actions: numpy.ndarray = numpy.eye(*self.action_space_shape)[numpy.array(actions).reshape(-1)]
         # Run the policy optimizer of the model in training mode
         session.run(self._policy_stream_optimizer,
                     feed_dict={
-                                self._inputs: inputs,
-                                self._targets: targets,
+                                self._inputs: observations,
+                                self._targets: actions,
                                 self._advantages: advantages
                               })
         # Run the value optimizer of the model in training mode for the required amount of steps
         for _ in range(self._value_steps_for_update):
             session.run(self._value_stream_optimizer,
                         feed_dict={
-                                    self._inputs: inputs,
+                                    self._inputs: observations,
                                     self._advantages: advantages,
                                     self._rewards: rewards
                                   })
         # Compute the policy loss and value loss of the model after this sequence of training and also compute the summary
         policy_loss, value_loss, summary = session.run([self._policy_stream_loss, self._value_stream_loss, self.summary],
                                                        feed_dict={
-                                                                   self._inputs: inputs,
-                                                                   self._targets: targets,
+                                                                   self._inputs: observations,
+                                                                   self._targets: actions,
                                                                    self._rewards: rewards,
                                                                    self._advantages: advantages
                                                                  })

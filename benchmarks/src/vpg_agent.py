@@ -19,6 +19,10 @@ from usienarl.models.policy_optimization import VanillaPolicyGradient
 
 
 class VPGAgent(Agent):
+    """
+    TODO: summary
+
+    """
 
     def __init__(self,
                  model: VanillaPolicyGradient,
@@ -38,9 +42,8 @@ class VPGAgent(Agent):
     def initialize(self,
                    logger: logging.Logger,
                    session):
-        """
-        Overridden method of Agent class: check its docstring for further information.
-        """
+        # Reset internal agent attributes
+        self._current_value_estimate = None
         # Initialize the model
         self.model.initialize(logger, session)
 
@@ -48,9 +51,6 @@ class VPGAgent(Agent):
                logger: logging.Logger,
                session,
                current_episode: int, total_episodes: int, current_step: int):
-        """
-        Overridden method of Agent class: check its docstring for further information.
-        """
         # Execute update only when required
         if current_episode % (total_episodes / self.updates_per_training_volley) == 0 and current_episode > 0:
             # Define a list of weights equals to one associated with each sample in the batch
@@ -65,37 +65,48 @@ class VPGAgent(Agent):
 
     def _generate(self,
                   logger: logging.Logger,
-                  experiment_scope: str) -> bool:
-        """
-        Overridden method of Agent class: check its docstring for further information.
-        """
-        # Reset internal agent attributes
-        self._current_value_estimate = None
+                  scope: str) -> bool:
         # Generate the model and return a flag stating if generation was successful
-        return self.model.generate(logger, experiment_scope + "/" + self.name,
+        return self.model.generate(logger, scope + "/" + self.name,
                                    self.interface.observation_space_type, self.interface.observation_space_shape,
                                    self.interface.agent_action_space_type, self.interface.agent_action_space_shape)
+
+    def _decide_pre_train(self,
+                          logger: logging.Logger,
+                          session,
+                          agent_observation_current: numpy.ndarray):
+        # Not needed by this agent
+        pass
 
     def _decide_train(self,
                       logger: logging.Logger,
                       session,
                       agent_observation_current: numpy.ndarray):
-        """
-        Overridden method of Agent class: check its docstring for further information.
-        """
         # Predict the action since the model is inherently exploring
         # Also store the current value estimate to feed the buffer later-on
         action, self._current_value_estimate = self.model.predict(session, agent_observation_current)
+        # Return the predicted action
+        return action
 
     def _decide_inference(self,
                           logger: logging.Logger,
                           session,
                           agent_observation_current: numpy.ndarray):
-        """
-        Overridden method of Agent class: check its docstring for further information.
-        """
         # Predict the action with the model
         action, _ = self.model.predict(session, agent_observation_current)
+        # Return the predicted action
+        return action
+
+    def _save_step_pre_train(self,
+                             logger: logging.Logger,
+                             session,
+                             agent_observation_current: numpy.ndarray,
+                             agent_action,
+                             reward: float,
+                             agent_observation_next: numpy.ndarray,
+                             episode_done: bool):
+        # Not needed by this agent
+        pass
 
     def _save_step_train(self,
                          logger: logging.Logger,
@@ -105,21 +116,15 @@ class VPGAgent(Agent):
                          reward: float,
                          agent_observation_next: numpy.ndarray,
                          episode_done: bool):
-        """
-        Overridden method of Agent class: check its docstring for further information.
-        """
         # Save the current step in the buffer together with the store current value estimate
-        self.model.buffer.store_train(agent_observation_current, agent_action, reward, self._current_value_estimate)
+        self.model.buffer.store(agent_observation_current, agent_action, reward, self._current_value_estimate)
         # If the episode is done, finish the trajectory and update the buffer accordingly
         if episode_done:
             self.model.buffer.finish_path(reward)
 
     def get_trainable_variables(self,
-                                experiment_scope: str):
-        """
-        Overridden method of Agent class: check its docstring for further information.
-        """
+                                scope: str):
         # Return the trainable variables of the agent model in the given experiment scope
-        return self.model.get_trainable_variables(experiment_scope + "/" + self.name)
+        return self.model.get_trainable_variables(scope + "/" + self.name)
 
 

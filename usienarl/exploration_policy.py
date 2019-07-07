@@ -4,7 +4,7 @@ from usienarl import Environment
 from usienarl.models import TemporalDifferenceModel
 
 
-class Explorer:
+class ExplorationPolicy:
     """
     Base class for all the exploration systems. It should not be used by itself, and should be extended instead.
 
@@ -17,18 +17,27 @@ class Explorer:
     Note: the explorers are not used by policy optimization algorithms.
 
     Attributes:
-        - exploration_rate_start_value: float defining the start value of the exploration rate
-        - exploration_rate_end_value: float defining the end value of the exploration rate
-
+        - exploration_rate_max: float defining the start value of the exploration rate
+        - exploration_rate_min: float defining the end value of the exploration rate
+        - exploration_rate_decay: float defining how much each the exploration rate reduces itself when it is updated
     """
 
     def __init__(self,
-                 exploration_rate_start_value: float, exploration_rate_end_value: float,
-                 exploration_rate_value_decay: float):
-        # Define explorer attributes
-        self.exploration_rate_start_value: float = exploration_rate_start_value
-        self.exploration_rate_end_value: float = exploration_rate_end_value
-        self._exploration_rate_value_decay: float = exploration_rate_value_decay
+                 exploration_rate_max: float, exploration_rate_min: float,
+                 exploration_rate_decay: float):
+        # Define attributes
+        self.exploration_rate_max: float = exploration_rate_max
+        self.exploration_rate_min: float = exploration_rate_min
+        self.exploration_rate_decay: float = exploration_rate_decay
+        # Define internal attributes
+        self._exploration_rate: float = None
+
+    def initialize(self):
+        """
+        Reset the exploration policy to its starting state.
+        """
+        # Reset the exploration rate
+        self._exploration_rate = self.exploration_rate_max
 
     def get_action(self,
                    exploration_rate: float,
@@ -48,17 +57,13 @@ class Explorer:
         # Empty method, definition should be implemented on a child class basis
         return None
 
-    def update_exploration_rate(self,
-                                exploration_rate_current_value: float) -> float:
+    def update(self):
         """
-        Update the given current exploration rate according to the defined decay value, and return back the updated
-        exploration rate.
+        Update the exploration policy, changing the exploration rate current value by its decay factor.
+        """
+        # Update the given exploration rate value according to its decay factor
+        self._exploration_rate = max(self._exploration_rate - self.exploration_rate_decay, self.exploration_rate_min)
 
-        :param exploration_rate_current_value: the current exploration rate value to update (usually, decay)
-        :return: the updated current exploration rate
-        """
-        # Update the given exploration rate value according to its decay and pass it back to the caller experiment
-        updated_exploration_rate: float = exploration_rate_current_value - self._exploration_rate_value_decay
-        if updated_exploration_rate < self.exploration_rate_end_value:
-            updated_exploration_rate = self.exploration_rate_end_value
-        return updated_exploration_rate
+    @property
+    def exploration_rate(self) -> float:
+        return self._exploration_rate

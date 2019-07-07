@@ -20,7 +20,7 @@ class PolicyOptimizationModel(Model):
     Because of that, usually policy optimization models uses two stream or sub-models for that.
 
     Attributes:
-        - _discount_factor: the discount factor of the discounted future expected reward
+        - discount_factor: the discount factor of the discounted future expected reward
         - buffer: the buffer in which to store the experiences to train the network
     """
 

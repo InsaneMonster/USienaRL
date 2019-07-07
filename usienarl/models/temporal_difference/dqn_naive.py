@@ -40,7 +40,7 @@ class DQNNaive(TemporalDifferenceModel):
         """
         Overridden method of Model class: check its docstring for further information.
         """
-        with tensorflow.variable_scope(self._experiment_name + "/" + self.name):
+        with tensorflow.variable_scope(self.scope + "/" + self.name):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self._inputs = tensorflow.placeholder(shape=[None, *self.observation_space_shape], dtype=tensorflow.float32, name="inputs")
             # Define the estimator network hidden layers from the config
@@ -69,7 +69,7 @@ class DQNNaive(TemporalDifferenceModel):
         Overridden method of QLearningModel class: check its docstring for further information.
         """
         # Get the outputs depending on the type of space (discrete is one-hot encoded)
-        if self._observation_space_type == SpaceType.discrete:
+        if self.observation_space_type == SpaceType.discrete:
             # Get the outputs at the current state and at the next state
             outputs_current = session.run(self.outputs,
                                           feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[state_current]]})
@@ -96,7 +96,7 @@ class DQNNaive(TemporalDifferenceModel):
         # Note: the current outputs modified by the Bellman equation are now used as target for the model
         # Save the value of the loss and of the absolute error as well as the summaries
         # Input values changes according to observation space type (discrete is one-hot encoded)
-        if self._observation_space_type == SpaceType.discrete:
+        if self.observation_space_type == SpaceType.discrete:
             _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
                                                            feed_dict={
                                                            self._inputs: [numpy.identity(*self.observation_space_shape)[state_current]],
@@ -121,7 +121,7 @@ class DQNNaive(TemporalDifferenceModel):
         Overridden method of QLearningModel class: check its docstring for further information.
         """
         # Get the outputs depending on the type of space (discrete is one-hot encoded)
-        if self._observation_space_type == SpaceType.discrete:
+        if self.observation_space_type == SpaceType.discrete:
             # Get all current states in the batch
             states_current = numpy.array([numpy.identity(*self.observation_space_shape)[val[0]] for val in batch])
             # Get all next states in the batch (if equals to None, it means end of episode, and as such no next state)
@@ -151,7 +151,7 @@ class DQNNaive(TemporalDifferenceModel):
             else:
                 outputs_current[i, action] = reward + self.discount_factor * numpy.max(outputs_next[i])
             # Insert training data in training arrays depending on the observation space type
-            if self._observation_space_type == SpaceType.discrete:
+            if self.observation_space_type == SpaceType.discrete:
                 inputs[i] = numpy.identity(*self.observation_space_shape)[state_current]
             else:
                 inputs[i] = state_current

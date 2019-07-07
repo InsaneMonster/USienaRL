@@ -36,18 +36,17 @@ class Model:
                  name: str):
         # Define attributes
         self.name: str = name
-        # Initialize environment attributes (they require the model to be generated to be effective)
-        # Those attributes will be reset each time the model is rebuilt for a new environment
-        self._supported_observation_space_types: [] = []
-        self._supported_action_space_types: [] = []
-        self._experiment_name: str = None
-        self._observation_space_type: SpaceType = None
-        self.observation_space_shape = None
-        self._action_space_type: SpaceType = None
-        self.action_space_shape = None
-        # Define empty general models attributes
+        # Define empty general model attributes
         self.initializer = None
         self.summary = None
+        self.scope: str = None
+        self.observation_space_type: SpaceType = None
+        self.observation_space_shape = None
+        self.action_space_type: SpaceType = None
+        self.action_space_shape = None
+        # Define internal general model attributes
+        self._supported_observation_space_types: [] = []
+        self._supported_action_space_types: [] = []
 
     def generate(self,
                  logger: logging.Logger,
@@ -55,30 +54,31 @@ class Model:
                  observation_space_type: SpaceType, observation_space_shape,
                  action_space_type: SpaceType, action_space_shape) -> bool:
         """
-        Generate the tensorflow model with the scope given by the format: experiment_name/model_name
-        It calls the define (which is implemented on the child class) and define_summary methods.
+        Generate the tensorflow model with the scope given by the format: experiment_name/agent_name/model_name
+        It calls the define (which is implemented on the child class) and define summary methods.
 
-        This method should be called each time the model is used in a different environment, since it makes sure
-        that the model is rebuilt according to the environment scope, observations and actions spaces.
+        This method is called every time the model is used in an agent on a new experiment or a new experiment iteration,
+        since it makes sure that the model is rebuilt according to the experiment/agent scope, agent observations and
+        actions spaces.
 
+        :param logger: the logger used to print the model information, warnings and errors
         :param scope: the str name of experiment/agent to use as a scope for the graph
-        :param observation_space_type: the type of the environment observation space: discrete or continuous
-        :param observation_space_shape: the shape of the environment observation space (it's a size if mono-dimensional)
-        :param action_space_type: the type of the environment action space: discrete or continuous
-        :param action_space_shape: the shape of the environment action space (it's a size if mono-dimensional)
-        :param logger: the logger to use to record model generation information
+        :param observation_space_type: the type of the agent observation space: discrete or continuous
+        :param observation_space_shape: the shape of the agent observation space (it's a size if mono-dimensional)
+        :param action_space_type: the type of the agent action space: discrete or continuous
+        :param action_space_shape: the shape of the agent action space (it's a size if mono-dimensional)
         :return: True if the model generation is successful, False otherwise
         """
-        self._observation_space_type = observation_space_type
+        self.observation_space_type = observation_space_type
         self.observation_space_shape = observation_space_shape
-        self._action_space_type = action_space_type
+        self.action_space_type = action_space_type
         self.action_space_shape = action_space_shape
-        self._experiment_name = scope
-        logger.info("Generating model " + self.name + "...")
+        self.scope = scope
+        logger.info("Generating model " + self.name + " in scope " + self.scope + "...")
         # Check whether or not the observation space and the action space types are supported by the model
         observation_space_type_supported: bool = False
         for space_type in self._supported_observation_space_types:
-            if self._observation_space_type == space_type:
+            if self.observation_space_type == space_type:
                 observation_space_type_supported = True
                 break
         if not observation_space_type_supported:
@@ -86,7 +86,7 @@ class Model:
             return False
         action_space_type_supported: bool = False
         for space_type in self._supported_action_space_types:
-            if self._action_space_type == space_type:
+            if self.action_space_type == space_type:
                 action_space_type_supported = True
                 break
         if not action_space_type_supported:
@@ -125,11 +125,12 @@ class Model:
         Initialize the variables of the model given the session.
         TODO: probably can add here from model already trained somehow
 
-        :param logger: the logger to use to record model generation information
+        :param logger: the logger used to print the model information, warnings and errors
         :param session: the session of tensorflow currently running
         """
         # Initialize the model running the session on the appropriate tensorflow operation
         session.run(self.initializer)
+        logger.info("Model initialized to default state")
 
     def predict(self,
                 session,
@@ -138,8 +139,8 @@ class Model:
         Get the best action predicted by the model at the given current observation.
 
         :param session: the session of tensorflow currently running
-        :param observation_current: the current state in the environment to get the prediction for
-        :return: the best action predicted by the model
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :return: the action predicted by the model
         """
         # Empty method, definition should be implemented on a child class basis
         pass
@@ -155,18 +156,18 @@ class Model:
         :param session: the session of tensorflow currently running
         :param current_episode: the current episode number in the experiment
         :param total_episodes: the total episodes number in the experiment
-        :param current_step: the current step number in the experiment
-        :param batch: a batch of samples each one consisting of a tuple at least comprising: (state_current, action, reward, state_next)
+        :param current_step: the current training step number in the experiment
+        :param batch: a batch of samples each one consisting of a tuple at least comprising observation current, action and reward all wrapped in numpy arrays
         :param weights: the weights of each sample in the batch in the shape of a numpy array (ndarray)
         :return: the updated summary and a set of parameters (losses, errors, etc) depending on the model
         """
         # Empty method, definition should be implemented on a child class basis
-        return None
+        pass
 
     def get_trainable_variables(self,
                                 scope: str):
         """
-        Get the trainable variables in the model (useful for saving the model or comparing the weights), given the
+        Get the trainable variables in the model (useful for saving the model or comparing the weights) given the
         current experiment/agent scope.
 
         :param scope: the string scope of the tensorflow graph (usually experiment/agent with their respective names)
@@ -179,7 +180,7 @@ class Model:
                                   scope: str,
                                   session):
         """
-        Print the trainable variables in the current tensorflow graph, given the current experiment/agent scope.
+        Print the trainable variables in the current tensorflow graph given the current experiment/agent scope.
 
         :param scope: the string scope of the tensorflow graph (usually experiment/agent with their respective names)
         :param session: the session of tensorflow currently running
