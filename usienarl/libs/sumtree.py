@@ -6,20 +6,20 @@ import numpy
 class SumTree(object):
     """
     Sum tree (a version of a binary tree in which all the child nodes sum up in the parent node) system. It can store
-    any kind of data until capacity is reached.
+    any kind of data until _capacity is reached.
 
     Attributes:
-        - capacity: the amount of data of any kind that can be stored inside the tree
+        - _capacity: the amount of data of any kind that can be stored inside the tree
     """
 
     def __init__(self,
                  capacity: int):
-        # Define the tree capacity: the number of leaf nodes that contains experiences
+        # Define the tree _capacity: the number of leaf nodes that contains experiences
         self.capacity: int = capacity
         # Generate the tree with all nodes values = 0
         # Note: the number of nodes in a binary tree is equal to the sum of:
-        # - Leaf nodes: capacity
-        # - Parent nodes: capacity - 1 if capacity is even, capacity if capacity is odd
+        # - Leaf nodes: _capacity
+        # - Parent nodes: _capacity - 1 if _capacity is even, _capacity if _capacity is odd
         if self.capacity % 2 == 0:
             self._tree: [] = numpy.zeros(2 * self.capacity - 1)
         else:
@@ -46,7 +46,7 @@ class SumTree(object):
         # Update data frame at the current pointer and increment it
         self._data[self._data_pointer] = data
         self._data_pointer += 1
-        # If next data pointer is above capacity, reset it to the beginning (it is used to overwrite)
+        # If next data pointer is above _capacity, reset it to the beginning (it is used to overwrite)
         if self._data_pointer >= self.capacity:
             self._data_pointer = 0
 
@@ -131,7 +131,7 @@ class SumTree(object):
         """
         Get the leaf nodes of the tree.
 
-        :return: the last elements in the tree up to capacity
+        :return: the last elements in the tree up to _capacity
         """
         # Get the leaf nodes on the tree
         return self._tree[-self.capacity:]
@@ -145,3 +145,12 @@ class SumTree(object):
         """
         # Get the root node of the tree
         return self._tree[0]
+
+    @property
+    def size(self):
+        """
+        Get the size of the sum-tree with respect to contained data.
+
+        :return: the size of the contained data in the sum-tree.
+        """
+        return self._data.size

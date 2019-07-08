@@ -10,7 +10,7 @@ import argparse
 
 def _positive_int(value: str) -> int:
     """
-    TODO: summary
+    TODO: _summary
 
     :param value:
     :return:
@@ -23,7 +23,7 @@ def _positive_int(value: str) -> int:
 
 def command_line_parse():
     """
-    TODO: summary
+    TODO: _summary
 
     :return:
     """
@@ -46,7 +46,7 @@ def run_experiments(experiments: [], experiment_iterations_number: int,
                     render_during_training: bool, render_during_validation: bool, render_during_test: bool,
                     workspace_path: str, file_name: str, logger: logging.Logger):
     """
-    TODO: summary
+    TODO: _summary
 
     :param experiments:
     :param experiment_iterations_number:
@@ -97,14 +97,14 @@ def run_experiments(experiments: [], experiment_iterations_number: int,
                     os.makedirs(iteration_path)
                 except FileExistsError:
                     pass
-            # Generate a metagraph and a summary directory for each iteration of experiment if not defined
+            # Generate a metagraph and a _summary directory for each iteration of experiment if not defined
             metagraph_path: str = iteration_path + "/metagraph"
             if not os.path.isdir(metagraph_path):
                 try:
                     os.makedirs(metagraph_path)
                 except FileExistsError:
                     pass
-            summary_path: str = iteration_path + "/summary"
+            summary_path: str = iteration_path + "/_summary"
             if not os.path.isdir(summary_path):
                 try:
                     os.makedirs(summary_path)
@@ -126,7 +126,7 @@ def run_experiments(experiments: [], experiment_iterations_number: int,
             logger.addHandler(console_handler)
             logger.addHandler(file_handler)
             # Conduct the experiment
-            if experiment.setup(iteration, logger):
+            if experiment.generate(iteration, logger):
                 average_score, best_score, trained_episodes = experiment.conduct(training_episodes, validation_episodes,
                                                                                  max_training_episodes,
                                                                                  testing_episodes, test_cycles,

@@ -11,7 +11,7 @@ from usienarl import Environment, Agent, Interface
 
 class Experiment:
     """
-    TODO: summary
+    TODO: _summary
     """
 
     def __init__(self,
@@ -23,7 +23,7 @@ class Experiment:
         self._name: str = name
         self._environment: Environment = environment
         self._agent: Agent = agent
-        self._interface: Interface = interface
+        self._interface: Interface = interface if interface is not None else Interface(self._environment)
         # Define empty experiment attributes
         self._agent_saver = None
         self._metagraph_path: str = None
@@ -39,13 +39,13 @@ class Experiment:
         """
         Setup the experiment, preparing all of its component to execution. This must be called before conduct method.
 
-        :param summary_path: the string path of the TensorBoard summary directory to save during model training
-        :param metagraph_path: the string path of the saved model directory to save at the end of each training interval
+        :param summary_path: the string path of the TensorBoard _summary directory to save during _model training
+        :param metagraph_path: the string path of the saved _model directory to save at the end of each training interval
         :param logger: the logger used to print the experiment information, warnings and errors
-        :param iteration: number to append to the experiment name in all scopes and print statements (if not less than zero)
+        :param iteration: number to append to the experiment _name in all scopes and print statements (if not less than zero)
         :return: a boolean equals to True if the setup of the experiment is successful, False otherwise
         """
-        # Save current experiment id using name and iteration
+        # Save current experiment id using _name and iteration
         self._current_id = self._name + "_" + str(iteration) if iteration > -1 else self._name
         # Start setup process
         logger.info("Setup of experiment " + self._current_id + "...")
@@ -58,7 +58,10 @@ class Experiment:
             return False
         logger.info("Environment setup is successful!")
         logger.info("Agent setup...")
-        if not self._agent.setup(logger, self._current_id, summary_path):
+        if not self._agent.setup(logger,
+                                 self._interface.observation_space_type, self._interface.observation_space_shape,
+                                 self._interface.agent_action_space_shape, self._interface.agent_action_space_type,
+                                 self._current_id, summary_path):
             logger.info("Agent setup failed. Cannot setup the experiment!")
             return False
         logger.info("Agent setup is successful!")
@@ -66,10 +69,10 @@ class Experiment:
         self._metagraph_path = metagraph_path
         self._trained_steps: int = 0
         self._trained_episodes: int = 0
-        # Initialize the agent internal model saver
+        # Initialize the agent internal _model saver
         self._agent_saver = tensorflow.train.Saver(self._agent.trainable_variables)
-        logger.info("Agent internal model will be saved after each train volley")
-        logger.info("Agent internal model metagraph save path: " + self._metagraph_path)
+        logger.info("Agent internal _model will be saved after each train volley")
+        logger.info("Agent internal _model metagraph save path: " + self._metagraph_path)
         # Initialize tensorflow gpu configuration
         self._tensorflow_gpu_config = tensorflow.ConfigProto()
         self._tensorflow_gpu_config.gpu_options.allow_growth = True
@@ -102,12 +105,19 @@ class Experiment:
             # Execute actions until the episode is completed or the maximum length is exceeded
             for step in range(episode_length):
                 # Get the action decided by the agent with train policy
-                action = self._agent.act_warmup(logger, session, state_current)
+                observation_current = self._interface.environment_state_to_observation(logger, session, state_current)
+                agent_action = self._agent.act_warmup(logger, session, observation_current)
                 # Get the next state with relative reward and completion flag
-                state_next, reward, episode_done = self._environment.step(logger, action, session)
-                # Finish the step and send back information to the agent
-                self._agent.finish_step_warmup(logger, session, state_current, action, reward, state_next,
-                                               step, episode, episodes)
+                environment_action = self._interface.agent_action_to_environment_action(logger, session, agent_action)
+                state_next, reward, episode_done = self._environment.step(logger, environment_action, session)
+                # Complete the step and send back information to the agent
+                observation_next = self._interface.environment_state_to_observation(logger, session, state_next)
+                # Set the observation next to None if final state is reached
+                if episode_done:
+                    observation_next = None
+                self._agent.complete_step_warmup(logger, session,
+                                                 observation_current, agent_action, reward, observation_next,
+                                                 step, episode, episodes)
                 # Render if required
                 if render:
                     self._environment.render(logger, session)
@@ -115,14 +125,15 @@ class Experiment:
                 episode_rewards.append(reward)
                 # Update the current state with the previously next state
                 state_current = state_next
-                # Check if the episode is finished
+                # Check if the episode is completed
                 if episode_done:
                     break
             # Compute total and average reward over the steps in the episode
             episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
-            # Finish the episode and send back information to the agent
-            self._agent.finish_episode_warmup(logger, session, episode_total_reward,
-                                              episode, episodes)
+            # Complete the episode and send back information to the agent
+            self._agent.complete_episode_warmup(logger, session,
+                                                episode_rewards[-1], episode_total_reward,
+                                                episode, episodes)
 
     def _train(self,
                logger: logging.Logger,
@@ -151,14 +162,21 @@ class Experiment:
             # Execute actions until the episode is completed or the maximum length is exceeded
             for step in range(episode_length):
                 # Get the action decided by the agent with train policy
-                action = self._agent.act_train(logger, session, state_current)
+                observation_current = self._interface.environment_state_to_observation(logger, session, state_current)
+                agent_action = self._agent.act_train(logger, session, observation_current)
                 # Get the next state with relative reward and completion flag
-                state_next, reward, episode_done = self._environment.step(logger, action, session)
-                # Finish the step and send back information to the agent
-                self._agent.finish_step_train(logger, session, state_current, action, reward, state_next,
-                                              step, self._trained_steps,
-                                              episode, self._trained_episodes,
-                                              episodes, episodes_max)
+                environment_action = self._interface.agent_action_to_environment_action(logger, session, agent_action)
+                state_next, reward, episode_done = self._environment.step(logger, environment_action, session)
+                # Complete the step and send back information to the agent
+                observation_next = self._interface.environment_state_to_observation(logger, session, state_next)
+                # Set the observation next to None if final state is reached
+                if episode_done:
+                    observation_next = None
+                self._agent.complete_step_train(logger, session,
+                                                observation_current, agent_action, reward, observation_next,
+                                                step, self._trained_steps,
+                                                episode, self._trained_episodes,
+                                                episodes, episodes_max)
                 # Render if required
                 if render:
                     self._environment.render(logger, session)
@@ -168,16 +186,18 @@ class Experiment:
                 state_current = state_next
                 # Increase the number of trained steps
                 self._trained_steps += 1
-                # Check if the episode is finished
+                # Check if the episode is completed
                 if episode_done:
                     break
             # Compute total and average reward over the steps in the episode
             episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
             episode_average_reward: float = numpy.average(numpy.array(episode_rewards))
-            # Finish the episode and send back information to the agent
-            self._agent.finish_episode_train(logger, session, episode_total_reward,
-                                             episode, self._trained_episodes,
-                                             episodes, episodes_max)
+            # Complete the episode and send back information to the agent
+            self._agent.complete_episode_train(logger, session,
+                                               episode_rewards[-1], episode_total_reward,
+                                               self._trained_steps,
+                                               episode, self._trained_episodes,
+                                               episodes, episodes_max)
             # Increase the counter of trained episodes
             self._trained_episodes += 1
             # Add the episode rewards to the volley
@@ -218,10 +238,14 @@ class Experiment:
                 # Get the next state with relative reward and completion flag
                 environment_action = self._interface.agent_action_to_environment_action(logger, session, agent_action)
                 state_next, reward, episode_done = self._environment.step(logger, environment_action, session)
-                # Finish the step and send back information to the agent
+                # Complete the step and send back information to the agent
                 observation_next = self._interface.environment_state_to_observation(logger, session, state_next)
-                self._agent.finish_step_inference(logger, session, observation_current, agent_action, reward, observation_next,
-                                                  step, episode, episodes)
+                # Set the observation next to None if final state is reached
+                if episode_done:
+                    observation_next = None
+                self._agent.complete_step_inference(logger, session,
+                                                    observation_current, agent_action, reward, observation_next,
+                                                    step, episode, episodes)
                 # Render if required
                 if render:
                     self._environment.render(logger, session)
@@ -229,15 +253,16 @@ class Experiment:
                 episode_rewards.append(reward)
                 # Update the current state with the previously next state
                 state_current = state_next
-                # Check if the episode is finished
+                # Check if the episode is completed
                 if episode_done:
                     break
             # Compute total and average reward over the steps in the episode
             episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
             episode_average_reward: float = numpy.average(numpy.array(episode_rewards))
-            # Finish the episode and send back information to the agent
-            self._agent.finish_episode_inference(logger, session, episode_total_reward,
-                                                 episode, episodes)
+            # Complete the episode and send back information to the agent
+            self._agent.complete_episode_inference(logger, session,
+                                                   episode_rewards[-1], episode_total_reward,
+                                                   episode, episodes)
             # Add the episode rewards to the volley
             volley_total_rewards[episode] = episode_total_reward
             volley_average_rewards[episode] = episode_average_reward
@@ -255,14 +280,14 @@ class Experiment:
         per volley, with the associated given number of test episodes per cycle and the given number of test cycles after
         the validation has passed.
 
-        A volley of training is always considered to stop the training exactly when the model performs well enough
+        A volley of training is always considered to stop the training exactly when the _model performs well enough
         to validate, by checking the appropriate condition. When validation is successful, appropriate condition is also
         checked on the test cycles to decide if the experiment is successful or not.
 
         Conducting an experiment will generate a tensorflow session for that experiment. It is required that the experiment
         is ready to be conducted by checking the result of the setup method before running this one.
 
-        :param training_episodes_per_volley: the number of training episodes per volley before trying to validate the model
+        :param training_episodes_per_volley: the number of training episodes per volley before trying to validate the _model
         :param validation_episodes_per_volley: the number of validation episodes per volley after the training in such interval
         :param training_episodes_max: the maximum number of training episodes allowed at all
         :param test_episodes_per_cycle: the number of episodes to play for each test cycle after validation has passed
@@ -271,7 +296,7 @@ class Experiment:
         :param render_during_training: boolean flag to render the environment during training
         :param render_during_validation: boolean flag to render the environment during validation
         :param render_during_test: boolean flag to render the environment during test
-        :return: the average of averages score over all the test cycles, the best average score among all the test cycles and the training episodes required to validate the model
+        :return: the average of averages score over all the test cycles, the best average score among all the test cycles and the training episodes required to validate the _model
         """
         logger.info("Conducting experiment " + self._current_id + "...")
         # Define the session
@@ -301,8 +326,8 @@ class Experiment:
                 logger.info("Average total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(training_total_reward))
                 logger.info("Average scaled reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(training_average_reward))
                 logger.info("Total training steps: " + str(self._trained_steps))
-                # Save the agent internal model at the current step
-                logger.info("Saving the model...")
+                # Save the agent internal _model at the current step
+                logger.info("Saving the _model...")
                 self._agent_saver.save(session, self._metagraph_path + "/" + self._current_id)
                 # Run inference for validation episodes per volley and get the average score
                 logger.info("Validating for " + str(validation_episodes_per_volley) + " episodes...")
@@ -317,9 +342,9 @@ class Experiment:
                 logger.info("Average scaled reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(validation_average_reward))
                 # Check for validation
                 if self._is_validated(validation_total_reward, validation_average_reward, training_total_reward, training_average_reward):
-                    logger.info("Validation of the model is successful")
+                    logger.info("Validation of the _model is successful")
                     break
-            # Test the model and get all cycles total and average rewards
+            # Test the _model and get all cycles total and average rewards
             test_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
             test_average_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
             for test in range(test_cycles):

@@ -12,11 +12,11 @@ from usienarl import Environment, SpaceType
 
 class Visualizer:
     """
-    Visualizer of models. It uses a saved model in the form of a metagraph file and run a specified number of episodes
+    Visualizer of models. It uses a saved _model in the form of a metagraph file and run a specified number of episodes
     on a specified environment.
 
-    It is used to further test a saved model and to visualize, if the render option is selected, the behaviour of the
-    model in full inference mode.
+    It is used to further test a saved _model and to visualize, if the render option is selected, the behaviour of the
+    _model in full inference mode.
     """
 
     def __init__(self,
@@ -28,7 +28,7 @@ class Visualizer:
         self._logger: logging.Logger = logger
         # Define the environment
         self._environment: Environment = environment
-        # Define tested model variables
+        # Define tested _model variables
         self._model_name: str = model_name
         self._inputs_name: str = inputs_name
         self._outputs_name: str = outputs_name
@@ -63,7 +63,7 @@ class Visualizer:
         """
         Run the visualizer for the given number of episodes. If it should render, a frame rate should be specified.
 
-        :param episodes: the number of episodes for which to visualize the model
+        :param episodes: the number of episodes for which to visualize the _model
         :param render: a boolean flag specifying whether or not the environment step should be rendered
         :param frame_rate: an integer indicating how many frame per seconds of rendering should be shown (it has to be >= 0)
         """
@@ -78,7 +78,7 @@ class Visualizer:
             self._environment.initialize(session)
             # Load the last checkpoint of the defined metagraph
             model_saver.restore(session, tensorflow.train.latest_checkpoint(self._metagraph_directory_path))
-            # Get the default graphs and set the inputs and the outputs of the model
+            # Get the default graphs and set the inputs and the outputs of the _model
             graph = tensorflow.get_default_graph()
             self._inputs = graph.get_tensor_by_name(self._metagraph_name + "/" + self._model_name + "/" + self._inputs_name + ":0")
             self._outputs = graph.get_tensor_by_name(self._metagraph_name + "/" + self._model_name + "/" + self._outputs_name + ":0")

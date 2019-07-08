@@ -10,7 +10,7 @@ from usienarl.models import TemporalDifferenceModel
 
 class QLearningExperiment(Experiment):
     """
-    Experiment in which the model commanding the agent is a Q-Learning algorithm.
+    Experiment in which the _model commanding the agent is a Q-Learning algorithm.
     It is the same as any other experiment, but the training system is tuned for Q-Learning.
 
     It can only accept Q-Learning models.
@@ -24,7 +24,7 @@ class QLearningExperiment(Experiment):
                  memory: Memory, batch_size: int,
                  explorer: ExplorationPolicy):
         # Define temporal_difference experiment attributes
-        # Define the memory: set also the number of pre-training episodes depending on the memory requirements and capacity
+        # Define the memory: set also the number of pre-training episodes depending on the memory requirements and _capacity
         self._memory: Memory = memory
         self._batch_size: int = batch_size
         pre_training_episodes: int = 0
@@ -32,7 +32,7 @@ class QLearningExperiment(Experiment):
             pre_training_episodes = self._memory.capacity
         # Define the explorer and initialize the exploration rate
         self._explorer: ExplorationPolicy = explorer
-        self._exploration_rate: float = self._explorer.exploration_rate_max
+        self._exploration_rate: float = self._explorer._exploration_rate_max
         super().__init__(name, validation_success_threshold, test_success_threshold, environment, model, pre_training_episodes)
 
     def _reset(self):
@@ -41,7 +41,7 @@ class QLearningExperiment(Experiment):
         """
         # Reset memory and explorer, if defined
         if self._explorer is not None:
-            self._exploration_rate = self._explorer.exploration_rate_max
+            self._exploration_rate = self._explorer._exploration_rate_max
         if self._memory is not None:
             self._memory.reset()
 
@@ -102,14 +102,14 @@ class QLearningExperiment(Experiment):
             while not episode_done:
                 # Increment the step counter
                 step += 1
-                # Get the action predicted by the model according to the explorer strategy
-                action: int = self._explorer.get_action(self._exploration_rate, self.model, self._environment, session, state_current)[0]
+                # Get the action predicted by the _model according to the explorer strategy
+                action: int = self._explorer.act(self._exploration_rate, self.model, self._environment, session, state_current)[0]
                 # Get the next state with relative reward and completion flag
                 state_next, reward, episode_done = self._environment.step(action, session)
                 # For storage purposes, set the state next to none if the episode is completed
                 if episode_done:
                     state_next = None
-                # Update the model with batch update or single update depending on memory (if defined, use batch update)
+                # Update the _model with batch update or single update depending on memory (if defined, use batch update)
                 if self._memory is not None:
                     # Add the new acquired sample in the memory
                     self._memory.add_sample((state_current, action, reward, state_next))
@@ -130,13 +130,13 @@ class QLearningExperiment(Experiment):
                 episode_reward += reward
                 # Update the current state with the previously next state
                 state_current = state_next
-                # Update the summary writer
+                # Update the _summary writer
                 summary_writer.add_summary(summary, step + start_step)
                 # Render if required
                 if render:
                     self._environment.render(session)
-        # Save the model
-        logger.info("Saving the model...")
+        # Save the _model
+        logger.info("Saving the _model...")
         if experiment_number >= 0:
             model_saver.save(session, save_path + "/" + self._name + "_" + str(experiment_number))
         else:

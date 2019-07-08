@@ -19,7 +19,7 @@ from usienarl import Environment, SpaceType
 
 class Interface:
     """
-    TODO: summary
+    TODO: _summary
 
     """
 

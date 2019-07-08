@@ -10,9 +10,9 @@ from usienarl.models import TemporalDifferenceModel
 
 class BoltzmannExplorer(ExplorationPolicy):
     """
-    Boltzmann explorer using the model output to compute a probability distribution of the best state to visit.
+    Boltzmann explorer using the _model output to compute a probability distribution of the best state to visit.
 
-    An output value from the predicted one by the model at the current state is used, and the randomness follows a
+    An output value from the predicted one by the _model at the current state is used, and the randomness follows a
     distribution which is defined by the softmax of the same output values w.r.t. the current exploration rate value.
     """
 
@@ -22,15 +22,15 @@ class BoltzmannExplorer(ExplorationPolicy):
         # Generate the base explorer
         super().__init__(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
-    def get_action(self,
-                   exploration_rate_current_value: float,
-                   model: TemporalDifferenceModel, environment: Environment, session, state_current: int) -> []:
+    def act(self,
+            exploration_rate_current_value: float,
+            model: TemporalDifferenceModel, environment: Environment, session, observation_current: int) -> []:
         """
         Overridden method of Explorer class: check its docstring for further information.
         """
         # Choose an action according to the boltzmann approach
-        # Get the model output and execute softmax on all the array components
-        output = model.get_output(session, state_current)
+        # Get the _model output and execute softmax on all the array components
+        output = model.get_output(session, observation_current)
         output = self._softmax(output / exploration_rate_current_value)
         # Get a random action value (random output) using the softmax as probability distribution
         action_value = numpy.random.choice(output[0], p=output[0])

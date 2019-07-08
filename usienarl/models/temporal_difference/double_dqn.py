@@ -11,7 +11,7 @@ from usienarl.models import TemporalDifferenceModel
 
 class Estimator:
     """
-    Estimator defining the real DDQN model. It is used to define two identical models: target network and q-network.
+    Estimator defining the real DDQN _model. It is used to define two identical models: target network and q-network.
 
     It is generated given the size of the observation and action spaces and the hidden layer config defining the
     hidden layers of the DDQN.
@@ -47,7 +47,7 @@ class Estimator:
 
 class DoubleDQN(TemporalDifferenceModel):
     """
-    DDQN (Double Deep Q-Network) model. The model is a deep neural network which hidden layers can be defined by a config
+    DDQN (Double Deep Q-Network) _model. The _model is a deep neural network which hidden layers can be defined by a config
     parameter. It uses a target network and a q-network to correctly evaluate the expected future reward in order
     to stabilize learning.
 
@@ -78,7 +78,7 @@ class DoubleDQN(TemporalDifferenceModel):
         self._inputs_target = None
         self._hidden_layers_config: Config = hidden_layers_config
         self._weight_copy_step_interval: int = weight_copy_step_interval
-        # Generate the base Q-Learning model
+        # Generate the base Q-Learning _model
         super().__init__(name, learning_rate, discount_factor)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
@@ -90,25 +90,25 @@ class DoubleDQN(TemporalDifferenceModel):
         Overridden method of Model class: check its docstring for further information.
         """
         # Define two estimator, one for target network and one for q-network, with identical structure
-        self._q_network = Estimator(self.scope + "/" + self.name + "/QNetwork",
-                                    self.observation_space_shape, self.action_space_shape,
+        self._q_network = Estimator(self._scope + "/" + self._name + "/QNetwork",
+                                    self._observation_space_shape, self._action_space_shape,
                                     self._hidden_layers_config)
-        self._target_network = Estimator(self.scope + "/" + self.name + "/TargetNetwork",
-                                         self.observation_space_shape, self.action_space_shape,
+        self._target_network = Estimator(self._scope + "/" + self._name + "/TargetNetwork",
+                                         self._observation_space_shape, self._action_space_shape,
                                          self._hidden_layers_config)
-        # Assign the q-network properties to the model properties (q-network is the actual model)
+        # Assign the q-network properties to the _model properties (q-network is the actual _model)
         self._inputs = self._q_network.inputs
         self.outputs = self._q_network.outputs
         self._targets = self._q_network.targets
         self._absolute_error = self._q_network.absolute_error
         self._loss = self._q_network.loss
         self._loss_weights = self._q_network.loss_weights
-        # Assign the target network outputs and inputs to the specific target outputs/inputs of the model
+        # Assign the target network outputs and inputs to the specific target outputs/inputs of the _model
         self._outputs_target = self._target_network.outputs
         self._inputs_target = self._target_network.inputs
         # Define the optimizer
         self._optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
-        # Define the initializer
+        # Define the _initializer
         self.initializer = tensorflow.global_variables_initializer()
         # Define the weight copy operation (to copy weights from q-network to target network)
         self._weight_copier = []
@@ -148,17 +148,17 @@ class DoubleDQN(TemporalDifferenceModel):
         # Copy the weight of the q-network in the target network, if required at this episode/step
         self._copy_weight(session, step)
         # Get the outputs depending on the type of space (discrete is one-hot encoded)
-        if self.observation_space_type == SpaceType.discrete:
+        if self._observation_space_type == SpaceType.discrete:
             # Get the outputs at the current state and at the next state, with next state computed by the target network
             # Note: next states are computed by both the q-network and the target network
             outputs_current = session.run(self.outputs,
                                           feed_dict={
-                                              self._inputs: [numpy.identity(*self.observation_space_shape)[state_current]]})
+                                              self._inputs: [numpy.identity(*self._observation_space_shape)[state_current]]})
             outputs_next_q_network = session.run(self.outputs,
-                                                 feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)
+                                                 feed_dict={self._inputs: [numpy.identity(*self._observation_space_shape)
                                                             [state_next if state_next is not None else 0]]})
             outputs_next_target_network = session.run(self._outputs_target,
-                                                      feed_dict={self._inputs_target: [numpy.identity(*self.observation_space_shape)
+                                                      feed_dict={self._inputs_target: [numpy.identity(*self._observation_space_shape)
                                                                  [state_next if state_next is not None else 0]]})
         else:
             # Get the outputs at the current state and at the next state, with next state computed by the target network
@@ -168,12 +168,12 @@ class DoubleDQN(TemporalDifferenceModel):
             outputs_next_q_network = session.run(self.outputs,
                                                  feed_dict={self._inputs: [state_next if state_next is not None
                                                                            else numpy.zeros(
-                                                                                self.observation_space_shape,
+                                                                                self._observation_space_shape,
                                                                                 dtype=float)]})
             outputs_next_target_network = session.run(self._outputs_target,
                                                       feed_dict={self._inputs_target: [state_next if state_next is not None
                                                                                        else numpy.zeros(
-                                                                                            self.observation_space_shape,
+                                                                                            self._observation_space_shape,
                                                                                             dtype=float)]})
         # Apply Bellman equation, modifying the weights at the current state with the discounted future reward of the
         # next state given the action
@@ -186,13 +186,13 @@ class DoubleDQN(TemporalDifferenceModel):
             predicted_output_index: int = numpy.argmax(outputs_next_q_network)
             outputs_current[0, action] = reward + self.discount_factor * outputs_next_target_network[predicted_output_index]
         # Run the optimizer while also evaluating new weights values
-        # Note: the current outputs modified by the Bellman equation are now used as target for the model
-        # Save the value of the loss and of the absolute error as well as the summary
+        # Note: the current outputs modified by the Bellman equation are now used as target for the _model
+        # Save the value of the loss and of the absolute error as well as the _summary
         # Input values changes according to observation space type (discrete is one-hot encoded)
-        if self.observation_space_type == SpaceType.discrete:
+        if self._observation_space_type == SpaceType.discrete:
             _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
                                                            feed_dict={
-                                                           self._inputs: [numpy.identity(self.observation_space_shape)[state_current]],
+                                                           self._inputs: [numpy.identity(self._observation_space_shape)[state_current]],
                                                            self._targets: outputs_current,
                                                            self._loss_weights: [[sample_weight]]
                                                            })
@@ -202,7 +202,7 @@ class DoubleDQN(TemporalDifferenceModel):
                                                            self._targets: outputs_current,
                                                            self._loss_weights: [[sample_weight]]
                                                            })
-        # Return the loss, the absolute error and the summary
+        # Return the loss, the absolute error and the _summary
         return loss, absolute_error, summary
 
     def update_batch(self,
@@ -215,18 +215,18 @@ class DoubleDQN(TemporalDifferenceModel):
         # Copy the weight of the q-network in the target network, if required at this episode/step
         self._copy_weight(session, step)
         # Get the outputs depending on the type of space (discrete is one-hot encoded)
-        if self.observation_space_type == SpaceType.discrete:
+        if self._observation_space_type == SpaceType.discrete:
             # Get all current states in the batch
-            states_current = numpy.array([numpy.identity(*self.observation_space_shape)[val[0]] for val in batch])
+            states_current = numpy.array([numpy.identity(*self._observation_space_shape)[val[0]] for val in batch])
             # Get all next states in the batch (if equals to None, it means end of episode, and as such no next state)
-            states_next = numpy.array([numpy.identity(*self.observation_space_shape)[val[3] if val[3] is not None else 0]
+            states_next = numpy.array([numpy.identity(*self._observation_space_shape)[val[3] if val[3] is not None else 0]
                                        for val in batch])
         else:
             # Get all current states in the batch
             states_current = numpy.array([val[0] for val in batch])
             # Get all next states in the batch (if equals to None, it means end of episode, and as such no next state)
             states_next = numpy.array([val[3] if val[3] is not None
-                                       else numpy.zeros(self.observation_space_shape, dtype=float) for val in
+                                       else numpy.zeros(self._observation_space_shape, dtype=float) for val in
                                        batch])
         # Get the outputs at the current states and at the next states
         # Note: next states are computed by both the q-network and the target network
@@ -237,8 +237,8 @@ class DoubleDQN(TemporalDifferenceModel):
         outputs_next_target_network = session.run(self._outputs_target,
                                                   feed_dict={self._inputs_target: states_next})
         # Define training arrays
-        inputs = numpy.zeros((len(batch), *self.observation_space_shape))
-        targets = numpy.zeros((len(batch), *self.action_space_shape))
+        inputs = numpy.zeros((len(batch), *self._observation_space_shape))
+        targets = numpy.zeros((len(batch), *self._action_space_shape))
         for i, example in enumerate(batch):
             state_current, action, reward, state_next = example[0], example[1], example[2], example[3]
             # Apply Bellman equation, modifying the weights at the current states with the discounted future reward of
@@ -252,21 +252,21 @@ class DoubleDQN(TemporalDifferenceModel):
                 predicted_output_index: int = numpy.argmax(outputs_next_q_network[i])
                 outputs_current[i, action] = reward + self.discount_factor * outputs_next_target_network[i][predicted_output_index]
             # Insert training data in training arrays depending on the observation space type
-            if self.observation_space_type == SpaceType.discrete:
-                inputs[i] = numpy.identity(*self.observation_space_shape)[state_current]
+            if self._observation_space_type == SpaceType.discrete:
+                inputs[i] = numpy.identity(*self._observation_space_shape)[state_current]
             else:
                 inputs[i] = state_current
-            # The current outputs modified by the Bellman equation are now used as target for the model
+            # The current outputs modified by the Bellman equation are now used as target for the _model
             targets[i] = outputs_current[i]
         # Feed the training arrays into the network and run the optimizer while also evaluating new weights values
-        # Save the value of the loss and of the absolute error as well as the summary
+        # Save the value of the loss and of the absolute error as well as the _summary
         _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
                                                        feed_dict={
                                                        self._inputs: inputs,
                                                        self._targets: targets,
                                                        self._loss_weights: sample_weights
                                                        })
-        # Return the loss, the absolute error and the summary
+        # Return the loss, the absolute error and the _summary
         return loss, absolute_error, summary
 
     @staticmethod
@@ -274,7 +274,7 @@ class DoubleDQN(TemporalDifferenceModel):
         """
         Overridden method of QLearningModel class: check its docstring for further information.
         """
-        # Get the name of the inputs of the tensorflow graph
+        # Get the _name of the inputs of the tensorflow graph
         return "QNetwork/inputs"
 
     @staticmethod
@@ -282,5 +282,5 @@ class DoubleDQN(TemporalDifferenceModel):
         """
         Overridden method of QLearningModel class: check its docstring for further information.
         """
-        # Get the name of the outputs of the tensorflow graph
+        # Get the _name of the outputs of the tensorflow graph
         return "QNetwork/outputs"

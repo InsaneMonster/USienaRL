@@ -10,7 +10,7 @@ from usienarl.models import PolicyOptimizationModel
 
 class PolicyOptimizationExperiment(Experiment):
     """
-    Experiment in which the model commanding the agent is a Policy Optimization algorithm.
+    Experiment in which the _model commanding the agent is a Policy Optimization algorithm.
     It is the same as any other experiment, but the training system is tuned for Policy Optimization.
 
     It can only accept Policy Optimization models.
@@ -51,17 +51,17 @@ class PolicyOptimizationExperiment(Experiment):
             while not episode_done:
                 # Increment the step counter
                 step += 1
-                # Get the action predicted by the model on the current state with the current policy and also the estimated value
-                result: [] = self.model.predict(session, state_current)
+                # Get the action predicted by the _model on the current state with the current policy and also the estimated value
+                result: [] = self.model.get_best_action(session, state_current)
                 action: int = result[0]
                 # Get the next state with relative reward and completion flag
                 state_next, reward, episode_done = self._environment.step(action, session)
                 # Update total reward for this episode
                 episode_reward += reward
-                # Store the properties in the model buffer (current state, action and relative reward then all the content
-                # returned by the model during prediction, since they can vary depending on the algorithm)
+                # Store the properties in the _model buffer (current state, action and relative reward then all the content
+                # returned by the _model during prediction, since they can vary depending on the algorithm)
                 self.model.buffer.store_train(state_current, action, reward, *result[1:])
-                # If the episode is completed and finalize the path in the model buffer
+                # If the episode is completed and finalize the path in the _model buffer
                 # Else update the current state with the previously next state
                 if episode_done:
                     self.model.buffer.finish_path(reward)
@@ -70,18 +70,18 @@ class PolicyOptimizationExperiment(Experiment):
                 # Render if required
                 if render:
                     self._environment.render(session)
-            # Update the model each defined steps
+            # Update the _model each defined steps
             if episode % (episodes / self._updates_per_training_interval) == 0 and episode > 0:
                 # Increase the update count
                 update_count += 1
                 # Get the losses of the policy for target/prediction for the observed trajectories in the batch and the
-                # correlated summary (the batch is stored inside a buffer in the model class)
+                # correlated _summary (the batch is stored inside a buffer in the _model class)
                 policy_loss, value_loss, summary = self.model.update(session, self.model.buffer.get())
-                # Update the summary writer
+                # Update the _summary writer
                 summary_writer.add_summary(summary, step + start_step)
-        # Save the model
+        # Save the _model
         logger.info("Executed " + str(update_count) + " updates count in " + str(step) + " steps")
-        logger.info("Saving the model...")
+        logger.info("Saving the _model...")
         if experiment_number >= 0:
             model_saver.save(session, save_path + "/" + self._name + "_" + str(experiment_number))
         else:

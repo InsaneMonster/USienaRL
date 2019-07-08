@@ -10,9 +10,9 @@ from usienarl import Model
 
 class PolicyOptimizationModel(Model):
     """
-    Base class for each Policy Optimization model. It should not be used by itself, and should be extended instead.
+    Base class for each Policy Optimization _model. It should not be used by itself, and should be extended instead.
 
-    A Policy Optimization model is a model computing directly the gradient of the policy by samples drawn from the
+    A Policy Optimization _model is a _model computing directly the gradient of the policy by samples drawn from the
     execution of a certain amount of episodes (a batch) using the last found optimal policy.
     It usually can use both discrete and continuous action spaces.
 
@@ -43,18 +43,18 @@ class PolicyOptimizationModel(Model):
         self._policy_stream_optimizer = None
         # Define buffer
         self.buffer = None
-        # Generate the base model
+        # Generate the base _model
         super().__init__(name)
 
     def update(self,
                session,
                batch: []):
         """
-        Update the model with data contained in the given batch list.
+        Update the _model with data contained in the given batch list.
 
         :param session: the session of tensorflow currently running
         :param batch: the batch list consisting of data used for training (usually a sequence of trajectories)
-        :return: losses of the model and summary
+        :return: losses of the _model and _summary
         """
         # Empty method, definition should be implemented on a child class basis
         return None

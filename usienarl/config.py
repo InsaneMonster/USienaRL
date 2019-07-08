@@ -14,7 +14,7 @@ class LayerType(Enum):
     Layer types for layer definition.
 
     Each layer type follows the naming scheme of the relative tensorflow layer types.
-    Choosing a layer type actually will make the model use the relative tensorflow layer.
+    Choosing a layer type actually will make the _model use the relative tensorflow layer.
     """
     average_pooling_1D = 1
     average_pooling_2D = 2
@@ -39,7 +39,7 @@ class Config:
     """
     Wrapper class used to define neural networks.
 
-    Parts (like hidden layers) of a tensorflow neural network model can be defined by it.
+    Parts (like hidden layers) of a tensorflow neural network _model can be defined by it.
     """
 
     def __init__(self):

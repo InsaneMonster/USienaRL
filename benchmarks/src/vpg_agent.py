@@ -9,7 +9,6 @@
 
 # Import packages
 
-import numpy
 import logging
 
 # Import required src
@@ -30,8 +29,8 @@ class VPGAgent(Agent):
                  name: str):
         # Define VPG agent attributes
         self.updates_per_training_volley: int = updates_per_training_volley
-        # Define tensorflow model
-        self.model: VanillaPolicyGradient = model
+        # Define tensorflow _model
+        self._model: VanillaPolicyGradient = model
         # Define internal agent attributes
         self._current_value_estimate = None
         self._current_policy_loss = None
@@ -43,10 +42,10 @@ class VPGAgent(Agent):
                   logger: logging.Logger,
                   observation_space_type: SpaceType, observation_space_shape,
                   action_space_type: SpaceType, action_space_shape) -> bool:
-        # Generate the model and return a flag stating if generation was successful
-        return self.model.generate(logger, self._scope + "/" + self._name,
-                                   observation_space_type, observation_space_shape,
-                                   action_space_type, action_space_shape)
+        # Generate the _model and return a flag stating if generation was successful
+        return self._model.generate(logger, self._scope + "/" + self._name,
+                                    observation_space_type, observation_space_shape,
+                                    action_space_type, action_space_shape)
 
     def initialize(self,
                    logger: logging.Logger,
@@ -55,120 +54,114 @@ class VPGAgent(Agent):
         self._current_value_estimate = None
         self._current_policy_loss = None
         self._current_value_loss = None
-        # Initialize the model
-        self.model.initialize(logger, session)
+        # Initialize the _model
+        self._model.initialize(logger, session)
 
     def act_warmup(self,
                    logger: logging.Logger,
                    session,
-                   agent_observation_current: numpy.ndarray):
+                   agent_observation_current):
         pass
 
     def act_train(self,
                   logger: logging.Logger,
                   session,
-                  agent_observation_current: numpy.ndarray):
-        # Predict the action since the model is inherently exploring
+                  agent_observation_current):
+        # Predict the action since the _model is inherently exploring
         # Also store the current value estimate to feed the buffer later-on
-        action, self._current_value_estimate = self.model.predict(session, agent_observation_current)
+        action, self._current_value_estimate = self._model.get_best_action(session, agent_observation_current)
         # Return the predicted action
         return action
 
     def act_inference(self,
                       logger: logging.Logger,
                       session,
-                      agent_observation_current: numpy.ndarray):
-        # Predict the action with the model
-        action, _ = self.model.predict(session, agent_observation_current)
+                      agent_observation_current):
+        # Predict the action with the _model
+        action, _ = self._model.get_best_action(session, agent_observation_current)
         # Return the predicted action
         return action
 
-    def finish_step_warmup(self,
-                           logger: logging.Logger,
-                           session,
-                           agent_observation_current: numpy.ndarray,
-                           agent_action,
-                           reward: float,
-                           agent_observation_next: numpy.ndarray,
-                           warmup_step_current: int,
-                           warmup_episode_current: int,
-                           warmup_episode_volley: int):
-        pass
-
-    def finish_step_train(self,
-                          logger: logging.Logger,
-                          session,
-                          agent_observation_current: numpy.ndarray,
-                          agent_action,
-                          reward: float,
-                          agent_observation_next: numpy.ndarray,
-                          train_step_current: int, train_step_absolute: int,
-                          train_episode_current: int, train_episode_absolute: int,
-                          train_episode_volley: int, train_episode_total: int):
-        # Save the current step in the buffer together with the store current value estimate
-        self.model.buffer.store(agent_observation_current, agent_action, reward, self._current_value_estimate)
-
-    def finish_step_inference(self,
-                              logger: logging.Logger,
-                              session,
-                              agent_observation_current: numpy.ndarray,
-                              agent_action,
-                              reward: float,
-                              agent_observation_next: numpy.ndarray,
-                              inference_step_current: int,
-                              inference_episode_current: int,
-                              inference_episode_volley: int):
-        pass
-
-    def finish_episode_warmup(self,
-                              logger: logging.Logger,
-                              session,
-                              last_step_reward: float,
-                              episode_total_reward: float,
-                              warmup_episode_current: int,
-                              warmup_episode_volley: int):
-        pass
-
-    def finish_episode_train(self,
+    def complete_step_warmup(self,
                              logger: logging.Logger,
                              session,
-                             last_step_reward: float,
-                             episode_total_reward: float,
-                             train_episode_current: int, train_episode_absolute: int,
-                             train_episode_volley: int, train_episode_total: int):
+                             agent_observation_current,
+                             agent_action,
+                             reward: float,
+                             agent_observation_next,
+                             warmup_step_current: int,
+                             warmup_episode_current: int,
+                             warmup_episode_volley: int):
+        pass
+
+    def complete_step_train(self,
+                            logger: logging.Logger,
+                            session,
+                            agent_observation_current,
+                            agent_action,
+                            reward: float,
+                            agent_observation_next,
+                            train_step_current: int, train_step_absolute: int,
+                            train_episode_current: int, train_episode_absolute: int,
+                            train_episode_volley: int, train_episode_total: int):
+        # Save the current step in the buffer together with the current value estimate
+        self._model.buffer.store(agent_observation_current, agent_action, reward, self._current_value_estimate)
+
+    def complete_step_inference(self,
+                                logger: logging.Logger,
+                                session,
+                                agent_observation_current,
+                                agent_action,
+                                reward: float,
+                                agent_observation_next,
+                                inference_step_current: int,
+                                inference_episode_current: int,
+                                inference_episode_volley: int):
+        pass
+
+    def complete_episode_warmup(self,
+                                logger: logging.Logger,
+                                session,
+                                last_step_reward: float,
+                                episode_total_reward: float,
+                                warmup_episode_current: int,
+                                warmup_episode_volley: int):
+        pass
+
+    def complete_episode_train(self,
+                               logger: logging.Logger,
+                               session,
+                               last_step_reward: float,
+                               episode_total_reward: float,
+                               train_step_absolute: int,
+                               train_episode_current: int, train_episode_absolute: int,
+                               train_episode_volley: int, train_episode_total: int):
         # Update the buffer at the end of trajectory
-        self.model.buffer.finish_path(last_step_reward)
+        self._model.buffer.finish_path(last_step_reward)
         # Execute update only after a certain number of episodes
         if train_episode_current % (train_episode_volley / self.updates_per_training_volley) == 0 and train_episode_current > 0:
-            # Define a list of weights equals to one associated with each sample in the batch
-            batch: [] = self.model.buffer.get()
-            weights: numpy.ndarray = numpy.ones(len(batch), dtype=float)
             # Execute the update and store policy and value loss
-            summary, self._current_policy_loss, self._current_value_loss = self.model.update(session,
-                                                                                             current_episode,
-                                                                                             total_episodes,
-                                                                                             current_step,
-                                                                                             batch, weights)
-            # Update the summary with current step given by the total step counter
-            self._summary_writer.add_summary(summary, self.train)
+            summary, self._current_policy_loss, self._current_value_loss = self._model.update(session, self._model.buffer.get())
+            # Update the _summary at the absolute current step
+            self._summary_writer.add_summary(summary, train_step_absolute)
 
-    def finish_episode_inference(self,
-                                 logger: logging.Logger,
-                                 session,
-                                 last_step_reward: float,
-                                 episode_total_reward: float,
-                                 inference_episode_current: int,
-                                 inference_episode_volley: int):
+    def complete_episode_inference(self,
+                                   logger: logging.Logger,
+                                   session,
+                                   last_step_reward: float,
+                                   episode_total_reward: float,
+                                   inference_episode_current: int,
+                                   inference_episode_volley: int):
         pass
 
     @property
     def trainable_variables(self):
-        # Return the trainable variables of the agent model in experiment/agent scope
-        return self.model.get_trainable_variables(self._scope + "/" + self._name)
+        # Return the trainable variables of the agent model in experiment/agent _scope
+        return self._model.trainable_variables
 
     @property
     def warmup_episodes(self) -> int:
-        return 0
+        return self._model.warmup_episodes
 
 
 

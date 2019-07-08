@@ -1,69 +1,84 @@
+# Import packages
+
+import logging
+
 # Import required src
 
-from usienarl import Environment
-from usienarl.models import TemporalDifferenceModel
+from usienarl import SpaceType
 
 
 class ExplorationPolicy:
     """
-    Base class for all the exploration systems. It should not be used by itself, and should be extended instead.
-
-    When an explorer is created, it should be assigned to the experiment in order to be used by the model,
-    also assigned to the experiment.
-
-    The exploration rate current value at each step is stored in the experiment, and it's not a variable of the
-    explorer per-se.
-
-    Note: the explorers are not used by policy optimization algorithms.
-
-    Attributes:
-        - exploration_rate_max: float defining the start value of the exploration rate
-        - exploration_rate_min: float defining the end value of the exploration rate
-        - exploration_rate_decay: float defining how much each the exploration rate reduces itself when it is updated
+    TODO: summary
     """
 
     def __init__(self,
                  exploration_rate_max: float, exploration_rate_min: float,
                  exploration_rate_decay: float):
-        # Define attributes
-        self.exploration_rate_max: float = exploration_rate_max
-        self.exploration_rate_min: float = exploration_rate_min
-        self.exploration_rate_decay: float = exploration_rate_decay
-        # Define internal attributes
+        # Define exploration policy attributes
+        self._exploration_rate_max: float = exploration_rate_max
+        self._exploration_rate_min: float = exploration_rate_min
+        self._exploration_rate_decay: float = exploration_rate_decay
+        # Define empty exploration policy attributes
         self._exploration_rate: float = None
+        self._action_space_type: SpaceType = None
+        self._action_space_shape = None
+        self._supported_observation_space_types: [] = []
+        self._supported_action_space_types: [] = []
 
-    def initialize(self):
+    def generate(self,
+                 logger: logging.Logger,
+                 agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
         """
-        Reset the exploration policy to its starting state.
-        """
-        # Reset the exploration rate
-        self._exploration_rate = self.exploration_rate_max
+        Generate the exploration policy. Checks if the exploration policy is compatible with the given action space and
+        define the exploration policy itself.
 
-    def get_action(self,
-                   exploration_rate: float,
-                   model: TemporalDifferenceModel, environment: Environment, session, state_current: int) -> []:
+        :return: True if generation is successful, False otherwise
         """
-        Get the action according to the exploration rate, the model and the current state of the environment.
+        logger.info("Generating exploration policy...")
+        # Set action space type and shape
+        self._action_space_type = agent_action_space_type
+        self._action_space_shape = agent_action_space_shape
+        # Check if action space type is supported
+        action_space_type_supported: bool = False
+        for space_type in self._supported_action_space_types:
+            if self._action_space_type == space_type:
+                action_space_type_supported = True
+                break
+        if not action_space_type_supported:
+            logger.error("Error during setup of exploration policy: action space type not supported")
+            return False
+        # Define the exploration policy
+        self._define()
+        # Return success
+        return True
 
-        Note: not all the explorers use all the provided parameters.
-
-        :param exploration_rate: the current exploration rate value
-        :param model: the model to use, if needed, to choose the action
-        :param environment: the environment in which the model operates
-        :param session: the session of tensorflow currently running
-        :param state_current: the current state of the environment
-        :return the action in the shape supported by the environment in the shape of a list
+    def _define(self):
         """
-        # Empty method, definition should be implemented on a child class basis
-        return None
-
-    def update(self):
+        Define the exploration policy. This is always called during generation.
         """
-        Update the exploration policy, changing the exploration rate current value by its decay factor.
-        """
-        # Update the given exploration rate value according to its decay factor
-        self._exploration_rate = max(self._exploration_rate - self.exploration_rate_decay, self.exploration_rate_min)
+        raise NotImplementedError()
 
-    @property
-    def exploration_rate(self) -> float:
-        return self._exploration_rate
+    def initialize(self,
+                   logger: logging.Logger,
+                   session):
+        """
+        Reset the exploration policy to its starting state, usually resetting the exploration rate to its max value.
+        """
+        raise NotImplementedError()
+
+    def act(self,
+            session,
+            all_actions, best_action):
+        """
+        Act according to the model actions and/or predicted action.
+        """
+        # Abstract method, definition should be implemented on a child class basis
+        raise NotImplementedError()
+
+    def update(self,
+               session):
+        """
+        Update the exploration policy, usually changing the exploration rate.
+        """
+        raise NotImplementedError()

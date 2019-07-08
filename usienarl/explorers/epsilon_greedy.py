@@ -20,9 +20,9 @@ class EpsilonGreedyExplorer(ExplorationPolicy):
         # Generate the base explorer
         super().__init__(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
-    def get_action(self,
-                   exploration_rate_current_value: float,
-                   model: TemporalDifferenceModel, environment: Environment, session, state_current: int) -> []:
+    def act(self,
+            exploration_rate_current_value: float,
+            model: TemporalDifferenceModel, environment: Environment, session, observation_current: int) -> []:
         """
         Overridden method of Explorer class: check its docstring for further information.
         """
@@ -30,5 +30,5 @@ class EpsilonGreedyExplorer(ExplorationPolicy):
         if exploration_rate_current_value > 0 and numpy.random.rand(1) < exploration_rate_current_value:
             action = environment.get_random_action()
         else:
-            action = model.predict(session, state_current)[0]
+            action = model.get_best_action(session, observation_current)[0]
         return [action]

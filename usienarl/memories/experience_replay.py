@@ -38,7 +38,7 @@ class ExperienceReplay(Memory):
         """
         Overridden method of Memory class: check its docstring for further information.
         """
-        # Add a new sample and, if capacity is exceeded, remove the oldest (first inserted) sample
+        # Add a new sample and, if _capacity is exceeded, remove the oldest (first inserted) sample
         self._samples.append(sample)
         if len(self._samples) > self.capacity:
             self._samples.pop(0)

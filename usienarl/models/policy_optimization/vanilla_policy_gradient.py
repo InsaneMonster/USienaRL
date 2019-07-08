@@ -17,7 +17,7 @@ class Buffer:
     The buffer is dynamically resizable.
 
     The buffer contains list of states (or observations), actions (used as targets), values (computed by the value stream
-    of the model itself during prediction), advantages (computed by the buffer using GAE when a trajectory finishes and
+    of the _model itself during prediction), advantages (computed by the buffer using GAE when a trajectory finishes and
     fed back up in the policy stream to drive the loss), rewards (used to compute rewards-to-go) and rewards-to-go
     (computed inside the buffer itself and used as weight for the targets action when training the value stream).
     """
@@ -46,7 +46,7 @@ class Buffer:
         :param state: the current state to store in the buffer
         :param action: the last action to store in the buffer
         :param reward: the reward obtained from the action at the current state to store in the buffer
-        :param value: the value of the state as estimated by the value stream of the model to store in the buffer
+        :param value: the value of the state as estimated by the value stream of the _model to store in the buffer
         """
         # Append all data and increase the pointer
         self._states.append(state)
@@ -54,25 +54,6 @@ class Buffer:
         self._rewards.append(reward)
         self._values.append(value)
         self._pointer += 1
-
-    def finish_path(self,
-                    value: float = 0):
-        """
-        Finish the path at the end of a trajectory. This looks back in the buffer to where the trajectory started,
-        and uses rewards and value estimates from the whole trajectory to compute advantage estimates with GAE-Lambda,
-        as well as compute the rewards-to-go for each state, to use as the targets for the value stream optimization.
-
-        :param value: the last reward given by the environment or the last predicted value if last state is not terminal
-        """
-        path_slice = slice(self._path_start_index, self._pointer)
-        rewards: numpy.ndarray = numpy.array(self._rewards[path_slice] + [value])
-        values: numpy.ndarray = numpy.array(self._values[path_slice] + [value])
-        # Compute GAE-Lambda advantage estimation (compute advantages using the value in the buffer taken from the model)
-        deltas: numpy.ndarray = numpy.concatenate(rewards[:-1] + self._discount_factor * values[1:] - values[:-1]).ravel()
-        self._advantages[path_slice] = self._discount_cumulative_sum(deltas, self._discount_factor * self._lambda_parameter).tolist()
-        # Compute rewards-to-go
-        self._rewards_to_go[path_slice] = (self._discount_cumulative_sum(rewards, self._discount_factor)[:-1]).tolist()
-        self._path_start_index = self._pointer
 
     def get(self) -> []:
         """
@@ -90,7 +71,7 @@ class Buffer:
         advantage_std: float = numpy.sqrt(global_sum_squared / advantages_array.size)
         # Adjust advantages according to the trick
         advantages_array = ((advantages_array - advantage_mean) / advantage_std)
-        # Save the necessary values as ndarrays before reset
+        # Save the necessary values as numpy arrays before reset
         states_array: numpy.ndarray = numpy.array(self._states)
         actions_array: numpy.ndarray = numpy.array(self._actions)
         rewards_to_go_array: numpy.ndarray = numpy.array(self._rewards_to_go)
@@ -105,6 +86,25 @@ class Buffer:
         self._values = []
         # Return all the buffer components
         return [states_array, actions_array, advantages_array, rewards_to_go_array]
+
+    def finish_path(self,
+                    value: float = 0):
+        """
+        Finish the path at the end of a trajectory. This looks back in the buffer to where the trajectory started,
+        and uses rewards and value estimates from the whole trajectory to compute advantage estimates with GAE-Lambda,
+        as well as compute the rewards-to-go for each state, to use as the targets for the value stream optimization.
+
+        :param value: the last reward given by the environment or the last predicted value if last state is not terminal
+        """
+        path_slice = slice(self._path_start_index, self._pointer)
+        rewards: numpy.ndarray = numpy.array(self._rewards[path_slice] + [value])
+        values: numpy.ndarray = numpy.array(self._values[path_slice] + [value])
+        # Compute GAE-Lambda advantage estimation (compute advantages using the value in the buffer taken from the _model)
+        deltas: numpy.ndarray = numpy.concatenate(rewards[:-1] + self._discount_factor * values[1:] - values[:-1]).ravel()
+        self._advantages[path_slice] = self._discount_cumulative_sum(deltas, self._discount_factor * self._lambda_parameter).tolist()
+        # Compute rewards-to-go
+        self._rewards_to_go[path_slice] = (self._discount_cumulative_sum(rewards, self._discount_factor)[:-1]).tolist()
+        self._path_start_index = self._pointer
 
     @staticmethod
     def _discount_cumulative_sum(vector: numpy.ndarray, discount: float) -> numpy.ndarray:
@@ -122,11 +122,11 @@ class VanillaPolicyGradient(Model):
     """
     Vanilla Policy Gradient with GAE (Generalized Advantage Estimation).
     The algorithm is on-policy and executes updates every a certain number of episodes.
-    The model is constituted by two sub-models, or streams. The first stream computes and optimizes the policy loss,
+    The _model is constituted by two sub-models, or streams. The first stream computes and optimizes the policy loss,
     and to drive the loss the advantages for each state in the batch is required to be estimated. This stream is called
     policy stream.
     The second stream computes the value on the current states and optimizes such estimation. To drive the loss of such
-    sub-model, the value estimated by the stream itself for each state in the batch is required to be estimated. This
+    sub-_model, the value estimated by the stream itself for each state in the batch is required to be estimated. This
     stream is called value stream.
     The advantage used to drive the policy stream loss is computed using GAE on the value estimated by the value stream
     and such computation is carried on in the buffer.
@@ -144,8 +144,8 @@ class VanillaPolicyGradient(Model):
         - continuous
 
     Attributes:
-        - learning_rate_policy: the lambda of the model in training phase for the policy stream
-        - learning_rate_value: the lambda of the model in training phase for the value stream
+        - learning_rate_policy: the lambda of the _model in training phase for the policy stream
+        - learning_rate_value: the lambda of the _model in training phase for the value stream
     """
 
     def __init__(self,
@@ -155,11 +155,11 @@ class VanillaPolicyGradient(Model):
                  value_steps_for_update: int,
                  hidden_layers_config: Config,
                  lambda_parameter: float):
-        # Define model attributes
+        # Define _model attributes
         self.learning_rate_policy: float = learning_rate_policy
         self.learning_rate_value: float = learning_rate_value
         self.discount_factor: float = discount_factor
-        # Define internal model attributes
+        # Define internal _model attributes
         self._hidden_layers_config: Config = hidden_layers_config
         self._value_steps_for_update: int = value_steps_for_update
         self._lambda_parameter: float = lambda_parameter
@@ -177,7 +177,7 @@ class VanillaPolicyGradient(Model):
         self._policy_stream_loss = None
         self._value_stream_optimizer = None
         self._policy_stream_optimizer = None
-        # Generate the base model
+        # Generate the base _model
         super(VanillaPolicyGradient, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
@@ -186,32 +186,29 @@ class VanillaPolicyGradient(Model):
         self._supported_action_space_types.append(SpaceType.continuous)
 
     def _define_graph(self):
-        """
-        Overridden method of Model class: check its docstring for further information.
-        """
         # Set the GAE buffer for the vanilla policy gradient algorithm
         self.buffer: Buffer = Buffer(self.discount_factor, self._lambda_parameter)
-        # Define the tensorflow model
-        with tensorflow.variable_scope(self.scope + "/" + self.name):
+        # Define the tensorflow _model
+        with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
-            self._inputs = tensorflow.placeholder(shape=[None, *self.observation_space_shape], dtype=tensorflow.float32, name="inputs")
+            self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
             # Define the estimator network hidden layers from the config
             hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
             # Define the targets for learning with the same NxA adaptable size
-            self._targets = tensorflow.placeholder(shape=(None, *self.action_space_shape), dtype=tensorflow.float32, name="targets")
-            # Change the model definition according to its action space type
-            if self.action_space_type == SpaceType.discrete:
+            self._targets = tensorflow.placeholder(shape=(None, *self._action_space_shape), dtype=tensorflow.float32, name="targets")
+            # Change the _model definition according to its action space type
+            if self._action_space_type == SpaceType.discrete:
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
-                logits = tensorflow.layers.dense(hidden_layers_output, *self.action_space_shape, name="logits")
+                logits = tensorflow.layers.dense(hidden_layers_output, *self._action_space_shape, name="logits")
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
                 self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=logits, num_samples=1), axis=1)
                 # Define the log likelihood according to the categorical distribution
                 self._log_likelihood, _ = self.get_categorical_log_likelihood(self._targets, logits)
             else:
                 # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape
-                expected_value = tensorflow.layers.dense(hidden_layers_output, *self.action_space_shape, name="expected_value")
+                expected_value = tensorflow.layers.dense(hidden_layers_output, *self._action_space_shape, name="expected_value")
                 # Define the log standard deviation
-                log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self.action_space_shape, dtype=numpy.float32))
+                log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._action_space_shape, dtype=numpy.float32))
                 # Define the standard deviation
                 std = tensorflow.exp(log_std, name="std")
                 # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
@@ -230,63 +227,65 @@ class VanillaPolicyGradient(Model):
             # Define the optimizer for the value stream (actually the MLP optimizer)
             self._value_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_value).minimize(self._value_stream_loss)
             # Define the advantages placeholder as an adaptable vector of floats (they are computed by the MLP and stored in the buffer)
-            # Note: the model get the advantages from the buffer once computed using GAE on the values
+            # Note: the _model get the advantages from the buffer once computed using GAE on the values
             self._advantages = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="advantages")
             # Define the loss as the mean of the rewards multiplied the log_likelihood
             self._policy_stream_loss = -tensorflow.reduce_mean(self._advantages * self._log_likelihood, name="policy_loss")
             # Define the optimizer for the policy stream
             self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
-            # Define the initializer
+            # Define the _initializer
             self.initializer = tensorflow.global_variables_initializer()
 
     def _define_summary(self):
-        """
-        Overridden method of Model class: check its docstring for further information.
-        """
-        with tensorflow.variable_scope(self.scope + "/" + self.name):
-            # Define the summary operation for this graph with losses summaries
+        with tensorflow.variable_scope(self._scope + "/" + self._name):
+            # Define the _summary operation for this graph with losses summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
                                                      tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
 
-    def predict(self,
-                session,
-                observation_current: numpy.ndarray):
-        """
-        Overridden method of Model class: check its docstring for further information.
-        """
+    def get_all_actions(self,
+                        session,
+                        observation_current):
+        # TODO: need to implement this, but how?
+        pass
+
+    def get_best_action(self,
+                        session,
+                        observation_current):
         # Return a random action sample given the current state and depending on the observation space type and also compute value estimate
-        if self.observation_space_type == SpaceType.discrete:
+        if self._observation_space_type == SpaceType.discrete:
             # Generate a one-hot encoded version of the observation if observation space type is discrete
-            observation_current_one_hot: numpy.ndarray = numpy.identity(*self.observation_space_shape)[observation_current]
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             actions, value = session.run([self._actions, self._value], feed_dict={self._inputs: [observation_current_one_hot]})
         else:
             actions, value = session.run([self._actions, self._value], feed_dict={self._inputs: [observation_current]})
         # Return the predicted action and the estimated value
         return actions[0], value
 
+    def get_best_action_and_all_actions(self,
+                                        session,
+                                        observation_current):
+        # TODO: need to implement this, but how?
+        pass
+
     def update(self,
                session,
-               current_episode: int, total_episodes: int, current_step: int,
-               batch: [], weights: numpy.ndarray):
-        """
-        Overridden method of Model class: check its docstring for further information.
-        """
+               batch: []):
         # Unpack the batch
         observations, actions, advantages, rewards = batch[0], batch[1], batch[2], batch[3]
         # Generate a one-hot encoded version of the observations if observation space type is discrete
-        if self.observation_space_type == SpaceType.discrete:
-            observations: numpy.ndarray = numpy.eye(*self.observation_space_shape)[numpy.array(observations).reshape(-1)]
+        if self._observation_space_type == SpaceType.discrete:
+            observations: numpy.ndarray = numpy.eye(*self._observation_space_shape)[numpy.array(observations).reshape(-1)]
         # Generate a one-hot encoded version of the actions if action space type is discrete
-        if self.action_space_type == SpaceType.discrete:
-            actions: numpy.ndarray = numpy.eye(*self.action_space_shape)[numpy.array(actions).reshape(-1)]
-        # Run the policy optimizer of the model in training mode
+        if self._action_space_type == SpaceType.discrete:
+            actions: numpy.ndarray = numpy.eye(*self._action_space_shape)[numpy.array(actions).reshape(-1)]
+        # Run the policy optimizer of the _model in training mode
         session.run(self._policy_stream_optimizer,
                     feed_dict={
                                 self._inputs: observations,
                                 self._targets: actions,
                                 self._advantages: advantages
                               })
-        # Run the value optimizer of the model in training mode for the required amount of steps
+        # Run the value optimizer of the _model in training mode for the required amount of steps
         for _ in range(self._value_steps_for_update):
             session.run(self._value_stream_optimizer,
                         feed_dict={
@@ -294,7 +293,7 @@ class VanillaPolicyGradient(Model):
                                     self._advantages: advantages,
                                     self._rewards: rewards
                                   })
-        # Compute the policy loss and value loss of the model after this sequence of training and also compute the summary
+        # Compute the policy loss and value loss of the _model after this sequence of training and also compute the _summary
         policy_loss, value_loss, summary = session.run([self._policy_stream_loss, self._value_stream_loss, self.summary],
                                                        feed_dict={
                                                                    self._inputs: observations,
@@ -302,8 +301,12 @@ class VanillaPolicyGradient(Model):
                                                                    self._rewards: rewards,
                                                                    self._advantages: advantages
                                                                  })
-        # Return both losses and summary for the update sequence
+        # Return both losses and _summary for the update sequence
         return summary, policy_loss, value_loss
+
+    @property
+    def warmup_episodes(self) -> int:
+        return 0
 
     @staticmethod
     def get_categorical_log_likelihood(target_actions_mask, logits):

@@ -31,12 +31,12 @@ class Environment:
     The environment is not created until the setup method is called.
 
     Attributes:
-        - name: the string name of the environment
+        - _name: the string _name of the environment
     """
 
     def __init__(self,
                  name: str):
-        # Define the name attribute
+        # Define the _name attribute
         self.name: str = name
 
     def setup(self,

@@ -22,9 +22,9 @@ class PrioritizedExperienceReplay(Memory):
     along with the minibatch as second returned value.
     """
 
-    _MINIMUM_ALLOWED_PRIORITY: float = 1
-    _IMPORTANCE_SAMPLING_VALUE_UPPER_BOUND: float = 1
-    _ABSOLUTE_ERROR_UPPER_BOUND: float = 1
+    _MINIMUM_ALLOWED_PRIORITY: float = 1.0
+    _IMPORTANCE_SAMPLING_VALUE_UPPER_BOUND: float = 1.0
+    _ABSOLUTE_ERROR_UPPER_BOUND: float = 1.0
 
     def __init__(self,
                  capacity: int, pre_train: bool,

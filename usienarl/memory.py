@@ -4,14 +4,14 @@ class Memory:
     """
     Base class for each memory. It should not be used by itself, and should be extended instead.
 
-    When a memory is created, it should be assigned to the experiment in order to be used by the model,
+    When a memory is created, it should be assigned to the experiment in order to be used by the _model,
     also assigned to the experiment.
 
     The batch size is defined in the experiment and it's not a property of the memory per-se.
 
     Attributes:
-        - capacity: integer representing the maximum size of the memory in units of samples
-        - pre_train: boolean flag defining whether or not the memory requires to be pre-trained or not.
+        - _capacity: integer representing the maximum size of the memory in units of samples
+        - _warmup: boolean flag defining whether or not the memory requires to be pre-trained or not.
     """
 
     def __init__(self,
@@ -49,9 +49,9 @@ class Memory:
     def update(self,
                absolute_error):
         """
-        Update the memory using the absolute error from the model.
+        Update the memory using the absolute error from the _model.
 
-        :param absolute_error: the absolute error from the model
+        :param absolute_error: the absolute error from the _model
         """
         # Empty method, definition should be implemented on a child class basis
         pass

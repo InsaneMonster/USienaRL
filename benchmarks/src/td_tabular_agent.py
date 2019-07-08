@@ -9,112 +9,145 @@
 
 # Import packages
 
-import numpy
 import logging
 
 # Import required src
 
-from usienarl import Agent
+from usienarl import Agent, ExplorationPolicy, SpaceType
 from usienarl.models.temporal_difference import Tabular
 
 
 class TDTabularAgent(Agent):
     """
     TODO: summary
+    TODO: finish methods
 
     """
 
     def __init__(self,
                  model: Tabular,
-                 exploration_rate_max: float, exploration_rate_min: float, exploration_rate_decay: float,
+                 exploration_policy: ExplorationPolicy,
                  name: str):
-        # Define tensorflow model
-        self.model: Tabular = model
+        # Define tabular agent attributes
+        self._model: Tabular = model
+        self._exploration_policy: ExplorationPolicy = exploration_policy
         # Define internal agent attributes
-        self._exploration_rate: float = None
-        self._exploration_rate_max: float = exploration_rate_max
-        self._exploration_rate_min: float = exploration_rate_min
-        self._exploration_rate_decay: float = exploration_rate_decay
+        self._current_absolute_errors = None
+        self._current_loss = None
         # Generate base agent
         super(TDTabularAgent, self).__init__(name)
+
+    def _generate(self,
+                  logger: logging.Logger,
+                  observation_space_type: SpaceType, observation_space_shape,
+                  action_space_type: SpaceType, action_space_shape) -> bool:
+        # Generate the exploration policy and check if it's successful, stop if not successful
+        if self._exploration_policy.generate(logger, action_space_type, action_space_shape):
+            # Generate the _model and return a flag stating if generation was successful
+            return self._model.generate(logger, self._scope + "/" + self._name,
+                                        observation_space_type, observation_space_shape,
+                                        action_space_type, action_space_shape)
+        return False
 
     def initialize(self,
                    logger: logging.Logger,
                    session):
         # Reset internal agent attributes
-        self._exploration_rate = self._exploration_rate_max
+        self._current_absolute_errors = None
+        self._current_loss = None
         # Initialize the model
-        self.model.initialize(logger, session)
+        self._model.initialize(logger, session)
+        # Initialize the exploration policy
+        self._exploration_policy.initialize(logger, session)
 
-    def update(self,
-               logger: logging.Logger,
-               session,
-               current_episode: int, total_episodes: int, current_step: int):
-        # Empty method, it should be implemented on a child class basis
+    def act_warmup(self,
+                   logger: logging.Logger,
+                   session,
+                   agent_observation_current):
         pass
 
-    def _generate(self,
+    def act_train(self,
                   logger: logging.Logger,
-                  scope: str) -> bool:
-        # Generate the model and return a flag stating if generation was successful
-        return self.model.generate(logger, scope + "/" + self._name,
-                                   self.interface.observation_space_type, self.interface.observation_space_shape,
-                                   self.interface.agent_action_space_type, self.interface.agent_action_space_shape)
+                  session,
+                  agent_observation_current):
+        pass
 
-    def _decide_train(self,
+    def act_inference(self,
                       logger: logging.Logger,
                       session,
-                      agent_observation_current: int):
-        # Predict an action using the model or a random action with epsilon greedy exploration
-        if self._exploration_rate > 0.0 and numpy.random.rand(1) < self._exploration_rate:
-            action: int = self.environment.get_random_action(logger, session)
-        else:
-            action: int = self.model.predict(session, agent_observation_current)
-        # Return the predicted action
-        return action
-
-    def _decide_pre_train(self,
-                          logger: logging.Logger,
-                          session,
-                          agent_observation_current: numpy.ndarray):
-        # Not needed by this agent
+                      agent_observation_current):
         pass
 
-    def _decide_inference(self,
-                          logger: logging.Logger,
-                          session,
-                          agent_observation_current: int):
-        # Predict the action with the model
-        action: int = self.model.predict(session, agent_observation_current)
-        # Return the predicted action
-        return action
-
-    def _save_step_pre_train(self,
+    def complete_step_warmup(self,
                              logger: logging.Logger,
                              session,
-                             agent_observation_current: numpy.ndarray,
-                             agent_action,
-                             reward: float,
-                             agent_observation_next: numpy.ndarray,
-                             episode_done: bool):
-        # Not needed by this agent
+                             agent_observation_current,
+                             agent_action, reward: float,
+                             agent_observation_next,
+                             warmup_step_current: int,
+                             warmup_episode_current: int,
+                             warmup_episode_volley: int):
+        # Save the current step in the buffer
+        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next)
+
+    def complete_step_train(self,
+                            logger: logging.Logger,
+                            session,
+                            agent_observation_current,
+                            agent_action,
+                            reward: float,
+                            agent_observation_next,
+                            train_step_current: int, train_step_absolute: int,
+                            train_episode_current: int, train_episode_absolute: int,
+                            train_episode_volley: int, train_episode_total: int):
+        # Save the current step in the buffer
+        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next)
+
+    def complete_step_inference(self,
+                                logger: logging.Logger,
+                                session,
+                                agent_observation_current,
+                                agent_action,
+                                reward: float,
+                                agent_observation_next,
+                                inference_step_current: int,
+                                inference_episode_current: int,
+                                inference_episode_volley: int):
         pass
 
-    def _save_step_train(self,
-                         logger: logging.Logger,
-                         session,
-                         agent_observation_current: numpy.ndarray,
-                         agent_action,
-                         reward: float,
-                         agent_observation_next: numpy.ndarray,
-                         episode_done: bool):
-        # TODO: add to model buffer with n-step
-        self.model.buffer.store_train(agent_observation_current, agent_action, reward, self._current_value_estimate)
-        # Decrease exploration rate value
-        if episode_done:
-            self._exploration_rate = max(self._exploration_rate - self._exploration_rate_decay, self._exploration_rate_min)
+    def complete_episode_warmup(self,
+                                logger: logging.Logger,
+                                session,
+                                last_step_reward: float,
+                                episode_total_reward: float,
+                                warmup_episode_current: int,
+                                warmup_episode_volley: int):
+        pass
 
-    def get_trainable_variables(self,
-                                scope: str):
-        # Return the trainable variables of the agent model in the given experiment scope
-        return self.model.get_trainable_variables(scope + "/" + self._name)
+    def complete_episode_train(self,
+                               logger: logging.Logger,
+                               session,
+                               last_step_reward: float,
+                               episode_total_reward: float,
+                               train_step_absolute: int,
+                               train_episode_current: int, train_episode_absolute: int,
+                               train_episode_volley: int, train_episode_total: int):
+        pass
+
+    def complete_episode_inference(self,
+                                   logger: logging.Logger,
+                                   session,
+                                   last_step_reward: float,
+                                   episode_total_reward: float,
+                                   inference_episode_current: int,
+                                   inference_episode_volley: int):
+        pass
+
+    @property
+    def trainable_variables(self):
+        # Return the trainable variables of the agent model in experiment/agent _scope
+        return self._model.trainable_variables
+
+    @property
+    def warmup_episodes(self) -> int:
+        return self._model.warmup_episodes

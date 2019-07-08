@@ -39,7 +39,7 @@ def _define_dqn_model(config: Config) -> DQN:
     weight_copy_step_interval: int = 25
     learning_rate: float = 0.001
     discount_factor: float = 0.99
-    # Return the model
+    # Return the _model
     return DQN("dqn", learning_rate, discount_factor, config, weight_copy_step_interval)
 
 
@@ -48,7 +48,7 @@ def _define_ddqn_model(config: Config) -> DoubleDQN:
     weight_copy_step_interval: int = 25
     learning_rate: float = 0.001
     discount_factor: float = 0.99
-    # Return the model
+    # Return the _model
     return DoubleDQN("ddqn", learning_rate, discount_factor, config, weight_copy_step_interval)
 
 
@@ -57,7 +57,7 @@ def _define_dddqn_model(config: Config) -> DuelingDoubleDQN:
     weight_copy_step_interval: int = 25
     learning_rate: float = 0.001
     discount_factor: float = 0.99
-    # Return the model
+    # Return the _model
     return DuelingDoubleDQN("dddqn", learning_rate, discount_factor, config, weight_copy_step_interval)
 
 
@@ -106,7 +106,7 @@ def _define_vpg_model(config: Config) -> VanillaPolicyGradient:
     discount_factor: float = 0.99
     value_steps_per_update: int = 80
     lambda_parameter: float = 0.95
-    # Return the model
+    # Return the _model
     return VanillaPolicyGradient("vpg", learning_rate_policy, learning_rate_advantage,
                                                              discount_factor, value_steps_per_update, config, lambda_parameter)
 
@@ -175,13 +175,13 @@ if __name__ == "__main__":
     experience_replay: ExperienceReplay = _define_experience_replay_memory()
     prioritized_experience_replay: PrioritizedExperienceReplay = _define_prioritized_experience_replay_memory()
     # Define Q-Learning experiments
-    # Format: model, suffix, memory, batch_size and explorer
+    # Format: _model, suffix, memory, batch_size and explorer
     q_learning_experiments_data: [] = [(model_dddqn, "_per_b", prioritized_experience_replay, 100, boltzmann_explorer)]
     q_learning_experiments: [] = _define_q_learning_experiment_batch(q_learning_experiments_data)
     # Define policy optimization models
     model_vpg: VanillaPolicyGradient = _define_vpg_model(policy_optimization_nn_config)
     # Define Policy Optimization experiments
-    # Format: model, suffix, updates_per_training_interval
+    # Format: _model, suffix, updates_per_training_interval
     policy_optimization_experiments_data: [] = [(model_vpg, "", 100)]
     policy_optimization_experiments: [] = _define_policy_optimization_experiment_batch(policy_optimization_experiments_data)
     # Define common experiment data

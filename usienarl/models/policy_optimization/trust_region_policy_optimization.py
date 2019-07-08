@@ -18,7 +18,7 @@ class Buffer:
     The buffer is dynamically resizable.
 
     The buffer contains list of states (or observations), actions (used as targets), values (computed by the value stream
-    of the model itself during prediction), advantages (computed by the buffer using GAE when a trajectory finishes and
+    of the _model itself during prediction), advantages (computed by the buffer using GAE when a trajectory finishes and
     fed back up in the policy stream to drive the loss), rewards (used to compute rewards-to-go) and rewards-to-go
     (computed inside the buffer itself and used as weight for the targets action when training the value stream).
     """
@@ -61,7 +61,7 @@ class Buffer:
         :param state: the current state to store in the buffer
         :param action: the last action to store in the buffer
         :param reward: the reward obtained from the action at the state to store in the buffer
-        :param value: the value of the state as estimated by the advantage stream of the model to store in the buffer
+        :param value: the value of the state as estimated by the advantage stream of the _model to store in the buffer
         :param args: additional arguments to store in the buffer, depending on the space type defined for it (e.g. expected-value, log-likelihood unmasked, etc)
         """
         # Append all data
@@ -69,8 +69,8 @@ class Buffer:
         self._actions.append(action)
         self._rewards.append(reward)
         self._values.append(value)
-        # Parse the args depending on the action space type of the model
-        # Note: they are parsed in the same order in which they are returned by the predict method of the model
+        # Parse the args depending on the action space type of the _model
+        # Note: they are parsed in the same order in which they are returned by the predict method of the _model
         if self._action_space_type == SpaceType.discrete:
             self._log_likelihoods_unmasked.append(args[0])
         else:
@@ -155,7 +155,7 @@ class Buffer:
 
 class TrustRegionPolicyOptimization(PolicyOptimizationModel):
     """
-    TODO summary
+    TODO _summary
     TODO: FINISH ALGORITHM
 
     Supported observation spaces:
@@ -175,7 +175,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
                  hidden_layers_config: Config,
                  lambda_parameter: float, damping_coefficient: float,
                  conjugate_gradient_iterations: int, kl_divergence_limit: float):
-        # Define Trust Region Policy Optimization model attributes
+        # Define Trust Region Policy Optimization _model attributes
         self._hidden_layers_config: Config = hidden_layers_config
         self.learning_rate: float = learning_rate
         self._value_steps_for_update: int = value_steps_for_update
@@ -197,7 +197,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         self._values = None
         self._get_actions_parameters = None
         self._set_actions_parameters = None
-        # Generate the base policy optimization model
+        # Generate the base policy optimization _model
         super().__init__(name, discount_factor)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
@@ -211,32 +211,32 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         """
         # Define the GAE buffer for the vanilla policy gradient algorithm
         self.buffer: Buffer = Buffer(self.discount_factor, self._lambda_parameter)
-        # Define the tensorflow model
-        with tensorflow.variable_scope(self.scope + "/" + self.name):
+        # Define the tensorflow _model
+        with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
-            self._inputs = tensorflow.placeholder(shape=[None, *self.observation_space_shape], dtype=tensorflow.float32, name="inputs")
+            self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
             # Define the estimator network hidden layers from the config
             hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
             # Define the targets for learning with the same NxA adaptable size
-            self._targets = tensorflow.placeholder(shape=(None, *self.action_space_shape), dtype=tensorflow.float32, name="targets")
-            # Change the model definition according to its action space type
-            if self.action_space_type == SpaceType.discrete:
+            self._targets = tensorflow.placeholder(shape=(None, *self._action_space_shape), dtype=tensorflow.float32, name="targets")
+            # Change the _model definition according to its action space type
+            if self._action_space_type == SpaceType.discrete:
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
-                logits = tensorflow.layers.dense(hidden_layers_output, *self.action_space_shape, name="logits")
+                logits = tensorflow.layers.dense(hidden_layers_output, *self._action_space_shape, name="logits")
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
                 self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=logits, num_samples=1), axis=1, name="actions")
                 # Define the log likelihood according to the categorical distribution and also the unmasked version of it
                 # The unmasked version is the one not "filtered" by the targets mask
                 self._log_likelihood, self._log_likelihood_unmasked = PolicyOptimizationModel.get_categorical_log_likelihood(self._targets, logits)
                 # Define the old policy unmasked log-likelihoods as a placeholder with adaptable shape Nx(A) where (A) is the shape of the action space
-                self._old_policies_log_likelihoods_unmasked = tensorflow.placeholder(shape=(None, *self.action_space_shape), dtype=tensorflow.float32, name="old_policy_log_likelihood_unmasked")
+                self._old_policies_log_likelihoods_unmasked = tensorflow.placeholder(shape=(None, *self._action_space_shape), dtype=tensorflow.float32, name="old_policy_log_likelihood_unmasked")
                 # Define the KL divergence on the unmasked log-likelihoods (current policy vs old policy)
                 self._kl_divergence = PolicyOptimizationModel.get_categorical_kl(self._log_likelihood_unmasked, self._old_policies_log_likelihoods_unmasked)
             else:
                 # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape
-                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self.action_space_shape, name="expected_value")
+                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._action_space_shape, name="expected_value")
                 # Define the log standard deviation
-                self._log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self.action_space_shape, dtype=numpy.float32))
+                self._log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._action_space_shape, dtype=numpy.float32))
                 # Define the standard deviation
                 std = tensorflow.exp(self._log_std, name="std")
                 # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
@@ -244,9 +244,9 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
                 # Define the log likelihood according to the gaussian distribution
                 self._log_likelihood = PolicyOptimizationModel.get_gaussian_log_likelihood(self._targets, self._expected_value, self._log_std)
                 # Define the old policy expected value as a placeholder of adaptable shape Nx(A) where (A) is the shape of the action space
-                self._old_policies_expected_values = tensorflow.placeholder(shape=(None, *self.action_space_shape), dtype=tensorflow.float32, name="old_policy_expected_value")
+                self._old_policies_expected_values = tensorflow.placeholder(shape=(None, *self._action_space_shape), dtype=tensorflow.float32, name="old_policy_expected_value")
                 # Define the old policy std as a placeholder of adaptable shape Nx(A) where (A) is the shape of the action space
-                self._old_policies_log_stds = tensorflow.placeholder(shape=(None, *self.action_space_shape), dtype=tensorflow.float32, name="old_policy_log_std")
+                self._old_policies_log_stds = tensorflow.placeholder(shape=(None, *self._action_space_shape), dtype=tensorflow.float32, name="old_policy_log_std")
                 # Define the KL divergence on the properties of both gaussian distributions (current policy vs old policy)
                 self._kl_divergence = PolicyOptimizationModel.get_diagonal_gaussian_kl(self._expected_value, self._log_std, self._old_policies_expected_values, self._old_policies_log_stds)
             # Define the value estimator (a deep MLP)
@@ -261,7 +261,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
             # Define the optimizer for the value stream (actually the MLP optimizer)
             self._value_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._value_stream_loss)
             # Define the advantages as an adaptable vector of floats (they are computed by the MLP and stored in the buffer)
-            # Note: the model get the advantages from the buffer once computed using GAE on the values
+            # Note: the _model get the advantages from the buffer once computed using GAE on the values
             self._advantages = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="advantages")
             # Define the old policy log-likelihood placeholder as a vector of floats
             self._old_policy_log_likelihood = tensorflow.placeholder(shape=(None, ), dtype=tensorflow.float32, name="old_policy_log_likelihood")
@@ -269,7 +269,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
             self._policy_ratio = tensorflow.exp(self._log_likelihood - self._old_policy_log_likelihood, name="policy_ratio")
             # Define the loss as the mean of the rewards multiplied the ratio of the policies
             self._policy_stream_loss = -tensorflow.reduce_mean(self._advantages * self._policy_ratio, name="policy_loss")
-            # Define a flat list of trainable variables under the action scope to use as parameters for the gradient
+            # Define a flat list of trainable variables under the action _scope to use as parameters for the gradient
             actions_parameters = [variable for variable in tensorflow.trainable_variables("actions")]
             # Define the flat gradient for the policy loss optimization
             self._policy_gradient = tensorflow.concat([tensorflow.reshape(parameter, (-1, )) for parameter in tensorflow.gradients(xs=actions_parameters, ys=self._policy_stream_loss)], axis=0)
@@ -284,29 +284,29 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
             splits = tensorflow.split(self._values, [int(numpy.prod(parameter.shape.as_list())) for parameter in actions_parameters])
             new_parameters = [tensorflow.reshape(parameter_new, parameter.shape) for parameter, parameter_new in zip(actions_parameters, splits)]
             self._set_actions_parameters = tensorflow.group([tensorflow.assign(parameter, parameter_new) for parameter, parameter_new in zip(actions_parameters, new_parameters)])
-            # Define the initializer
+            # Define the _initializer
             self.initializer = tensorflow.global_variables_initializer()
 
     def _define_summary(self):
         """
         Overridden method of Model class: check its docstring for further information.
         """
-        with tensorflow.variable_scope(self.scope + "/" + self.name):
-            # Define the summary operation for this graph with losses summaries
+        with tensorflow.variable_scope(self._scope + "/" + self._name):
+            # Define the _summary operation for this graph with losses summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
                                                      tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
 
-    def predict(self,
-                session,
-                observation_current) -> []:
+    def get_best_action(self,
+                        session,
+                        observation_current) -> []:
         """
         Overridden method of Model class: check its docstring for further information.
         """
         # Return a random action sample given the current state and depending on the observation space type
         # Also compute value estimate
-        if self.observation_space_type == SpaceType.discrete:
+        if self._observation_space_type == SpaceType.discrete:
             actions, value, log_likelihood_unmasked = session.run([self._actions, self._value, self._log_likelihood_unmasked],
-                                                                  feed_dict={self._inputs: [numpy.identity(*self.observation_space_shape)[observation_current]]})
+                                                                  feed_dict={self._inputs: [numpy.identity(*self._observation_space_shape)[observation_current]]})
             # Return the predicted action (first one in the distribution) and the estimated value in the shape of a list
             # Also return the log-likelihood unmasked
             return [actions[0], value, log_likelihood_unmasked]
@@ -327,18 +327,18 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         # Unpack the batch in the training arrays for necessary values
         inputs, targets, values, rewards = batch[0], batch[1], batch[2], batch[3]
         # Generate a one-hot encoded version of the inputs if observation space type is discrete
-        if self.observation_space_type == SpaceType.discrete:
+        if self._observation_space_type == SpaceType.discrete:
             inputs_array = numpy.array(inputs).reshape(-1)
-            inputs = numpy.eye(*self.observation_space_shape)[inputs_array]
+            inputs = numpy.eye(*self._observation_space_shape)[inputs_array]
         # Generate a one-hot encoded version of the targets if action space type is discrete
-        if self.action_space_type == SpaceType.discrete:
+        if self._action_space_type == SpaceType.discrete:
             targets_array = numpy.array(targets).reshape(-1)
-            targets = numpy.eye(*self.action_space_shape)[targets_array]
+            targets = numpy.eye(*self._action_space_shape)[targets_array]
 
         # TODO: FINISH HERE, CHANGE NAME VALUES TO SOMETHING APPROPRIATE, finish comments
         # Unpack the additional values in the batch depending on the action space type
 
-        if self.action_space_type == SpaceType.discrete:
+        if self._action_space_type == SpaceType.discrete:
             log_likelihoods_unmasked = batch[4]
             h_x = lambda values: session.run(self._hessian_vector_product,
                                              feed_dict={
@@ -377,14 +377,14 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
         old_params = session.run(self._get_actions_parameters)
 
 
-        # Run the policy optimizer of the model in training mode
+        # Run the policy optimizer of the _model in training mode
         session.run(self._policy_stream_optimizer,
                     feed_dict={
                         self._inputs: inputs,
                         self._targets: targets,
                         self._advantages: values
                     })
-        # Run the value optimizer of the model in training mode for the required amount of steps
+        # Run the value optimizer of the _model in training mode for the required amount of steps
         for _ in range(self._value_steps_for_update):
             session.run(self._value_stream_optimizer,
                         feed_dict={
@@ -392,7 +392,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
                             self._advantages: values,
                             self._rewards: rewards
                         })
-        # Compute the policy loss and value loss of the model after this sequence of training and also compute the summary
+        # Compute the policy loss and value loss of the _model after this sequence of training and also compute the _summary
         policy_loss, value_loss, summary = session.run([self._policy_stream_loss, self._value_stream_loss, self.summary],
                                                        feed_dict={
                                                            self._inputs: inputs,
@@ -400,7 +400,7 @@ class TrustRegionPolicyOptimization(PolicyOptimizationModel):
                                                            self._rewards: rewards,
                                                            self._advantages: values
                                                        })
-        # Return both losses and summary for the update sequence
+        # Return both losses and _summary for the update sequence
         return policy_loss, value_loss, summary
 
     @staticmethod
