@@ -57,13 +57,13 @@ class QLearningExperiment(Experiment):
             # Initialize episode completion flag
             episode_done: bool = False
             # Get the initial state of the episode
-            state_current = self.environment.reset(session)
+            state_current = self._environment.reset(session)
             # Execute actions (one per step) until the episode is completed
             while not episode_done:
                 # Take a random action
-                action: int = self.environment.get_random_action(session)
+                action: int = self._environment.get_random_action(session)
                 # Get the next state with relative reward and completion flag
-                state_next, reward, episode_done = self.environment.step(action, session)
+                state_next, reward, episode_done = self._environment.step(action, session)
                 # For storage purposes, set the state next to none if the episode is completed
                 if episode_done:
                     state_next = None
@@ -94,7 +94,7 @@ class QLearningExperiment(Experiment):
             episode_reward: float = 0
             episode_done: bool = False
             # Get the initial state of the episode
-            state_current = self.environment.reset(session)
+            state_current = self._environment.reset(session)
             # Update the exploration rate at each episode except the first
             if episode > 0:
                 self._exploration_rate = self._explorer.update(self._exploration_rate)
@@ -103,9 +103,9 @@ class QLearningExperiment(Experiment):
                 # Increment the step counter
                 step += 1
                 # Get the action predicted by the model according to the explorer strategy
-                action: int = self._explorer.get_action(self._exploration_rate, self.model, self.environment, session, state_current)[0]
+                action: int = self._explorer.get_action(self._exploration_rate, self.model, self._environment, session, state_current)[0]
                 # Get the next state with relative reward and completion flag
-                state_next, reward, episode_done = self.environment.step(action, session)
+                state_next, reward, episode_done = self._environment.step(action, session)
                 # For storage purposes, set the state next to none if the episode is completed
                 if episode_done:
                     state_next = None
@@ -134,12 +134,12 @@ class QLearningExperiment(Experiment):
                 summary_writer.add_summary(summary, step + start_step)
                 # Render if required
                 if render:
-                    self.environment.render(session)
+                    self._environment.render(session)
         # Save the model
         logger.info("Saving the model...")
         if experiment_number >= 0:
-            model_saver.save(session, save_path + "/" + self.name + "_" + str(experiment_number))
+            model_saver.save(session, save_path + "/" + self._name + "_" + str(experiment_number))
         else:
-            model_saver.save(session, save_path + "/" + self.name)
+            model_saver.save(session, save_path + "/" + self._name)
         # Return the reached step
         return step + start_step

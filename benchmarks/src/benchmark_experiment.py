@@ -45,7 +45,7 @@ class BenchmarkExperiment(Experiment):
             # Initialize episode completion flag
             episode_done: bool = False
             # Get the initial state of the episode
-            state_current = self.environment.reset(logger, session)
+            state_current = self._environment.reset(logger, session)
             # Initialize the step of the episode
             step: int = 0
             # Execute actions until the episode is completed or the maximum length is exceeded
@@ -65,7 +65,7 @@ class BenchmarkExperiment(Experiment):
                episodes: int, session,
                render: bool = False):
         # Choose how to train the agent depending on its type
-        if not isinstance(self.agent, VPGAgent):
+        if not isinstance(self._agent, VPGAgent):
             scores: numpy.ndarray = self._train_temporal_difference_agents(logger, episodes, session, render)
         else:
             scores: numpy.ndarray = self._train_policy_optimization_agents(logger, episodes, session, render)
@@ -87,7 +87,7 @@ class BenchmarkExperiment(Experiment):
             episode_score: float = 0
             episode_done: bool = False
             # Get the initial state of the episode
-            state_current = self.environment.reset(logger, session)
+            state_current = self._environment.reset(logger, session)
             # Initialize the step of the episode
             step: int = 0
             # Execute actions until the episode is completed or the maximum length is exceeded
@@ -101,7 +101,7 @@ class BenchmarkExperiment(Experiment):
                 # Update the current state with the previously next state
                 state_current = state_next
             # Update the agent internal model according to its own logic and only if it's a PO agent
-            self.agent.update(logger, session, episode, episodes, step)
+            self._agent.update(logger, session, episode, episodes, step)
             # Add the episode reward to the list of rewards
             scores[episode] = episode_score
         # Return back the scores array to the train method
@@ -122,7 +122,7 @@ class BenchmarkExperiment(Experiment):
             episode_score: float = 0
             episode_done: bool = False
             # Get the initial state of the episode
-            state_current = self.environment.reset(logger, session)
+            state_current = self._environment.reset(logger, session)
             # Initialize the step of the episode
             step: int = 0
             # Execute actions until the episode is completed or the maximum length is exceeded
@@ -135,7 +135,7 @@ class BenchmarkExperiment(Experiment):
                 if episode_done:
                     state_next = None
                 # Update the agent internal model according to its own logic
-                self.agent.update(logger, session, episode, episodes, step)
+                self._agent.update(logger, session, episode, episodes, step)
                 # Update score for this episode with the given reward
                 episode_score += reward
                 # Update the current state with the previously next state
@@ -156,7 +156,7 @@ class BenchmarkExperiment(Experiment):
             episode_score: float = 0.0
             episode_done: bool = False
             # Get the initial state of the episode
-            state_current = self.environment.reset(logger, session)
+            state_current = self._environment.reset(logger, session)
             # Initialize the step of the episode
             step: int = 0
             # Execute actions until the episode is completed or the maximum length is exceeded

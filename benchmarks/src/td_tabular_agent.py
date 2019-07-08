@@ -57,7 +57,7 @@ class TDTabularAgent(Agent):
                   logger: logging.Logger,
                   scope: str) -> bool:
         # Generate the model and return a flag stating if generation was successful
-        return self.model.generate(logger, scope + "/" + self.name,
+        return self.model.generate(logger, scope + "/" + self._name,
                                    self.interface.observation_space_type, self.interface.observation_space_shape,
                                    self.interface.agent_action_space_type, self.interface.agent_action_space_shape)
 
@@ -117,4 +117,4 @@ class TDTabularAgent(Agent):
     def get_trainable_variables(self,
                                 scope: str):
         # Return the trainable variables of the agent model in the given experiment scope
-        return self.model.get_trainable_variables(scope + "/" + self.name)
+        return self.model.get_trainable_variables(scope + "/" + self._name)

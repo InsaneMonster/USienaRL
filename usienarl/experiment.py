@@ -19,17 +19,18 @@ class Experiment:
                  environment: Environment,
                  agent: Agent,
                  interface: Interface = None):
-        # Define the experiment name
-        self.name: str = name
-        # Define environment, agent and interface attributes
-        self.environment: Environment = environment
-        self.agent: Agent = agent
-        self.interface: Interface = interface
-        # Define experiment internal attributes
+        # Define experiment attributes
+        self._name: str = name
+        self._environment: Environment = environment
+        self._agent: Agent = agent
+        self._interface: Interface = interface
+        # Define empty experiment attributes
         self._agent_saver = None
         self._metagraph_path: str = None
         self._tensorflow_gpu_config = None
         self._current_id: str = None
+        self._trained_steps: int = None
+        self._trained_episodes: int = None
 
     def setup(self,
               summary_path: str, metagraph_path: str,
@@ -45,26 +46,28 @@ class Experiment:
         :return: a boolean equals to True if the setup of the experiment is successful, False otherwise
         """
         # Save current experiment id using name and iteration
-        self._current_id = self.name + "_" + str(iteration) if iteration > -1 else self.name
+        self._current_id = self._name + "_" + str(iteration) if iteration > -1 else self._name
         # Start setup process
         logger.info("Setup of experiment " + self._current_id + "...")
         # Reset the tensorflow graph to a blank new graph
         tensorflow.reset_default_graph()
         # Execute the setup on the environment and on the agent and return if not both of them setup correctly
         logger.info("Environment setup..")
-        if not self.environment.setup(logger):
+        if not self._environment.setup(logger):
             logger.info("Environment setup failed. Cannot setup the experiment!")
             return False
         logger.info("Environment setup is successful!")
-        logger.info("Agent setup..")
-        if not self.agent.setup(logger, self._current_id, summary_path):
+        logger.info("Agent setup...")
+        if not self._agent.setup(logger, self._current_id, summary_path):
             logger.info("Agent setup failed. Cannot setup the experiment!")
             return False
         logger.info("Agent setup is successful!")
         # If setup of both environment and agent is successful, reset internal experiment variables
         self._metagraph_path = metagraph_path
+        self._trained_steps: int = 0
+        self._trained_episodes: int = 0
         # Initialize the agent internal model saver
-        self._agent_saver = tensorflow.train.Saver(self.agent.trainable_variables)
+        self._agent_saver = tensorflow.train.Saver(self._agent.trainable_variables)
         logger.info("Agent internal model will be saved after each train volley")
         logger.info("Agent internal model metagraph save path: " + self._metagraph_path)
         # Initialize tensorflow gpu configuration
@@ -75,10 +78,11 @@ class Experiment:
         logger.info("Experiment setup is successful. Now can conduct the experiment")
         return True
 
-    def _pre_train(self,
-                   logger: logging.Logger,
-                   episodes: int, session,
-                   render: bool = False):
+    def _warmup(self,
+                logger: logging.Logger,
+                episodes: int, episode_length: int,
+                session,
+                render: bool = False):
         """
         Execute a volley of pre-training of the agent on the environment.
         How the pre-training is done depends on the experiment implementation.
@@ -91,12 +95,39 @@ class Experiment:
         :param render: boolean parameter deciding whether or not to render during pre-training
         :return: the float average of the score obtained in the played episodes
         """
-        # Abstract method, definition should be implemented on a child class basis
-        raise NotImplementedError()
+        for episode in range(episodes):
+            # Start the episode
+            episode_rewards: [] = []
+            state_current = self._environment.reset(logger, session)
+            # Execute actions until the episode is completed or the maximum length is exceeded
+            for step in range(episode_length):
+                # Get the action decided by the agent with train policy
+                action = self._agent.act_warmup(logger, session, state_current)
+                # Get the next state with relative reward and completion flag
+                state_next, reward, episode_done = self._environment.step(logger, action, session)
+                # Finish the step and send back information to the agent
+                self._agent.finish_step_warmup(logger, session, state_current, action, reward, state_next,
+                                               step, episode, episodes)
+                # Render if required
+                if render:
+                    self._environment.render(logger, session)
+                # Add the reward to the list of rewards for this episode
+                episode_rewards.append(reward)
+                # Update the current state with the previously next state
+                state_current = state_next
+                # Check if the episode is finished
+                if episode_done:
+                    break
+            # Compute total and average reward over the steps in the episode
+            episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
+            # Finish the episode and send back information to the agent
+            self._agent.finish_episode_warmup(logger, session, episode_total_reward,
+                                              episode, episodes)
 
     def _train(self,
                logger: logging.Logger,
-               episodes: int, session,
+               episodes: int, episode_length: int, episodes_max: int,
+               session,
                render: bool = False):
         """
         Execute a volley of training of the agent on the environment.
@@ -110,44 +141,55 @@ class Experiment:
         :param render: boolean parameter deciding whether or not to render during training
         :return: the float average of the score obtained in the played episodes
         """
-        # Define list of scores
-        scores: numpy.ndarray = numpy.zeros(episodes, dtype=float)
+        # Define arrays of volley rewards
+        volley_average_rewards: numpy.ndarray = numpy.zeros(episodes, dtype=float)
+        volley_total_rewards: numpy.ndarray = numpy.zeros(episodes, dtype=float)
         for episode in range(episodes):
-            # Initialize score and episode completion flag
-            episode_score: float = 0
-            episode_done: bool = False
-            # Get the initial state of the episode
-            state_current = self.environment.reset(logger, session)
-            # Initialize the step of the episode
-            step: int = 0
+            # Start the episode
+            episode_rewards: [] = []
+            state_current = self._environment.reset(logger, session)
             # Execute actions until the episode is completed or the maximum length is exceeded
-            while not episode_done and not step > self._episode_length_max:
-                # Increment the step counter
-                step += 1
-                # Execute a train step
-                # Get the action decided by the agent with pre-train policy
-                action = self.agent.act_train(logger, session, state_current)
+            for step in range(episode_length):
+                # Get the action decided by the agent with train policy
+                action = self._agent.act_train(logger, session, state_current)
                 # Get the next state with relative reward and completion flag
-                state_next, reward, episode_done = self.environment.step(logger, action, session)
+                state_next, reward, episode_done = self._environment.step(logger, action, session)
+                # Finish the step and send back information to the agent
+                self._agent.finish_step_train(logger, session, state_current, action, reward, state_next,
+                                              step, self._trained_steps,
+                                              episode, self._trained_episodes,
+                                              episodes, episodes_max)
                 # Render if required
                 if render:
-                    self.environment.render(logger, session)
-                # Finish the step and send back information to the agent
-                self.agent.finish_step_train(logger, session, state_current, action, reward, state_next)
-                # Update score for this episode with the given reward
-                episode_score += reward
+                    self._environment.render(logger, session)
+                # Add the reward to the list of rewards for this episode
+                episode_rewards.append(reward)
                 # Update the current state with the previously next state
                 state_current = state_next
+                # Increase the number of trained steps
+                self._trained_steps += 1
+                # Check if the episode is finished
+                if episode_done:
+                    break
+            # Compute total and average reward over the steps in the episode
+            episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
+            episode_average_reward: float = numpy.average(numpy.array(episode_rewards))
             # Finish the episode and send back information to the agent
-            self.agent.finish_episode_train(logger, session, episode_reward)
-            # Add the episode reward to the list of rewards
-            scores[episode] = episode_score
-        # Return back the scores array to the train method
-        return scores
+            self._agent.finish_episode_train(logger, session, episode_total_reward,
+                                             episode, self._trained_episodes,
+                                             episodes, episodes_max)
+            # Increase the counter of trained episodes
+            self._trained_episodes += 1
+            # Add the episode rewards to the volley
+            volley_total_rewards[episode] = episode_total_reward
+            volley_average_rewards[episode] = episode_average_reward
+        # Return the average of the total and of the averages over the episodes
+        return numpy.average(volley_total_rewards), numpy.average(volley_average_rewards)
 
     def _inference(self,
                    logger: logging.Logger,
-                   episodes: int, session,
+                   episodes: int, episode_length: int,
+                   session,
                    render: bool = False):
         """
         Execute a volley of inference of the agent on the environment.
@@ -161,11 +203,50 @@ class Experiment:
         :param render: boolean parameter deciding whether or not to render during inference
         :return: the float average of the score obtained in the played episodes
         """
-        # Abstract method, definition should be implemented on a child class basis
-        raise NotImplementedError()
+        # Define arrays of volley rewards
+        volley_average_rewards: numpy.ndarray = numpy.zeros(episodes, dtype=float)
+        volley_total_rewards: numpy.ndarray = numpy.zeros(episodes, dtype=float)
+        for episode in range(episodes):
+            # Start the episode
+            episode_rewards: [] = []
+            state_current = self._environment.reset(logger, session)
+            # Execute actions until the episode is completed or the maximum length is exceeded
+            for step in range(episode_length):
+                # Get the action decided by the agent with train policy
+                observation_current = self._interface.environment_state_to_observation(logger, session, state_current)
+                agent_action = self._agent.act_inference(logger, session, observation_current)
+                # Get the next state with relative reward and completion flag
+                environment_action = self._interface.agent_action_to_environment_action(logger, session, agent_action)
+                state_next, reward, episode_done = self._environment.step(logger, environment_action, session)
+                # Finish the step and send back information to the agent
+                observation_next = self._interface.environment_state_to_observation(logger, session, state_next)
+                self._agent.finish_step_inference(logger, session, observation_current, agent_action, reward, observation_next,
+                                                  step, episode, episodes)
+                # Render if required
+                if render:
+                    self._environment.render(logger, session)
+                # Add the reward to the list of rewards for this episode
+                episode_rewards.append(reward)
+                # Update the current state with the previously next state
+                state_current = state_next
+                # Check if the episode is finished
+                if episode_done:
+                    break
+            # Compute total and average reward over the steps in the episode
+            episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
+            episode_average_reward: float = numpy.average(numpy.array(episode_rewards))
+            # Finish the episode and send back information to the agent
+            self._agent.finish_episode_inference(logger, session, episode_total_reward,
+                                                 episode, episodes)
+            # Add the episode rewards to the volley
+            volley_total_rewards[episode] = episode_total_reward
+            volley_average_rewards[episode] = episode_average_reward
+        # Return the average of the total and of the averages over the episodes
+        return numpy.average(volley_total_rewards), numpy.average(volley_average_rewards)
 
     def conduct(self,
-                training_episodes_per_volley: int, validation_episodes_per_volley: int, max_training_episodes: int,
+                training_episodes_per_volley: int, validation_episodes_per_volley: int,
+                training_episodes_max: int, episode_length_max: int,
                 test_episodes_per_cycle: int, test_cycles: int,
                 logger: logging.Logger,
                 render_during_training: bool = False, render_during_validation: bool = False, render_during_test: bool = False):
@@ -183,7 +264,7 @@ class Experiment:
 
         :param training_episodes_per_volley: the number of training episodes per volley before trying to validate the model
         :param validation_episodes_per_volley: the number of validation episodes per volley after the training in such interval
-        :param max_training_episodes: the maximum number of training episodes allowed at all
+        :param training_episodes_max: the maximum number of training episodes allowed at all
         :param test_episodes_per_cycle: the number of episodes to play for each test cycle after validation has passed
         :param test_cycles: the number of test cycles to execute after validation has passed
         :param logger: the logger used to print the experiment information, warnings and errors
@@ -196,63 +277,86 @@ class Experiment:
         # Define the session
         with tensorflow.Session(config=self._tensorflow_gpu_config) as session:
             # Initialize the environment and the agent
-            self.environment.initialize(logger, session)
-            self.agent.initialize(logger, session)
+            self._environment.initialize(logger, session)
+            self._agent.initialize(logger, session)
             # Execute pre-training if the agent requires pre-training
-            if self.agent.pre_train_episodes > 0:
-                logger.info("Pre-training for " + str(self.agent.pre_train_episodes) + " episodes...")
-                self._pre_train(logger, self.agent.pre_train_episodes, session)
+            if self._agent.warmup_episodes > 0:
+                logger.info("Warming-up for " + str(self._agent.warmup_episodes) + " episodes...")
+                self._warmup(logger,
+                             self._agent.warmup_episodes,
+                             episode_length_max,
+                             session)
             # Execute training until max training episodes number is reached or the validation score is above the threshold
-            while self._train_episodes_counter < max_training_episodes:
+            while self._trained_episodes < training_episodes_max:
                 # Run train for training episodes per volley and get the average score
                 logger.info("Training for " + str(training_episodes_per_volley) + " episodes...")
-                training_score: float = self._train(logger, training_episodes_per_volley, render_during_training)
+                training_total_reward, training_average_reward = self._train(logger,
+                                                                             training_episodes_per_volley,
+                                                                             episode_length_max,
+                                                                             training_episodes_max,
+                                                                             session,
+                                                                             render_during_training)
                 # Print training results
                 logger.info("Training of " + str(training_episodes_per_volley) + " finished with following result:")
-                logger.info("Average score over " + str(training_episodes_per_volley) + " training episodes after " + str(self._train_episodes_counter) + " total training episodes: " + str(training_score))
-                logger.info("Total training steps: " + str(self.agent.train_steps_counter))
-                # Increase training episodes counter
-                self._train_episodes_counter += training_episodes_per_volley
+                logger.info("Average total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(training_total_reward))
+                logger.info("Average scaled reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(training_average_reward))
+                logger.info("Total training steps: " + str(self._trained_steps))
                 # Save the agent internal model at the current step
                 logger.info("Saving the model...")
                 self._agent_saver.save(session, self._metagraph_path + "/" + self._current_id)
                 # Run inference for validation episodes per volley and get the average score
                 logger.info("Validating for " + str(validation_episodes_per_volley) + " episodes...")
-                validation_score: float = self._inference(logger, validation_episodes_per_volley, session, render_during_validation)
+                validation_total_reward, validation_average_reward = self._inference(logger,
+                                                                                     validation_episodes_per_volley,
+                                                                                     episode_length_max,
+                                                                                     session,
+                                                                                     render_during_validation)
                 # Print validation results
                 logger.info("Training of " + str(validation_episodes_per_volley) + " finished with following result:")
-                logger.info("Average score over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._train_episodes_counter) + " total training episodes: " + str(validation_score))
+                logger.info("Average total reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(validation_total_reward))
+                logger.info("Average scaled reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(validation_average_reward))
                 # Check for validation
-                if self._is_validated(self._train_episodes_counter, self.agent.train_steps_counter, validation_score, training_score):
+                if self._is_validated(validation_total_reward, validation_average_reward, training_total_reward, training_average_reward):
                     logger.info("Validation of the model is successful")
                     break
-            # Test the model, getting the average score per test and an array of all tests
-            test_scores: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
-            for test_index in range(test_cycles):
+            # Test the model and get all cycles total and average rewards
+            test_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
+            test_average_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
+            for test in range(test_cycles):
                 # Run inference for test episodes per cycles and get the average score
                 logger.info("Testing for " + str(test_episodes_per_cycle) + " episodes...")
-                score_cycle: float = self._inference(logger, test_episodes_per_cycle, session, render_during_test)
+                cycle_total_reward, cycle_average_reward = self._inference(logger,
+                                                                           test_episodes_per_cycle,
+                                                                           episode_length_max,
+                                                                           session,
+                                                                           render_during_test)
                 # Print validation results
                 logger.info("Testing of " + str(test_episodes_per_cycle) + " finished with following result:")
-                logger.info("Average score over " + str(test_episodes_per_cycle) + " test episodes: " + str(score_cycle))
-                # Insert the score to the array of scores
-                test_scores[test_index] = score_cycle
-            # Get the final average score over all the test and the best score registered among all tests
-            average_test_score: float = numpy.average(test_scores)
-            best_test_score: float = numpy.max(test_scores)
+                logger.info("Average total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(cycle_total_reward))
+                logger.info("Average scaled reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(cycle_average_reward))
+                # Save the rewards
+                test_total_rewards[test] = cycle_total_reward
+                test_average_rewards[test] = cycle_average_reward
+            # Get the average and the best total and average rewards over all cycles
+            average_test_total_reward: float = numpy.average(test_total_rewards)
+            max_test_total_reward: float = numpy.max(test_total_rewards)
+            average_test_average_reward: float = numpy.average(test_average_rewards)
+            max_test_average_reward: float = numpy.max(test_average_rewards)
             # Print final results and outcome of the experiment
-            logger.info("Average test score is " + str(average_test_score) + " with " + str(self._train_episodes_counter) + " training episodes")
-            logger.info("Best average test score over " + str(test_episodes_per_cycle) + " is: " + str(best_test_score))
+            logger.info("Average test total reward is " + str(average_test_total_reward) + " with " + str(self._trained_episodes) + " training episodes")
+            logger.info("Average test scaled reward is " + str(average_test_average_reward) + " with " + str(self._trained_episodes) + " training episodes")
+            logger.info("Best test total reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_total_reward))
+            logger.info("Best test scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_average_reward))
             # Check if the experiment is successful
-            if self._is_successful(self._train_episodes_counter, self.agent.train_steps_counter, average_test_score, best_test_score):
+            if self._is_successful(average_test_total_reward, average_test_average_reward, max_test_total_reward, max_test_average_reward):
                 logger.info("The experiment is successful")
             else:
                 logger.info("The experiment is not successful")
-            return average_test_score, best_test_score, self._train_episodes_counter
+            return average_test_total_reward, max_test_total_reward, average_test_average_reward, max_test_average_reward, self._trained_episodes
 
     def _is_validated(self,
-                      total_training_episodes: int, total_training_steps: int,
-                      average_validation_score: float, average_training_score: float) -> bool:
+                      average_validation_total_reward: float, average_validation_average_reward: float,
+                      average_training_total_reward: float, average_training_average_reward: float) -> bool:
         """
         Check if the experiment is to be considered validated using the given parameters.
 
@@ -266,8 +370,8 @@ class Experiment:
         raise NotImplementedError()
 
     def _is_successful(self,
-                       total_training_episodes: int, total_training_steps: int,
-                       average_test_score: float, best_test_score: float) -> bool:
+                       average_test_total_reward: float, average_test_average_reward: float,
+                       max_test_total_reward: float, max_test_average_reward: float) -> bool:
         """
         Check if the experiment is to be considered successful using the given parameters.
 

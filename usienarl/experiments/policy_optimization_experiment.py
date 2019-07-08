@@ -46,7 +46,7 @@ class PolicyOptimizationExperiment(Experiment):
             episode_reward: float = 0
             episode_done: bool = False
             # Get the initial state of the episode
-            state_current = self.environment.reset(session)
+            state_current = self._environment.reset(session)
             # Execute actions (one per step) until the episode is completed
             while not episode_done:
                 # Increment the step counter
@@ -55,7 +55,7 @@ class PolicyOptimizationExperiment(Experiment):
                 result: [] = self.model.predict(session, state_current)
                 action: int = result[0]
                 # Get the next state with relative reward and completion flag
-                state_next, reward, episode_done = self.environment.step(action, session)
+                state_next, reward, episode_done = self._environment.step(action, session)
                 # Update total reward for this episode
                 episode_reward += reward
                 # Store the properties in the model buffer (current state, action and relative reward then all the content
@@ -69,7 +69,7 @@ class PolicyOptimizationExperiment(Experiment):
                     state_current = state_next
                 # Render if required
                 if render:
-                    self.environment.render(session)
+                    self._environment.render(session)
             # Update the model each defined steps
             if episode % (episodes / self._updates_per_training_interval) == 0 and episode > 0:
                 # Increase the update count
@@ -83,9 +83,9 @@ class PolicyOptimizationExperiment(Experiment):
         logger.info("Executed " + str(update_count) + " updates count in " + str(step) + " steps")
         logger.info("Saving the model...")
         if experiment_number >= 0:
-            model_saver.save(session, save_path + "/" + self.name + "_" + str(experiment_number))
+            model_saver.save(session, save_path + "/" + self._name + "_" + str(experiment_number))
         else:
-            model_saver.save(session, save_path + "/" + self.name)
+            model_saver.save(session, save_path + "/" + self._name)
         # Return the reached step
         return step + start_step
 

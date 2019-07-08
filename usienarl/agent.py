@@ -15,7 +15,7 @@ import tensorflow
 
 # Import required src
 
-from usienarl import Environment, Interface
+from usienarl import SpaceType
 
 
 class Agent:
@@ -70,13 +70,15 @@ class Agent:
     def __init__(self,
                  name: str):
         # Define agent attributes
-        self.name: str = name
+        self._name: str = name
         # Define empty agent attributes
-        self.scope: str = None
-        self.summary_writer = None
+        self._scope: str = None
+        self._summary_writer = None
 
     def setup(self,
               logger: logging.Logger,
+              observation_space_type: SpaceType, observation_space_shape,
+              action_space_type: SpaceType, action_space_shape,
               scope: str, summary_path: str) -> bool:
         """
         Setup the agent for pre-training, training and inference.
@@ -88,41 +90,22 @@ class Agent:
         :param summary_path: the path of the summary writer of the agent
         :return a boolean flag True if setup is successful, False otherwise
         """
-        logger.info("Setup of agent " + self.name + " with scope " + scope + "...")
+        logger.info("Setup of agent " + self._name + " with scope " + scope + "...")
         # Reset agent attributes
-        self.scope = scope
+        self._scope = scope
         # Reset the summary writer
-        self.summary_writer = tensorflow.summary.FileWriter(summary_path, graph=tensorflow.get_default_graph())
+        self._summary_writer = tensorflow.summary.FileWriter(summary_path, graph=tensorflow.get_default_graph())
         logger.info("A Tensorboard summary for the agent will be updated during training of its internal model")
         logger.info("Tensorboard summary path: " + summary_path)
         # Set the interface (using a default pass-through interface if not given a specific one)
         # self.interface = interface if interface is not None else Interface(environment)
         # Try to generate the agent inner model
-        return self._generate(logger, self.scope)
-
-    def act_inference(self,
-                      logger: logging.Logger,
-                      session,
-                      environment_state_current: numpy.ndarray):
-        """
-        Take an action given the current environment state in inference mode (using inference policy, usually the
-        optimal one).
-
-        :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
-        :param environment_state_current: the current state of the environment wrapped in a numpy array (ndarray)
-        :return: the action chosen by the agent
-        """
-        # Get the current agent observation on the environment given the current state
-        observation_current: numpy.ndarray = self.interface.environment_state_to_observation(logger, session, environment_state_current)
-        # Decide which action to take by running the agent decision making process in inference mode
-        agent_action = self._decide_inference(logger, session, observation_current)
-        # Return the respective environment action
-        return self.interface.agent_action_to_environment_action(logger, session, agent_action)
+        return self._generate(logger, observation_space_type, observation_space_shape, action_space_type, action_space_shape)
 
     def _generate(self,
                   logger: logging.Logger,
-                  scope: str) -> bool:
+                  observation_space_type: SpaceType, observation_space_shape,
+                  action_space_type: SpaceType, action_space_shape) -> bool:
         """
         Generate the agent internal model. Used to generate all custom components of the agent.
         It is always called during setup.
@@ -266,7 +249,8 @@ class Agent:
     def finish_episode_warmup(self,
                               logger: logging.Logger,
                               session,
-                              episode_reward: float,
+                              last_step_reward: float,
+                              episode_total_reward: float,
                               warmup_episode_current: int,
                               warmup_episode_volley: int):
         """
@@ -282,7 +266,8 @@ class Agent:
     def finish_episode_train(self,
                              logger: logging.Logger,
                              session,
-                             episode_reward: float,
+                             last_step_reward: float,
+                             episode_total_reward: float,
                              train_episode_current: int, train_episode_absolute: int,
                              train_episode_volley: int, train_episode_total: int):
         """
@@ -298,7 +283,8 @@ class Agent:
     def finish_episode_inference(self,
                                  logger: logging.Logger,
                                  session,
-                                 episode_reward: float,
+                                 last_step_reward: float,
+                                 episode_total_reward: float,
                                  inference_episode_current: int,
                                  inference_episode_volley: int):
         """
@@ -323,11 +309,11 @@ class Agent:
         raise NotImplementedError()
 
     @property
-    def pre_train_episodes(self) -> int:
+    def warmup_episodes(self) -> int:
         """
-        Return the integer number of pre-training episodes required by the agent.
+        Return the integer number of warm-up episodes required by the agent.
 
-        :return: the integer number of pre-training episodes required by the agent internal model
+        :return: the integer number of warm-up episodes required by the agent internal model
         """
         # Abstract property, it should be implemented on a child class basis
         raise NotImplementedError()
