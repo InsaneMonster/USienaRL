@@ -26,11 +26,13 @@ class TDTabularAgent(Agent):
     def __init__(self,
                  name: str,
                  model: Tabular,
-                 exploration_policy: ExplorationPolicy):
+                 exploration_policy: ExplorationPolicy,
+                 batch_size: int = 1):
         # Define tabular agent attributes
         self._model: Tabular = model
         self._exploration_policy: ExplorationPolicy = exploration_policy
         # Define internal agent attributes
+        self._batch_size: int = batch_size
         self._current_absolute_errors = None
         self._current_loss = None
         # Generate base agent
@@ -115,6 +117,12 @@ class TDTabularAgent(Agent):
                             train_episode_volley: int, train_episode_total: int):
         # Save the current step in the buffer
         self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next)
+        # Update the model and save current loss and absolute errors
+        summary, self._current_loss, self._current_absolute_errors = self._model.update(session, self._model.buffer.get(self._batch_size))
+        # Update the buffer with the computed absolute error
+        self._model.buffer.update(self._current_absolute_errors)
+        # Update the summary at the absolute current step
+        self._summary_writer.add_summary(summary, train_step_absolute)
 
     def complete_step_inference(self,
                                 logger: logging.Logger,

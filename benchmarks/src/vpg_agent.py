@@ -80,7 +80,7 @@ class VPGAgent(Agent):
                   interface: Interface,
                   agent_observation_current):
         # If there is no exploration policy just use the model best prediction (it is still inherently exploring)
-        best_action = self._model.get_best_action(session, agent_observation_current)
+        best_action, self._current_value_estimate = self._model.get_best_action(session, agent_observation_current)
         # Use the given epsilon greedy model otherwise
         # Note: epsilon greedy just requires the best action to be supplied by the model
         if self._exploration_policy is not None:
@@ -95,7 +95,7 @@ class VPGAgent(Agent):
                       session,
                       interface: Interface,
                       agent_observation_current):
-        # Predict the action with the _model
+        # Predict the action with the model
         action, _ = self._model.get_best_action(session, agent_observation_current)
         # Return the predicted action
         return action
@@ -163,7 +163,7 @@ class VPGAgent(Agent):
         if train_episode_current % (train_episode_volley / self.updates_per_training_volley) == 0 and train_episode_current > 0:
             # Execute the update and store policy and value loss
             summary, self._current_policy_loss, self._current_value_loss = self._model.update(session, self._model.buffer.get())
-            # Update the _summary at the absolute current step
+            # Update the summary at the absolute current step
             self._summary_writer.add_summary(summary, train_step_absolute)
 
     def complete_episode_inference(self,
