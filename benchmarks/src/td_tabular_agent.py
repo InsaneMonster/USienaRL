@@ -13,7 +13,7 @@ import logging
 
 # Import required src
 
-from usienarl import Agent, ExplorationPolicy, SpaceType
+from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
 from usienarl.models.temporal_difference import Tabular
 
 
@@ -62,13 +62,17 @@ class TDTabularAgent(Agent):
     def act_warmup(self,
                    logger: logging.Logger,
                    session,
+                   interface: Interface,
                    agent_observation_current):
         # Act randomly
-        action = self.env
+        action = interface.get_random_agent_action(logger, session)
+        # Return the random action
+        return action
 
     def act_train(self,
                   logger: logging.Logger,
                   session,
+                  interface: Interface,
                   agent_observation_current):
         # Get all actions and the best action predicted by the model
         best_action, all_actions = self._model.get_best_action_and_all_actions(session, agent_observation_current)
@@ -80,6 +84,7 @@ class TDTabularAgent(Agent):
     def act_inference(self,
                       logger: logging.Logger,
                       session,
+                      interface: Interface,
                       agent_observation_current):
         # Act with the best policy according to the model
         action = self._model.get_best_action(session, agent_observation_current)

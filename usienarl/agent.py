@@ -14,7 +14,7 @@ import tensorflow
 
 # Import required src
 
-from usienarl import SpaceType
+from usienarl import Interface, SpaceType
 
 
 class Agent:
@@ -133,6 +133,7 @@ class Agent:
     def act_warmup(self,
                    logger: logging.Logger,
                    session,
+                   interface: Interface,
                    agent_observation_current):
         """
         Take an action given the current agent observation in _warmup mode. Usually it uses a random policy.
@@ -148,6 +149,7 @@ class Agent:
     def act_train(self,
                   logger: logging.Logger,
                   session,
+                  interface: Interface,
                   agent_observation_current):
         """
         Take an action given the current agent observation in _warmup mode. Usually it uses an exploring policy.
@@ -163,6 +165,7 @@ class Agent:
     def act_inference(self,
                       logger: logging.Logger,
                       session,
+                      interface: Interface,
                       agent_observation_current):
         """
         Take an action given the current agent observation in _warmup mode. Usually it uses the best possible policy.

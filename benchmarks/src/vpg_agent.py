@@ -13,7 +13,7 @@ import logging
 
 # Import required src
 
-from usienarl import Agent, SpaceType
+from usienarl import Agent, Interface, SpaceType
 from usienarl.models.policy_optimization import VanillaPolicyGradient
 
 
@@ -60,12 +60,14 @@ class VPGAgent(Agent):
     def act_warmup(self,
                    logger: logging.Logger,
                    session,
+                   interface: Interface,
                    agent_observation_current):
         pass
 
     def act_train(self,
                   logger: logging.Logger,
                   session,
+                  interface: Interface,
                   agent_observation_current):
         # Predict the action since the _model is inherently exploring
         # Also store the current value estimate to feed the buffer later-on
@@ -76,6 +78,7 @@ class VPGAgent(Agent):
     def act_inference(self,
                       logger: logging.Logger,
                       session,
+                      interface: Interface,
                       agent_observation_current):
         # Predict the action with the _model
         action, _ = self._model.get_best_action(session, agent_observation_current)
