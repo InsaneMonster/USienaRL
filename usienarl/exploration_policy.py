@@ -4,7 +4,7 @@ import logging
 
 # Import required src
 
-from usienarl import SpaceType
+from usienarl import Interface, SpaceType
 
 
 class ExplorationPolicy:
@@ -66,12 +66,16 @@ class ExplorationPolicy:
         raise NotImplementedError()
 
     def act(self,
+            logger: logging.Logger,
             session,
+            interface: Interface,
             all_actions, best_action):
         """
         Act according to the model actions and/or predicted action.
 
+        :param logger: the logger used to print the exploration policy information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent using the exploration policy and the environment
         :param all_actions: all the action values predicted by the model
         :param best_action: the best (usually highest) action value predicted by the model
         """
@@ -79,10 +83,12 @@ class ExplorationPolicy:
         raise NotImplementedError()
 
     def update(self,
+               logger: logging.Logger,
                session):
         """
         Update the exploration policy, usually changing the exploration rate.
 
+        :param logger: the logger used to print the exploration policy information, warnings and errors
         :param session: the session of tensorflow currently running, if any
         """
         raise NotImplementedError()

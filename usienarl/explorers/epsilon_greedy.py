@@ -1,11 +1,11 @@
 # Import packages
 
 import logging
-import numpy
+import random
 
 # Import required src
 
-from usienarl import ExplorationPolicy, SpaceType
+from usienarl import ExplorationPolicy, Interface, SpaceType
 
 
 class EpsilonGreedyExplorer(ExplorationPolicy):
@@ -26,26 +26,32 @@ class EpsilonGreedyExplorer(ExplorationPolicy):
         super().__init__()
         # Define the types of allowed action space types
         self._supported_action_space_types.append(SpaceType.discrete)
+        self._supported_action_space_types.append(SpaceType.continuous)
 
     def _define(self):
         pass
 
-    def initialize(self, logger: logging.Logger, session):
+    def initialize(self,
+                   logger: logging.Logger,
+                   session):
         # Reset exploration rate to its starting value (the max)
         self._exploration_rate = self._exploration_rate_max
 
     def act(self,
+            logger: logging.Logger,
             session,
+            interface: Interface,
             all_actions, best_action):
-        # TODO: add support for continuous action spaces
-        # Choose an action according to the epsilon greedy approach: best action or random action at random
-        if self._exploration_rate > 0 and numpy.random.rand(1) < self._exploration_rate:
-            action = numpy.random.randint(*self._agent_action_space_shape)
+        # Choose an action according to the epsilon greedy approach: best action or random action
+        if self._exploration_rate > 0 and random.uniform(0, 1.0) < self._exploration_rate:
+            action = interface.get_random_agent_action(logger, session)
         else:
             action = best_action
         return action
 
-    def update(self, session):
+    def update(self,
+               logger: logging.Logger,
+               session):
         # Decrease the exploration rate by its decay value
         self._exploration_rate = max(self._exploration_rate_min, self._exploration_rate - self._exploration_rate_decay)
 

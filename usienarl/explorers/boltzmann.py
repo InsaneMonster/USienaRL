@@ -5,7 +5,7 @@ import numpy
 
 # Import required src
 
-from usienarl import ExplorationPolicy, SpaceType
+from usienarl import ExplorationPolicy, Interface, SpaceType
 
 
 class BoltzmannExplorer(ExplorationPolicy):
@@ -35,7 +35,9 @@ class BoltzmannExplorer(ExplorationPolicy):
         self._temperature = self._temperature_max
 
     def act(self,
+            logger: logging.Logger,
             session,
+            interface: Interface,
             all_actions, best_action):
         # Act according to boltzmann approach: get the softmax over all the actions predicted by the model
         output = self._softmax(all_actions / self._temperature)
@@ -45,6 +47,7 @@ class BoltzmannExplorer(ExplorationPolicy):
         return numpy.argmax(output[0] == action_value)
 
     def update(self,
+               logger: logging.Logger,
                session):
         # Decrease the exploration rate by its decay value
         self._temperature = max(self._temperature_min, self._temperature - self._temperature_decay)
