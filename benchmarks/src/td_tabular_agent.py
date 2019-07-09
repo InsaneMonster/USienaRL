@@ -39,13 +39,13 @@ class TDTabularAgent(Agent):
     def _generate(self,
                   logger: logging.Logger,
                   observation_space_type: SpaceType, observation_space_shape,
-                  action_space_type: SpaceType, action_space_shape) -> bool:
+                  agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
         # Generate the exploration policy and check if it's successful, stop if not successful
-        if self._exploration_policy.generate(logger, action_space_type, action_space_shape):
+        if self._exploration_policy.generate(logger, agent_action_space_type, agent_action_space_shape):
             # Generate the _model and return a flag stating if generation was successful
             return self._model.generate(logger, self._scope + "/" + self._name,
                                         observation_space_type, observation_space_shape,
-                                        action_space_type, action_space_shape)
+                                        agent_action_space_type, agent_action_space_shape)
         return False
 
     def initialize(self,
@@ -77,7 +77,7 @@ class TDTabularAgent(Agent):
         # Get all actions and the best action predicted by the model
         best_action, all_actions = self._model.get_best_action_and_all_actions(session, agent_observation_current)
         # Act according to the exploration policy
-        action = self._exploration_policy.act(session, all_actions, best_action)
+        action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
         # Return the exploration action
         return action
 
@@ -145,7 +145,8 @@ class TDTabularAgent(Agent):
                                train_step_absolute: int,
                                train_episode_current: int, train_episode_absolute: int,
                                train_episode_volley: int, train_episode_total: int):
-        pass
+        # Update the exploration policy
+        self._exploration_policy.update(logger, session)
 
     def complete_episode_inference(self,
                                    logger: logging.Logger,

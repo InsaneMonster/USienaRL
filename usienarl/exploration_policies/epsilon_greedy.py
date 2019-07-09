@@ -8,7 +8,7 @@ import random
 from usienarl import ExplorationPolicy, Interface, SpaceType
 
 
-class EpsilonGreedyExplorer(ExplorationPolicy):
+class EpsilonGreedyExplorationPolicy(ExplorationPolicy):
     """
     TODO: summary
     """

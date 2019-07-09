@@ -19,9 +19,9 @@ from usienarl.models.temporal_difference import DQN, DoubleDQN, DuelingDoubleDQN
 # Import usienarl memories
 
 from usienarl.memories import ExperienceReplay, PrioritizedExperienceReplay
-# Import usienarl explorers
+# Import usienarl exploration_policies
 
-from usienarl.explorers import EpsilonGreedyExplorer, BoltzmannExplorer
+from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy, BoltzmannExplorationPolicy
 
 # Import usienarl policy optimization models
 
@@ -61,22 +61,22 @@ def _define_dddqn_model(config: Config) -> DuelingDoubleDQN:
     return DuelingDoubleDQN("dddqn", learning_rate, discount_factor, config, weight_copy_step_interval)
 
 
-def _define_epsilon_greedy_explorer() -> EpsilonGreedyExplorer:
+def _define_epsilon_greedy_explorer() -> EpsilonGreedyExplorationPolicy:
     # Define attributes
     exploration_rate_start_value: float = 1.0
     exploration_rate_end_value: float = 0.1
     exploration_rate_value_decay: float = 0.001
     # Return the explorer
-    return EpsilonGreedyExplorer(exploration_rate_start_value, exploration_rate_end_value, exploration_rate_value_decay)
+    return EpsilonGreedyExplorationPolicy(exploration_rate_start_value, exploration_rate_end_value, exploration_rate_value_decay)
 
 
-def _define_boltzmann_explorer() -> BoltzmannExplorer:
+def _define_boltzmann_explorer() -> BoltzmannExplorationPolicy:
     # Define attributes
     exploration_rate_start_value: float = 1.0
     exploration_rate_end_value: float = 0.1
     exploration_rate_value_decay: float = 0.001
     # Return the explorer
-    return BoltzmannExplorer(exploration_rate_start_value, exploration_rate_end_value, exploration_rate_value_decay)
+    return BoltzmannExplorationPolicy(exploration_rate_start_value, exploration_rate_end_value, exploration_rate_value_decay)
 
 
 def _define_experience_replay_memory() -> ExperienceReplay:
@@ -168,9 +168,9 @@ if __name__ == "__main__":
     model_dqn: DQN = _define_dqn_model(q_learning_nn_config)
     model_ddqn: DoubleDQN = _define_ddqn_model(q_learning_nn_config)
     model_dddqn: DuelingDoubleDQN = _define_dddqn_model(q_learning_nn_config)
-    # Define explorers
-    epsilon_greedy_explorer: EpsilonGreedyExplorer = _define_epsilon_greedy_explorer()
-    boltzmann_explorer: BoltzmannExplorer = _define_boltzmann_explorer()
+    # Define exploration_policies
+    epsilon_greedy_explorer: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_explorer()
+    boltzmann_explorer: BoltzmannExplorationPolicy = _define_boltzmann_explorer()
     # Define memories
     experience_replay: ExperienceReplay = _define_experience_replay_memory()
     prioritized_experience_replay: PrioritizedExperienceReplay = _define_prioritized_experience_replay_memory()

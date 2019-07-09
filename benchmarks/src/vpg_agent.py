@@ -15,6 +15,7 @@ import logging
 
 from usienarl import Agent, Interface, SpaceType
 from usienarl.models.policy_optimization import VanillaPolicyGradient
+from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy
 
 
 class VPGAgent(Agent):
@@ -26,11 +27,14 @@ class VPGAgent(Agent):
     def __init__(self,
                  name: str,
                  model: VanillaPolicyGradient,
-                 updates_per_training_volley: int):
+                 updates_per_training_volley: int,
+                 epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = None):
         # Define VPG agent attributes
         self.updates_per_training_volley: int = updates_per_training_volley
-        # Define tensorflow _model
+        # Define tensorflow model
         self._model: VanillaPolicyGradient = model
+        # Define epsilon greedy exploration policy, if any
+        self._exploration_policy: EpsilonGreedyExplorationPolicy = epsilon_greedy_exploration_policy
         # Define internal agent attributes
         self._current_value_estimate = None
         self._current_policy_loss = None
@@ -41,11 +45,17 @@ class VPGAgent(Agent):
     def _generate(self,
                   logger: logging.Logger,
                   observation_space_type: SpaceType, observation_space_shape,
-                  action_space_type: SpaceType, action_space_shape) -> bool:
-        # Generate the _model and return a flag stating if generation was successful
-        return self._model.generate(logger, self._scope + "/" + self._name,
-                                    observation_space_type, observation_space_shape,
-                                    action_space_type, action_space_shape)
+                  agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
+        # Generate the model and check if it's successful, stop if not successful
+        if self._model.generate(logger, self._scope + "/" + self._name,
+                                observation_space_type, observation_space_shape,
+                                agent_action_space_type, agent_action_space_shape):
+            # Generate the exploration policy, if any, and return a flag stating is generation is successful
+            if self._exploration_policy is None:
+                return True
+            else:
+                return self._exploration_policy.generate(logger, agent_action_space_type, agent_action_space_shape)
+        return False
 
     def initialize(self,
                    logger: logging.Logger,
@@ -69,10 +79,15 @@ class VPGAgent(Agent):
                   session,
                   interface: Interface,
                   agent_observation_current):
-        # Predict the action since the _model is inherently exploring
-        # Also store the current value estimate to feed the buffer later-on
-        action, self._current_value_estimate = self._model.get_best_action(session, agent_observation_current)
-        # Return the predicted action
+        # If there is no exploration policy just use the model best prediction (it is still inherently exploring)
+        best_action = self._model.get_best_action(session, agent_observation_current)
+        # Use the given epsilon greedy model otherwise
+        # Note: epsilon greedy just requires the best action to be supplied by the model
+        if self._exploration_policy is not None:
+            action = self._exploration_policy.act(logger, session, interface, None, best_action)
+        else:
+            action = best_action
+        # Return the exploration action
         return action
 
     def act_inference(self,
@@ -141,6 +156,9 @@ class VPGAgent(Agent):
                                train_episode_volley: int, train_episode_total: int):
         # Update the buffer at the end of trajectory
         self._model.buffer.finish_path(last_step_reward)
+        # Update exploration policy, if any
+        if self._exploration_policy is not None:
+            self._exploration_policy.update(logger, session)
         # Execute update only after a certain number of trajectories each time
         if train_episode_current % (train_episode_volley / self.updates_per_training_volley) == 0 and train_episode_current > 0:
             # Execute the update and store policy and value loss

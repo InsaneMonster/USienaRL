@@ -8,7 +8,7 @@ import numpy
 from usienarl import ExplorationPolicy, Interface, SpaceType
 
 
-class BoltzmannExplorer(ExplorationPolicy):
+class BoltzmannExplorationPolicy(ExplorationPolicy):
     """
     TODO: summary
     """
