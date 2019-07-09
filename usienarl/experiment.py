@@ -106,7 +106,7 @@ class Experiment:
             for step in range(episode_length):
                 # Get the action decided by the agent with train policy
                 observation_current = self._interface.environment_state_to_observation(logger, session, state_current)
-                agent_action = self._agent.act_warmup(logger, session, observation_current)
+                agent_action = self._agent.act_warmup(logger, session, self._interface, observation_current)
                 # Get the next state with relative reward and completion flag
                 environment_action = self._interface.agent_action_to_environment_action(logger, session, agent_action)
                 state_next, reward, episode_done = self._environment.step(logger, environment_action, session)
@@ -163,7 +163,7 @@ class Experiment:
             for step in range(episode_length):
                 # Get the action decided by the agent with train policy
                 observation_current = self._interface.environment_state_to_observation(logger, session, state_current)
-                agent_action = self._agent.act_train(logger, session, observation_current)
+                agent_action = self._agent.act_train(logger, session, self._interface, observation_current)
                 # Get the next state with relative reward and completion flag
                 environment_action = self._interface.agent_action_to_environment_action(logger, session, agent_action)
                 state_next, reward, episode_done = self._environment.step(logger, environment_action, session)
@@ -234,7 +234,7 @@ class Experiment:
             for step in range(episode_length):
                 # Get the action decided by the agent with train policy
                 observation_current = self._interface.environment_state_to_observation(logger, session, state_current)
-                agent_action = self._agent.act_inference(logger, session, observation_current)
+                agent_action = self._agent.act_inference(logger, session, self._interface, observation_current)
                 # Get the next state with relative reward and completion flag
                 environment_action = self._interface.agent_action_to_environment_action(logger, session, agent_action)
                 state_next, reward, episode_done = self._environment.step(logger, environment_action, session)
