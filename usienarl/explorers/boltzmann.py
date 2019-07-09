@@ -1,41 +1,53 @@
 # Import packages
 
+import logging
 import numpy
 
 # Import required src
 
-from usienarl import Environment, ExplorationPolicy
-from usienarl.models import TemporalDifferenceModel
+from usienarl import ExplorationPolicy, SpaceType
 
 
 class BoltzmannExplorer(ExplorationPolicy):
     """
-    Boltzmann explorer using the _model output to compute a probability distribution of the best state to visit.
-
-    An output value from the predicted one by the _model at the current state is used, and the randomness follows a
-    distribution which is defined by the softmax of the same output values w.r.t. the current exploration rate value.
+    TODO: summary
     """
 
     def __init__(self,
-                 exploration_rate_max: float, exploration_rate_min: float,
-                 exploration_rate_decay: float):
+                 temperature_max: float, temperature_min: float,
+                 temperature_decay: float):
+        # Define boltzmann exploration policy attributes
+        self._temperature_max: float = temperature_max
+        self._temperature_min: float = temperature_min
+        self._temperature_decay: float = temperature_decay
+        # Define epsilon-greedy empty exploration policy attributes
+        self._temperature: float = None
         # Generate the base explorer
-        super().__init__(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
+        super().__init__()
+        # Define the types of allowed action space types
+        self._supported_action_space_types.append(SpaceType.discrete)
+
+    def _define(self):
+        pass
+
+    def initialize(self, logger: logging.Logger, session):
+        # Reset temperature to its starting value (the max)
+        self._temperature = self._temperature_max
 
     def act(self,
-            exploration_rate_current_value: float,
-            model: TemporalDifferenceModel, environment: Environment, session, observation_current: int) -> []:
-        """
-        Overridden method of Explorer class: check its docstring for further information.
-        """
-        # Choose an action according to the boltzmann approach
-        # Get the _model output and execute softmax on all the array components
-        output = model.get_output(session, observation_current)
-        output = self._softmax(output / exploration_rate_current_value)
+            session,
+            all_actions, best_action):
+        # Act according to boltzmann approach: get the softmax over all the actions predicted by the model
+        output = self._softmax(all_actions / self._temperature)
         # Get a random action value (random output) using the softmax as probability distribution
         action_value = numpy.random.choice(output[0], p=output[0])
         # Return the chose action as the index of such chosen action value
-        return [numpy.argmax(output[0] == action_value)]
+        return numpy.argmax(output[0] == action_value)
+
+    def update(self,
+               session):
+        # Decrease the exploration rate by its decay value
+        self._temperature = max(self._temperature_min, self._temperature - self._temperature_decay)
 
     @staticmethod
     def _softmax(array):

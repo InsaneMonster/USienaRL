@@ -1,34 +1,51 @@
 # Import packages
 
+import logging
 import numpy
 
 # Import required src
 
-from usienarl import Environment, ExplorationPolicy
-from usienarl.models import TemporalDifferenceModel
+from usienarl import ExplorationPolicy, SpaceType
 
 
 class EpsilonGreedyExplorer(ExplorationPolicy):
     """
-    Simple epsilon greedy explorer. It choose a random state if a random number in the interval [0, 1] is
-    inferior to the current value of the exploration rate and such rate is also greater than zero.
+    TODO: summary
     """
 
     def __init__(self,
                  exploration_rate_max: float, exploration_rate_min: float,
                  exploration_rate_decay: float):
-        # Generate the base explorer
-        super().__init__(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
+        # Define epsilon-greedy exploration policy attributes
+        self._exploration_rate_max: float = exploration_rate_max
+        self._exploration_rate_min: float = exploration_rate_min
+        self._exploration_rate_decay: float = exploration_rate_decay
+        # Define epsilon-greedy empty exploration policy attributes
+        self._exploration_rate: float = None
+        # Generate the base exploration policy
+        super().__init__()
+        # Define the types of allowed action space types
+        self._supported_action_space_types.append(SpaceType.discrete)
+
+    def _define(self):
+        pass
+
+    def initialize(self, logger: logging.Logger, session):
+        # Reset exploration rate to its starting value (the max)
+        self._exploration_rate = self._exploration_rate_max
 
     def act(self,
-            exploration_rate_current_value: float,
-            model: TemporalDifferenceModel, environment: Environment, session, observation_current: int) -> []:
-        """
-        Overridden method of Explorer class: check its docstring for further information.
-        """
-        # Choose an action according to the epsilon greedy approach
-        if exploration_rate_current_value > 0 and numpy.random.rand(1) < exploration_rate_current_value:
-            action = environment.get_random_action()
+            session,
+            all_actions, best_action):
+        # TODO: add support for continuous action spaces
+        # Choose an action according to the epsilon greedy approach: best action or random action at random
+        if self._exploration_rate > 0 and numpy.random.rand(1) < self._exploration_rate:
+            action = numpy.random.randint(*self._agent_action_space_shape)
         else:
-            action = model.get_best_action(session, observation_current)[0]
-        return [action]
+            action = best_action
+        return action
+
+    def update(self, session):
+        # Decrease the exploration rate by its decay value
+        self._exploration_rate = max(self._exploration_rate_min, self._exploration_rate - self._exploration_rate_decay)
+
