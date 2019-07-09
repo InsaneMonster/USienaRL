@@ -24,9 +24,9 @@ class VPGAgent(Agent):
     """
 
     def __init__(self,
+                 name: str,
                  model: VanillaPolicyGradient,
-                 updates_per_training_volley: int,
-                 name: str):
+                 updates_per_training_volley: int):
         # Define VPG agent attributes
         self.updates_per_training_volley: int = updates_per_training_volley
         # Define tensorflow _model
@@ -138,7 +138,7 @@ class VPGAgent(Agent):
                                train_episode_volley: int, train_episode_total: int):
         # Update the buffer at the end of trajectory
         self._model.buffer.finish_path(last_step_reward)
-        # Execute update only after a certain number of episodes
+        # Execute update only after a certain number of trajectories each time
         if train_episode_current % (train_episode_volley / self.updates_per_training_volley) == 0 and train_episode_current > 0:
             # Execute the update and store policy and value loss
             summary, self._current_policy_loss, self._current_value_loss = self._model.update(session, self._model.buffer.get())
@@ -161,6 +161,7 @@ class VPGAgent(Agent):
 
     @property
     def warmup_episodes(self) -> int:
+        # Return the amount of warmup episodes required by the model
         return self._model.warmup_episodes
 
 

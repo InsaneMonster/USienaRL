@@ -20,14 +20,13 @@ from usienarl.models.temporal_difference import Tabular
 class TDTabularAgent(Agent):
     """
     TODO: summary
-    TODO: finish methods
 
     """
 
     def __init__(self,
+                 name: str,
                  model: Tabular,
-                 exploration_policy: ExplorationPolicy,
-                 name: str):
+                 exploration_policy: ExplorationPolicy):
         # Define tabular agent attributes
         self._model: Tabular = model
         self._exploration_policy: ExplorationPolicy = exploration_policy
@@ -64,19 +63,28 @@ class TDTabularAgent(Agent):
                    logger: logging.Logger,
                    session,
                    agent_observation_current):
-        pass
+        # Act randomly
+        action = self.env
 
     def act_train(self,
                   logger: logging.Logger,
                   session,
                   agent_observation_current):
-        pass
+        # Get all actions and the best action predicted by the model
+        best_action, all_actions = self._model.get_best_action_and_all_actions(session, agent_observation_current)
+        # Act according to the exploration policy
+        action = self._exploration_policy.act(session, all_actions, best_action)
+        # Return the exploration action
+        return action
 
     def act_inference(self,
                       logger: logging.Logger,
                       session,
                       agent_observation_current):
-        pass
+        # Act with the best policy according to the model
+        action = self._model.get_best_action(session, agent_observation_current)
+        # Return the predicted action
+        return action
 
     def complete_step_warmup(self,
                              logger: logging.Logger,
@@ -150,4 +158,5 @@ class TDTabularAgent(Agent):
 
     @property
     def warmup_episodes(self) -> int:
+        # Return the amount of warmup episodes required by the model
         return self._model.warmup_episodes
