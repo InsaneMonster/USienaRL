@@ -6,7 +6,7 @@ import enum
 
 # Import required src
 
-from usienarl import SpaceType, Model
+from usienarl import Model, SpaceType, Config
 from usienarl.libs import SumTree
 
 
@@ -140,16 +140,58 @@ class UpdateRule(enum.Enum):
     expected_sarsa = 2
 
 
-class Tabular(Model):
+class Estimator:
     """
-    Tabular temporal difference _model. The weights of the _model are the entries of the table and the outputs are computed by
-    multiplication of this matrix elements by the inputs.
+    Estimator defining the real DDQN _model. It is used to define two identical models: target network and q-network.
 
-    It can be updated with Q-Learning update rule or SARSA update rule with respect to the Bellman equation. By default
-    it uses Q-Learning.
+    It is generated given the size of the observation and action spaces and the hidden layer config defining the
+    hidden layers of the DDQN.
+    """
+
+    def __init__(self,
+                 scope: str,
+                 observation_space_shape, action_space_shape,
+                 hidden_layers_config: Config):
+        self.scope = scope
+        with tensorflow.variable_scope(self.scope):
+            # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
+            self.inputs = tensorflow.placeholder(shape=[None, *observation_space_shape], dtype=tensorflow.float32, name="inputs")
+            # Define the estimator network hidden layers from the config
+            hidden_layers_output = hidden_layers_config.apply_hidden_layers(self.inputs)
+            # Define outputs as an array of neurons of size NxA and with linear activation functions
+            # Define the targets for learning with the same NxA adaptable size
+            # Note: N is the number of examples and A the size of the action space (DDQN only supports discrete actions spaces)
+            self.outputs = tensorflow.layers.dense(hidden_layers_output, *action_space_shape, name="outputs")
+            self.targets = tensorflow.placeholder(shape=[None, *action_space_shape], dtype=tensorflow.float32, name="targets")
+            # Define the weights of the targets during the update process (e.g. the importance sampling weights)
+            self.loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
+            # Define the absolute error
+            self.absolute_error = tensorflow.abs(self.targets - self.outputs, name="absolute_error")
+            # Define the estimator loss
+            self.loss = tensorflow.reduce_mean(self.loss_weights * tensorflow.squared_difference(self.targets, self.outputs), name="loss")
+            # Define the estimator weight parameters
+            self.weight_parameters = [variable for variable
+                                      in tensorflow.trainable_variables()
+                                      if variable.name.startswith(self.scope)]
+            self.weight_parameters = sorted(self.weight_parameters, key=lambda parameter: parameter.name)
+
+
+class DoubleDeepNN(Model):
+    """
+    DDQN (Double Deep Q-Network) _model. The _model is a deep neural network which hidden layers can be defined by a config
+    parameter. It uses a target network and a q-network to correctly evaluate the expected future reward in order
+    to stabilize learning.
+
+    In order to synchronize the target network and the q-network, every some interval steps the weight have to be copied
+    from the q-network to the target network.
+
+    It is further enhanced by the update process of the q-value. In the DDQN the q-network estimates the outputs given
+    the current state, but the best predicted action (the index of the best predicted output) is chosen by the target
+    network.
 
     Supported observation spaces:
         - discrete
+        - continuous
 
     Supported action spaces:
         - discrete
@@ -161,58 +203,69 @@ class Tabular(Model):
                  buffer_capacity: int,
                  minimum_sample_probability: float, random_sample_trade_off: float,
                  importance_sampling_value: float, importance_sampling_value_increment: float,
+                 hidden_layers_config: Config,
                  update_rule: UpdateRule = UpdateRule.q_learning):
-        # Define tabular model attributes
+        # Define deep-nn model attributes
         self.learning_rate: float = learning_rate
         self.discount_factor: float = discount_factor
-        # Define internal tabular model attributes
+        # Define internal deep-nn model attributes
         self._update_rule: UpdateRule = update_rule
         self._buffer_capacity: int = buffer_capacity
         self._minimum_sample_probability: float = minimum_sample_probability
         self._random_sample_trade_off: float = random_sample_trade_off
         self._importance_sampling_value: float = importance_sampling_value
         self._importance_sampling_value_increment: float = importance_sampling_value_increment
-        # Define tabular model empty attributes
+        self._hidden_layers_config: Config = hidden_layers_config
+        # Define deep-nn model empty attributes
         self.buffer: Buffer = None
-        # Define internal tabular model empty attributes
-        self._inputs = None
-        self._outputs = None
-        self._table = None
+        # Define internal deep-nn model empty attributes
+        self._target_network: Estimator = None
+        self._main_network: Estimator = None
+        self._target_network_inputs = None
+        self._target_network_outputs = None
+        self._main_network_inputs = None
+        self._main_network_outputs = None
         self._targets = None
         self._loss_weights = None
         self._absolute_error = None
         self._loss = None
         self._optimizer = None
+        self._weight_copier = None
         # Generate the base model
-        super(Tabular, self).__init__(name)
+        super(DoubleDeepNN, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
+        self._supported_observation_space_types.append(SpaceType.continuous)
         self._supported_action_space_types.append(SpaceType.discrete)
 
     def _define_graph(self):
-        # Set the buffer for the tabular temporal difference algorithm
-        self.buffer = Buffer(self._buffer_capacity, self._minimum_sample_probability, self._random_sample_trade_off, self._importance_sampling_value, self._importance_sampling_value_increment)
-        # Define the tensorflow _model
-        with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define inputs of the _model as a float adaptable array with size Nx(S) where N is the number of examples and (O) is the shape of the observations space
-            self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
-            # Initialize the table (a weight matrix) of OxA dimensions with random uniform numbers between 0 and 0.1
-            self._table = tensorflow.get_variable(name="table", trainable=True, initializer=tensorflow.random_uniform([*self._observation_space_shape, *self._action_space_shape], 0, 0.1))
-            # Define the outputs at a given state as a matrix of size NxA given by multiplication of inputs and weights
-            # Define the targets for learning with the same Nx(A) adaptable size
-            # Note: N is the number of examples and (A) the shape of the action space
-            self._outputs = tensorflow.matmul(self._inputs, self._table, name="outputs")
-            self._targets = tensorflow.placeholder(shape=[None, *self._action_space_shape], dtype=tensorflow.float32, name="targets")
-            # Define the weights of the targets during the update process (e.g. the importance sampling weights)
-            self._loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
-            # Define the absolute error and its mean
-            self._absolute_error = tensorflow.abs(self._targets - self._outputs, name="absolute_error")
-            # Define the loss
-            self._loss = tensorflow.reduce_sum(self._loss_weights * tensorflow.squared_difference(self._targets, self._outputs), name="loss")
-            # Define the optimizer
-            self._optimizer = tensorflow.train.GradientDescentOptimizer(self.learning_rate).minimize(self._loss)
-            # Define the _initializer
-            self.initializer = tensorflow.global_variables_initializer()
+        # Define two estimator, one for target network and one for main network, with identical structure
+        self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
+                                       self._observation_space_shape, self._action_space_shape,
+                                       self._hidden_layers_config)
+        self._target_network = Estimator(self._scope + "/" + self._name + "/TargetNetwork",
+                                         self._observation_space_shape, self._action_space_shape,
+                                         self._hidden_layers_config)
+        # Assign the main network properties to the model properties (main network is the actual model)
+        self._main_network_inputs = self._main_network.inputs
+        self._main_network_outputs = self._main_network.outputs
+        self._targets = self._main_network.targets
+        self._absolute_error = self._main_network.absolute_error
+        self._loss = self._main_network.loss
+        self._loss_weights = self._main_network.loss_weights
+        # Assign the target network outputs and inputs to the specific target outputs/inputs of the model
+        self._target_network_outputs = self._target_network.outputs
+        self._target_network_inputs = self._target_network.inputs
+        # Define the optimizer
+        self._optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
+        # Define the initializer
+        self._initializer = tensorflow.global_variables_initializer()
+        # Define the weight copy operation (to copy weights from main network to target network)
+        self._weight_copier = []
+        for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters,
+                                                                    self._target_network.weight_parameters):
+            copy_operation = target_network_parameter.assign(main_network_parameter)
+            self._weight_copier.append(copy_operation)
 
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
@@ -225,7 +278,8 @@ class Tabular(Model):
         # Generate a one-hot encoded version of the observation
         observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
         # Return all the predicted q-values given the current observation
-        return session.run(self._outputs, feed_dict={self._inputs: [observation_current_one_hot]})
+        return session.run(self._main_network_outputs,
+                           feed_dict={self._main_network_inputs: [observation_current_one_hot]})
 
     def get_best_action(self,
                         session,
@@ -241,33 +295,121 @@ class Tabular(Model):
         # Return the best action and all the actions
         return numpy.argmax(all_actions)[0], all_actions
 
+    def copy_weight(self,
+                    session):
+        """
+        Copy the weights from the main network to the target network.
+
+        :param session: the session of tensorflow currently running
+        """
+        # Run all the weight copy operations
+        session.run(self._weight_copier)
+
     def update(self,
                session,
                batch: []):
         # Unpack the batch into numpy arrays
         observations_current, actions, rewards, observations_next, weights = batch[0], batch[1], batch[2], batch[3], batch[4]
-        # Generate a one-hot encoded version of the observations
-        observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
-        observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
+        # Define the input observations to the model (to support both space types)
+        observations_current_input = observations_current
+        observations_next_input = observations_next
+        # Generate a one-hot encoded version of the observations if space type is discrete
+        if self._observation_space_type == SpaceType.discrete:
+            observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
+            observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
+            # Set the model input to the one-hot encoded representation
+            observations_current_input = observations_current_one_hot
+            observations_next_input = observations_next_one_hot
         # Get the q-values from the model at both current observations and next observations
-        q_values_current: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_current_one_hot})
-        q_values_next: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_next_one_hot})
+        # Next observation is estimated by the target network
+        q_values_current: numpy.ndarray = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: observations_current_input})
+        q_values_next_main_network: numpy.ndarray = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: observations_next_input})
+        q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: observations_next_input})
         # Apply Bellman equation with the required update rule (Q-Learning, SARSA or Expected SARSA)
         if self._update_rule == UpdateRule.q_learning:
-            self._q_learning_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
+            self._q_learning_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_target_network, rewards, self.discount_factor)
         elif self._update_rule == UpdateRule.sarsa:
-            self._sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
+            self._sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_target_network, rewards, self.discount_factor)
         else:
-            self._expected_sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
+            self._expected_sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_target_network, rewards, self.discount_factor)
         # Train the model and save the value of the loss and of the absolute error as well as the summary
-        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
+        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
                                                        feed_dict={
-                                                                   self._inputs: observations_current_one_hot,
-                                                                   self._targets: q_values_current,
-                                                                   self._loss_weights: weights
-                                                                  })
+                                                            self._main_network_inputs: observations_current_input,
+                                                            self._targets: q_values_current,
+                                                            self._loss_weights: weights
+                                                       })
         # Return the loss, the absolute error and relative summary
         return summary, loss, absolute_error
+
+
+
+
+
+
+    def update_batch(self,
+                     session,
+                     episode: int, episodes: int, step: int,
+                     batch: [], sample_weights: []):
+        """
+        Overridden method of QLearningModel class: check its docstring for further information.
+        """
+        # Copy the weight of the q-network in the target network, if required at this episode/step
+        self._copy_weight(session, step)
+        # Get the outputs depending on the type of space (discrete is one-hot encoded)
+        if self._observation_space_type == SpaceType.discrete:
+            # Get all current states in the batch
+            states_current = numpy.array([numpy.identity(*self._observation_space_shape)[val[0]] for val in batch])
+            # Get all next states in the batch (if equals to None, it means end of episode, and as such no next state)
+            states_next = numpy.array([numpy.identity(*self._observation_space_shape)[val[3] if val[3] is not None else 0]
+                                       for val in batch])
+        else:
+            # Get all current states in the batch
+            states_current = numpy.array([val[0] for val in batch])
+            # Get all next states in the batch (if equals to None, it means end of episode, and as such no next state)
+            states_next = numpy.array([val[3] if val[3] is not None
+                                       else numpy.zeros(self._observation_space_shape, dtype=float) for val in
+                                       batch])
+        # Get the outputs at the current states and at the next states
+        # Note: next states are computed by both the q-network and the target network
+        outputs_current = session.run(self.outputs,
+                                      feed_dict={self._inputs: states_current})
+        outputs_next_q_network = session.run(self.outputs,
+                                             feed_dict={self._inputs: states_next})
+        outputs_next_target_network = session.run(self._outputs_target,
+                                                  feed_dict={self._inputs_target: states_next})
+        # Define training arrays
+        inputs = numpy.zeros((len(batch), *self._observation_space_shape))
+        targets = numpy.zeros((len(batch), *self._action_space_shape))
+        for i, example in enumerate(batch):
+            state_current, action, reward, state_next = example[0], example[1], example[2], example[3]
+            # Apply Bellman equation, modifying the weights at the current states with the discounted future reward of
+            # the next states given the actions
+            if state_next is None:
+                # Only the immediate reward can be assigned at end of the episode
+                outputs_current[i, action] = reward
+            else:
+                # Predict the output using the q-network and then get the q-value estimated by the target network at the
+                # same index
+                predicted_output_index: int = numpy.argmax(outputs_next_q_network[i])
+                outputs_current[i, action] = reward + self.discount_factor * outputs_next_target_network[i][predicted_output_index]
+            # Insert training data in training arrays depending on the observation space type
+            if self._observation_space_type == SpaceType.discrete:
+                inputs[i] = numpy.identity(*self._observation_space_shape)[state_current]
+            else:
+                inputs[i] = state_current
+            # The current outputs modified by the Bellman equation are now used as target for the _model
+            targets[i] = outputs_current[i]
+        # Feed the training arrays into the network and run the optimizer while also evaluating new weights values
+        # Save the value of the loss and of the absolute error as well as the _summary
+        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
+                                                       feed_dict={
+                                                       self._inputs: inputs,
+                                                       self._targets: targets,
+                                                       self._loss_weights: sample_weights
+                                                       })
+        # Return the loss, the absolute error and the _summary
+        return loss, absolute_error, summary
 
     @property
     def warmup_episodes(self) -> int:
@@ -276,26 +418,28 @@ class Tabular(Model):
     @property
     def inputs_name(self) -> str:
         # Get the _name of the inputs of the tensorflow graph
-        return "inputs"
+        return "MainNetwork/inputs"
 
     @property
     def outputs_name(self) -> str:
         # Get the _name of the outputs of the tensorflow graph
-        return "outputs"
+        return "MainNetwork/outputs"
 
     @staticmethod
     def _q_learning_update_rule(batch_size: int,
                                 observations_next, actions,
-                                q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
+                                q_values_current: numpy.ndarray,
+                                q_values_next_main_network: numpy.ndarray, q_values_next_target_network: numpy.ndarray,
                                 rewards, discount_factor: float):
         """
         Update the Q-Values target to be estimated by the _model using q-learning update rule for the Bellman equation:
-        Q(s, a) = R + gamma * max_a(Q(s'))
+        Q(s, a) = R + gamma * max_a(Q(s')) where the index of the max is computed by the main network.
 
         :param observations_next: the next observation for each sample
         :param actions: the actions taken by the agent at each sample
         :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
+        :param q_values_next_target_network: the q-values output for the next observation as predicted by the main network (used to update the target)
+        :param q_values_next_target_network: the q-values output for the next observation as predicted by the target network (used to update the target)
         :param rewards: the rewards obtained by the agent at each sample
         :param discount_factor: the discount factor set for the _model, i.e. gamma
         """
@@ -309,12 +453,15 @@ class Tabular(Model):
             if observation_next is None:
                 q_values_current[sample_index, action] = reward
             else:
-                q_values_current[sample_index, action] = rewards + discount_factor * numpy.max(q_values_next[sample_index])
+                # Predict the best action index with the main network and execute the update with the target network
+                best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index])
+                q_values_current[sample_index, action] = rewards + discount_factor * q_values_next_target_network[sample_index, best_action_index]
 
     @staticmethod
     def _sarsa_update_rule(batch_size: int,
                            observations_next, actions,
-                           q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
+                           q_values_current: numpy.ndarray,
+                           q_values_next_main_network: numpy.ndarray, q_values_next_target_network: numpy.ndarray,
                            rewards, discount_factor: float):
         """
         Update the Q-Values target to be estimated by the _model using SARSA update rule for the Bellman equation:
@@ -323,7 +470,8 @@ class Tabular(Model):
         :param observations_next: the next observation for each sample
         :param actions: the actions taken by the agent at each sample
         :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
+        :param q_values_next_target_network: the q-values output for the next observation as predicted by the main network (used to update the target)
+        :param q_values_next_target_network: the q-values output for the next observation as predicted by the target network (used to update the target)
         :param rewards: the rewards obtained by the agent at each sample
         :param discount_factor: the discount factor set for the _model, i.e. gamma
         """
@@ -337,6 +485,7 @@ class Tabular(Model):
             if observation_next is None:
                 q_values_current[sample_index, action] = reward
             else:
+                chosen_action: int = q_values_next_main_network[sample_index]
                 q_values_current[sample_index, action] = rewards + discount_factor * q_values_next[sample_index, action]
 
     @staticmethod

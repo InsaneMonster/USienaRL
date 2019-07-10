@@ -14,7 +14,7 @@ from usienarl.experiments import PolicyOptimizationExperiment, QLearningExperime
 
 # Import usienarl q-learning models
 
-from usienarl.models.temporal_difference import DQN, DoubleDQN, DuelingDoubleDQN
+from usienarl.models.temporal_difference import DeepNN, DoubleDQN, DuelingDoubleDQN
 
 # Import usienarl memories
 
@@ -34,13 +34,13 @@ from benchmarks.src.openai_environment import OpenAIEnvironment
 # Define utility functions to run the experiment
 
 
-def _define_dqn_model(config: Config) -> DQN:
+def _define_dqn_model(config: Config) -> DeepNN:
     # Define attributes
     weight_copy_step_interval: int = 25
     learning_rate: float = 0.001
     discount_factor: float = 0.99
     # Return the _model
-    return DQN("dqn", learning_rate, discount_factor, config, weight_copy_step_interval)
+    return DeepNN("dqn", learning_rate, discount_factor, config, weight_copy_step_interval)
 
 
 def _define_ddqn_model(config: Config) -> DoubleDQN:
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     policy_optimization_nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
     policy_optimization_nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
     # Define Q-Learning models
-    model_dqn: DQN = _define_dqn_model(q_learning_nn_config)
+    model_dqn: DeepNN = _define_dqn_model(q_learning_nn_config)
     model_ddqn: DoubleDQN = _define_ddqn_model(q_learning_nn_config)
     model_dddqn: DuelingDoubleDQN = _define_dddqn_model(q_learning_nn_config)
     # Define exploration_policies

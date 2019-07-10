@@ -2,6 +2,6 @@
 
 from .tabular import Tabular
 from .dqn_naive import DQNNaive
-from .dqn import DQN
-from .double_dqn import DoubleDQN
-from .dueling_double_dqn import DuelingDoubleDQN
+from .deepnn import DeepNN
+from .double_deepnn import DoubleDQN
+from .dueling_deepnn import DuelingDoubleDQN
