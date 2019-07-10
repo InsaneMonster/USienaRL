@@ -327,11 +327,13 @@ class DoubleDeepNN(Model):
         q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: observations_next_input})
         # Apply Bellman equation with the required update rule (Q-Learning, SARSA or Expected SARSA)
         if self._update_rule == UpdateRule.q_learning:
-            self._q_learning_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_target_network, rewards, self.discount_factor)
+            self._q_learning_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_main_network, q_values_next_target_network, rewards, self.discount_factor)
         elif self._update_rule == UpdateRule.sarsa:
-            self._sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_target_network, rewards, self.discount_factor)
+            self._sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_main_network, q_values_next_target_network, rewards, self.discount_factor)
+        elif self._update_rule == UpdateRule.expected_sarsa:
+            self._expected_sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_main_network, rewards, self.discount_factor)
         else:
-            self._expected_sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_target_network, rewards, self.discount_factor)
+            raise TypeError("")
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
                                                        feed_dict={
@@ -341,75 +343,6 @@ class DoubleDeepNN(Model):
                                                        })
         # Return the loss, the absolute error and relative summary
         return summary, loss, absolute_error
-
-
-
-
-
-
-    def update_batch(self,
-                     session,
-                     episode: int, episodes: int, step: int,
-                     batch: [], sample_weights: []):
-        """
-        Overridden method of QLearningModel class: check its docstring for further information.
-        """
-        # Copy the weight of the q-network in the target network, if required at this episode/step
-        self._copy_weight(session, step)
-        # Get the outputs depending on the type of space (discrete is one-hot encoded)
-        if self._observation_space_type == SpaceType.discrete:
-            # Get all current states in the batch
-            states_current = numpy.array([numpy.identity(*self._observation_space_shape)[val[0]] for val in batch])
-            # Get all next states in the batch (if equals to None, it means end of episode, and as such no next state)
-            states_next = numpy.array([numpy.identity(*self._observation_space_shape)[val[3] if val[3] is not None else 0]
-                                       for val in batch])
-        else:
-            # Get all current states in the batch
-            states_current = numpy.array([val[0] for val in batch])
-            # Get all next states in the batch (if equals to None, it means end of episode, and as such no next state)
-            states_next = numpy.array([val[3] if val[3] is not None
-                                       else numpy.zeros(self._observation_space_shape, dtype=float) for val in
-                                       batch])
-        # Get the outputs at the current states and at the next states
-        # Note: next states are computed by both the q-network and the target network
-        outputs_current = session.run(self.outputs,
-                                      feed_dict={self._inputs: states_current})
-        outputs_next_q_network = session.run(self.outputs,
-                                             feed_dict={self._inputs: states_next})
-        outputs_next_target_network = session.run(self._outputs_target,
-                                                  feed_dict={self._inputs_target: states_next})
-        # Define training arrays
-        inputs = numpy.zeros((len(batch), *self._observation_space_shape))
-        targets = numpy.zeros((len(batch), *self._action_space_shape))
-        for i, example in enumerate(batch):
-            state_current, action, reward, state_next = example[0], example[1], example[2], example[3]
-            # Apply Bellman equation, modifying the weights at the current states with the discounted future reward of
-            # the next states given the actions
-            if state_next is None:
-                # Only the immediate reward can be assigned at end of the episode
-                outputs_current[i, action] = reward
-            else:
-                # Predict the output using the q-network and then get the q-value estimated by the target network at the
-                # same index
-                predicted_output_index: int = numpy.argmax(outputs_next_q_network[i])
-                outputs_current[i, action] = reward + self.discount_factor * outputs_next_target_network[i][predicted_output_index]
-            # Insert training data in training arrays depending on the observation space type
-            if self._observation_space_type == SpaceType.discrete:
-                inputs[i] = numpy.identity(*self._observation_space_shape)[state_current]
-            else:
-                inputs[i] = state_current
-            # The current outputs modified by the Bellman equation are now used as target for the _model
-            targets[i] = outputs_current[i]
-        # Feed the training arrays into the network and run the optimizer while also evaluating new weights values
-        # Save the value of the loss and of the absolute error as well as the _summary
-        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
-                                                       feed_dict={
-                                                       self._inputs: inputs,
-                                                       self._targets: targets,
-                                                       self._loss_weights: sample_weights
-                                                       })
-        # Return the loss, the absolute error and the _summary
-        return loss, absolute_error, summary
 
     @property
     def warmup_episodes(self) -> int:
@@ -465,7 +398,7 @@ class DoubleDeepNN(Model):
                            rewards, discount_factor: float):
         """
         Update the Q-Values target to be estimated by the _model using SARSA update rule for the Bellman equation:
-        Q(s, a) = R + gamma * Q(s', a)
+        Q(s, a) = R + gamma * Q(s', a) where Q(s', a) uses as action index the max of the sum of the two estimators.
 
         :param observations_next: the next observation for each sample
         :param actions: the actions taken by the agent at each sample
@@ -485,22 +418,23 @@ class DoubleDeepNN(Model):
             if observation_next is None:
                 q_values_current[sample_index, action] = reward
             else:
-                chosen_action: int = q_values_next_main_network[sample_index]
-                q_values_current[sample_index, action] = rewards + discount_factor * q_values_next[sample_index, action]
+                # Choose the best action index according to the sum of main and target networks q-values and execute the update with the target network
+                best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index] + q_values_next_target_network[sample_index])
+                q_values_current[sample_index, action] = rewards + discount_factor * q_values_next_target_network[sample_index, best_action_index]
 
     @staticmethod
     def _expected_sarsa_update_rule(batch_size: int,
                                     observations_next, actions,
-                                    q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
+                                    q_values_current: numpy.ndarray, q_values_next_main_network: numpy.ndarray,
                                     rewards, discount_factor: float):
         """
         Update the Q-Values target to be estimated by the _model using Expected SARSA update rule for the Bellman equation:
-        Q(s, a) = R + gamma * mean_a(Q(s'))
+        Q(s, a) = R + gamma * mean_a(Q(s')) where the mean is estimated by the main network.
 
         :param observations_next: the next observation for each sample
         :param actions: the actions taken by the agent at each sample
         :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
+        :param q_values_next_main_network: the q-values output for the next observation as predicted by the main network (used to update the target)
         :param rewards: the rewards obtained by the agent at each sample
         :param discount_factor: the discount factor set for the _model, i.e. gamma
         """
@@ -514,5 +448,5 @@ class DoubleDeepNN(Model):
             if observation_next is None:
                 q_values_current[sample_index, action] = reward
             else:
-                q_values_current[sample_index, action] = rewards + discount_factor * numpy.average(q_values_next[sample_index])
+                q_values_current[sample_index, action] = rewards + discount_factor * numpy.average(q_values_next_main_network[sample_index])
 

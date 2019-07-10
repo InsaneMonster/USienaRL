@@ -257,7 +257,7 @@ class Tabular(Model):
             self._q_learning_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
         elif self._update_rule == UpdateRule.sarsa:
             self._sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
-        else:
+        elif self._update_rule == UpdateRule.expected_sarsa:
             self._expected_sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
