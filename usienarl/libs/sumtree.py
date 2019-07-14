@@ -1,3 +1,13 @@
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
+
 # Import packages
 
 import numpy
@@ -6,10 +16,7 @@ import numpy
 class SumTree(object):
     """
     Sum tree (a version of a binary tree in which all the child nodes sum up in the parent node) system. It can store
-    any kind of data until _capacity is reached.
-
-    Attributes:
-        - _capacity: the amount of data of any kind that can be stored inside the tree
+    any kind of data until capacity is reached.
     """
 
     def __init__(self,

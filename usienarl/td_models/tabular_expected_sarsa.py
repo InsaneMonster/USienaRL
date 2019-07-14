@@ -2,7 +2,6 @@
 
 import tensorflow
 import numpy
-import enum
 
 # Import required src
 
@@ -12,16 +11,15 @@ from usienarl.libs import SumTree
 
 class Buffer:
     """
-    TODO: summary
-    Prioritized experience replay memory. It uses a sum tree to store not only the samples but also the priority of
+    Prioritized experience replay buffer. It uses a sum tree to store not only the samples but also the priority of
     the samples, where the priority of the samples is a representation of the probability of a sample.
 
-    When adding a new sample, the default priority value of the new node associated with such sample is set to
+    When storing a new sample, the default priority value of the new node associated with such sample is set to
     the maximum defined priority. This value is iteratively changed by the algorithm when update is called.
 
     When getting the samples, a priority segment inversely proportional to the amount of required samples is generated.
     Samples are then uniformly taken for that segment, and stored in a minibatch which is returned.
-    Also, a weight to compensate for the over-presence of higher priority samples is returned by the get_sample method,
+    Also, a weight to compensate for the over-presence of higher priority samples is returned by the get method,
     along with the minibatch as second returned value.
     """
 
@@ -131,22 +129,17 @@ class Buffer:
 
 # Define update rules for the model
 
-class UpdateRule(enum.Enum):
-    """
-    TODO: summary
-    """
-    q_learning = 0
-    sarsa = 1
-    expected_sarsa = 2
 
-
-class Tabular(Model):
+class TabularExpectedSARSA(Model):
     """
-    Tabular temporal difference _model. The weights of the _model are the entries of the table and the outputs are computed by
-    multiplication of this matrix elements by the inputs.
+    Tabular temporal difference model with Expected SARSA update rule.
+    The weights of the model are the entries of the table and the outputs are computed by multiplication of this
+    matrix elements by the inputs.
 
-    It can be updated with Q-Learning update rule or SARSA update rule with respect to the Bellman equation. By default
-    it uses Q-Learning.
+    The update rule is the following (Bellman equation):
+    Q(s, a) = R + gamma * mean_a(Q(s'))
+    It uses the mean of the q-values estimated at the next state to update the estimate of the q-values at the current
+    state.
 
     Supported observation spaces:
         - discrete
@@ -160,21 +153,19 @@ class Tabular(Model):
                  learning_rate: float, discount_factor: float,
                  buffer_capacity: int,
                  minimum_sample_probability: float, random_sample_trade_off: float,
-                 importance_sampling_value: float, importance_sampling_value_increment: float,
-                 update_rule: UpdateRule = UpdateRule.q_learning):
-        # Define tabular model attributes
+                 importance_sampling_value: float, importance_sampling_value_increment: float):
+        # Define model attributes
         self.learning_rate: float = learning_rate
         self.discount_factor: float = discount_factor
-        # Define internal tabular model attributes
-        self._update_rule: UpdateRule = update_rule
+        # Define internal model attributes
         self._buffer_capacity: int = buffer_capacity
         self._minimum_sample_probability: float = minimum_sample_probability
         self._random_sample_trade_off: float = random_sample_trade_off
         self._importance_sampling_value: float = importance_sampling_value
         self._importance_sampling_value_increment: float = importance_sampling_value_increment
-        # Define tabular model empty attributes
+        # Define model empty attributes
         self.buffer: Buffer = None
-        # Define internal tabular model empty attributes
+        # Define internal model empty attributes
         self._inputs = None
         self._outputs = None
         self._table = None
@@ -184,7 +175,7 @@ class Tabular(Model):
         self._loss = None
         self._optimizer = None
         # Generate the base model
-        super(Tabular, self).__init__(name)
+        super(TabularExpectedSARSA, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_action_space_types.append(SpaceType.discrete)
@@ -197,12 +188,12 @@ class Tabular(Model):
             # Define inputs of the _model as a float adaptable array with size Nx(S) where N is the number of examples and (O) is the shape of the observations space
             self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
             # Initialize the table (a weight matrix) of OxA dimensions with random uniform numbers between 0 and 0.1
-            self._table = tensorflow.get_variable(name="table", trainable=True, initializer=tensorflow.random_uniform([*self._observation_space_shape, *self._action_space_shape], 0, 0.1))
+            self._table = tensorflow.get_variable(name="table", trainable=True, initializer=tensorflow.random_uniform([*self._observation_space_shape, *self._agent_action_space_shape], 0, 0.1))
             # Define the outputs at a given state as a matrix of size NxA given by multiplication of inputs and weights
             # Define the targets for learning with the same Nx(A) adaptable size
             # Note: N is the number of examples and (A) the shape of the action space
             self._outputs = tensorflow.matmul(self._inputs, self._table, name="outputs")
-            self._targets = tensorflow.placeholder(shape=[None, *self._action_space_shape], dtype=tensorflow.float32, name="targets")
+            self._targets = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self._loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
             # Define the absolute error and its mean
@@ -252,13 +243,17 @@ class Tabular(Model):
         # Get the q-values from the model at both current observations and next observations
         q_values_current: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_current_one_hot})
         q_values_next: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_next_one_hot})
-        # Apply Bellman equation with the required update rule (Q-Learning, SARSA or Expected SARSA)
-        if self._update_rule == UpdateRule.q_learning:
-            self._q_learning_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
-        elif self._update_rule == UpdateRule.sarsa:
-            self._sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
-        elif self._update_rule == UpdateRule.expected_sarsa:
-            self._expected_sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
+        # Apply Bellman equation with the Expected SARSA update rule
+        for sample_index in range(len(batch)):
+            # Extract current sample values
+            observation_next = observations_next[sample_index]
+            action = actions[sample_index]
+            reward: float = rewards[sample_index]
+            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
+            if observation_next is None:
+                q_values_current[sample_index, action] = reward
+            else:
+                q_values_current[sample_index, action] = reward + self.discount_factor * numpy.average(q_values_next[sample_index])
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
                                                        feed_dict={
@@ -282,88 +277,3 @@ class Tabular(Model):
     def outputs_name(self) -> str:
         # Get the _name of the outputs of the tensorflow graph
         return "outputs"
-
-    @staticmethod
-    def _q_learning_update_rule(batch_size: int,
-                                observations_next, actions,
-                                q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
-                                rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using q-learning update rule for the Bellman equation:
-        Q(s, a) = R + gamma * max_a(Q(s'))
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using Q-Learning Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                q_values_current[sample_index, action] = rewards + discount_factor * numpy.max(q_values_next[sample_index])
-
-    @staticmethod
-    def _sarsa_update_rule(batch_size: int,
-                           observations_next, actions,
-                           q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
-                           rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using SARSA update rule for the Bellman equation:
-        Q(s, a) = R + gamma * Q(s', a)
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using SARSA Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                q_values_current[sample_index, action] = rewards + discount_factor * q_values_next[sample_index, action]
-
-    @staticmethod
-    def _expected_sarsa_update_rule(batch_size: int,
-                                    observations_next, actions,
-                                    q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
-                                    rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using Expected SARSA update rule for the Bellman equation:
-        Q(s, a) = R + gamma * mean_a(Q(s'))
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using Expected SARSA Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                q_values_current[sample_index, action] = rewards + discount_factor * numpy.average(q_values_next[sample_index])
-

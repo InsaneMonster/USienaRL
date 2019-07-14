@@ -2,10 +2,11 @@
 # Copyright (C) 2019 Luca Pasqualini
 # University of Siena - Artificial Intelligence Laboratory - SAILab
 #
-# USienaRL is licensed under a MIT License.
+#
+# USienaRL is licensed under a BSD 3-Clause.
 #
 # You should have received a copy of the license along with this
-# work. If not, see <https://opensource.org/licenses/MIT>.
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
 # Import packages
 
@@ -18,14 +19,19 @@ from usienarl import Environment, SpaceType
 
 class Interface:
     """
-    TODO: _summary
+    Base interface abstract class to define interaction between agent and environment.
 
+    An interface allows to translate the environment state and actions to the agent observations and action.
+    The default interface is the pass-through interface, implementing a simple fully observable interface for the
+    environment. The environment is specific for each interface, and should not be changed outside of initialization.
+
+    To define a specific interface, the abstract class should be implemented in a specific child class.
     """
 
     def __init__(self,
                  environment: Environment):
         # Define interface attribute
-        self.environment: Environment = environment
+        self._environment: Environment = environment
 
     def get_random_agent_action(self,
                                 logger: logging.Logger,
@@ -38,7 +44,7 @@ class Interface:
         :return: the random action as seen by the agent
         """
         # Get the random environment action
-        environment_action = self.environment.get_random_action(logger, session)
+        environment_action = self._environment.get_random_action(logger, session)
         # Translate it to agent action and return it
         return self.environment_action_to_agent_action(logger, session, environment_action)
 
@@ -119,3 +125,12 @@ class Interface:
         :return: the shape of the agent action space in the form of a tuple
         """
         raise NotImplementedError()
+
+    @property
+    def environment(self):
+        """
+        Return the environment associated with the interface.
+
+        :return: the environment
+        """
+        return self._environment

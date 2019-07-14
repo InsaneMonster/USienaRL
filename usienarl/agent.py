@@ -2,10 +2,11 @@
 # Copyright (C) 2019 Luca Pasqualini
 # University of Siena - Artificial Intelligence Laboratory - SAILab
 #
-# USienaRL is licensed under a MIT License.
+#
+# USienaRL is licensed under a BSD 3-Clause.
 #
 # You should have received a copy of the license along with this
-# work. If not, see <https://opensource.org/licenses/MIT>.
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
 # Import packages
 
@@ -19,51 +20,22 @@ from usienarl import Interface, SpaceType
 
 class Agent:
     """
-    Base abstract agent class. Use this class as base for any agent.
-    To define an agent, implement all of the abstract methods in this class. Check each method docstring for further
-    details.
+    Base agent abstract class.
 
-    Usually, an agent is built for at least a _model class, often it also employs one or more classes of
-    exploration policies. The final implementation, however, does not require nor limits what can be used and
-    it all really depends in what is the end goal of the agent.
+    An agent defines who or what operates in a certain environment during a certain experiment.
+    An agent can act and being updated, but the inner working (model, policies and so on) are left to be decided by the
+    implementation.
 
-    Note: the agent always interact with an environment via an interface which translates environment actions and states
-    to agent actions and observations. The agent always acts on the latter.
+    An agent needs to be generated before running, and generation is done when executing agent setup.
 
-    In order to fully generate an agent, the setup method needs to be called. It is always called by the experiment.
-    Within this method the agents generates the _model and connects to the environment by the interface.
+    Any agent can act in three different modes:
+        - warmup mode, before training (not all agents required that, it depends on the agent inner model)
+        - train mode, during training
+        - inference mode, when exploiting
 
-    Each agent consist mainly of three different phases:
-        - pre-training, if required set implement the pre_train_episodes method and return a value greater than zero
-        - training, in which the inner _model of the agent is updated and usually an exploration policy is employed
-        - inference, where the _model runs in full exploitation, usually used for validating and testing an agent
+    One or more policies can be defined for each one of these modes.
 
-    The pre-train phase comprehends:
-        - decide_pre_train: the agent is invoked to decide which action to execute in pre-training mode given the
-        observation. Usually, this is a random action
-        - save_step_pre_train: the agent is invoked to save the step in the environment after the decided action is
-        taken, using all the environment data in the relative step. This can also be used to update some parameters
-        at the end of the episode by checking the relative flag.
-
-    The train phase comprehends:
-        - decide_train: the agent is invoked to decide which action to execute in training mode given the observation.
-        Usually this is an action involving an exploration policy.
-        - save_step_train: the agent is invoked to save the step in the environment after the decided action is taken,
-        using all the environment data in the relative step. This can also be used to update some parameters
-        at the end of the episode by checking the relative flag.
-        - update: the agent is invoked to update its inner _model. When this is called depends on the experiment
-        implementation. Further customization is possible with the given parameters relative to the training process.
-
-    The inference phase comprehends:
-        - decide_inference: the agent is invoked to decide which action to execute in inference mode given the
-        observation. Usually this is the time the agent tries to predict the best possible action according to its
-        own inner _model.
-
-    Attributes:
-        - _name: _name of the agent, used as further _scope with respect to the experiment
-        - environment: the environment in which the agent is called to act, set by the experiment during setup
-        - summary_writer: the tensorboard _summary writer for the inner _model of the agent
-        - train_steps_counter: the number of training steps in total executed by the agent in the current experiment
+    To define your own agent, implement the abstract class in a specific child class.
     """
 
     def __init__(self,
@@ -80,25 +52,27 @@ class Agent:
               agent_action_space_type: SpaceType, agent_action_space_shape,
               scope: str, summary_path: str) -> bool:
         """
-        Setup the agent for pre-training, training and inference.
-        It is called before the tensorflow session generation.
-        Note: this should generate the _model and other components, if any.
+        Setup the agent.
+        It is called before the tensorflow session generation, if any.
+        Note: this should generate the model and other components, if any.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param scope: the experiment _scope encompassing the agent _scope, if any
-        :param summary_path: the path of the _summary writer of the agent
+        :param observation_space_type: the space type of the observation space
+        :param observation_space_shape: the shape of the observation space
+        :param agent_action_space_type: the space type of the agent action space
+        :param agent_action_space_shape: the shape of the agent action space
+        :param scope: the experiment scope encompassing the agent _scope, if any
+        :param summary_path: the path of the summary writer of the agent
         :return a boolean flag True if setup is successful, False otherwise
         """
-        logger.info("Setup of agent " + self._name + " with _scope " + scope + "...")
+        logger.info("Setup of agent " + self._name + " with scope " + scope + "...")
         # Reset agent attributes
         self._scope = scope
         # Reset the _summary writer
         self._summary_writer = tensorflow.summary.FileWriter(summary_path, graph=tensorflow.get_default_graph())
-        logger.info("A Tensorboard _summary for the agent will be updated during training of its internal _model")
-        logger.info("Tensorboard _summary path: " + summary_path)
-        # Set the interface (using a default pass-through interface if not given a specific one)
-        # self.interface = interface if interface is not None else Interface(environment)
-        # Try to generate the agent inner _model
+        logger.info("A Tensorboard summary for the agent will be updated during training of its internal model")
+        logger.info("Tensorboard summary path: " + summary_path)
+        # Try to generate the agent inner model
         return self._generate(logger, observation_space_type, observation_space_shape, agent_action_space_type, agent_action_space_shape)
 
     def _generate(self,
@@ -106,7 +80,7 @@ class Agent:
                   observation_space_type: SpaceType, observation_space_shape,
                   action_space_type: SpaceType, action_space_shape) -> bool:
         """
-        Generate the agent internal _model. Used to generate all custom components of the agent.
+        Generate the agent internal model. Used to generate all custom components of the agent.
         It is always called during setup.
 
         :param logger: the logger used to print the agent information, warnings and errors
@@ -121,7 +95,7 @@ class Agent:
         """
         Initialize the agent before acting in the environment.
         It is called right after tensorflow session generation.
-        Note: this should initialize the _model and other components, if any. It can also reset all the agent internal
+        Note: this should initialize the model and other components, if any. It can also reset all the agent internal
         attributes in order to prepare for the experiment.
 
         :param logger: the logger used to print the agent information, warnings and errors
@@ -136,10 +110,11 @@ class Agent:
                    interface: Interface,
                    agent_observation_current):
         """
-        Take an action given the current agent observation in _warmup mode. Usually it uses a random policy.
+        Take an action given the current agent observation in warmup mode. Usually it uses a random policy.
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param agent_observation_current: the current observation of the agent
         :return: the action the agent decided to take
         """
@@ -152,10 +127,11 @@ class Agent:
                   interface: Interface,
                   agent_observation_current):
         """
-        Take an action given the current agent observation in _warmup mode. Usually it uses an exploring policy.
+        Take an action given the current agent observation in train mode. Usually it uses an exploring policy.
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param agent_observation_current: the current observation of the agent
         :return: the action the agent decided to take
         """
@@ -168,10 +144,11 @@ class Agent:
                       interface: Interface,
                       agent_observation_current):
         """
-        Take an action given the current agent observation in _warmup mode. Usually it uses the best possible policy.
+        Take an action given the current agent observation in inference mode. Usually it uses the best possible policy.
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param agent_observation_current: the current observation of the agent
         :return: the action the agent decided to take
         """
@@ -189,7 +166,7 @@ class Agent:
                              warmup_episode_current: int,
                              warmup_episode_volley: int):
         """
-        Finish a _warmup step with the given values.
+        Complete a warmup step with the given values.
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
@@ -197,6 +174,9 @@ class Agent:
         :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
         :param reward: the reward obtained by the combination of current observation, next observation and action in-between
         :param agent_observation_next: the next observation of the agent
+        :param warmup_step_current: the current warmup step in the current episode
+        :param warmup_episode_current: the current warmup episode
+        :param warmup_episode_volley: the number of warmup episodes in the volley
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -212,7 +192,7 @@ class Agent:
                             train_episode_current: int, train_episode_absolute: int,
                             train_episode_volley: int, train_episode_total: int):
         """
-        Finish a train step with the given values.
+        Complete a train step with the given values.
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
@@ -220,6 +200,12 @@ class Agent:
         :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
         :param reward: the reward obtained by the combination of current observation, next observation and action in-between
         :param agent_observation_next: the next observation of the agent
+        :param train_step_current: the current train step in the current episode
+        :param train_step_absolute: the current absolute number of train step (counting all volleys)
+        :param train_episode_current: the current train episode
+        :param train_episode_absolute: the current absolute number of train episode (counting all volleys)
+        :param train_episode_volley: the number of train episodes in the volley
+        :param train_episode_total: the total number of allowed train episodes
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -235,7 +221,7 @@ class Agent:
                                 inference_episode_current: int,
                                 inference_episode_volley: int):
         """
-        Finish an inference step with the given values.
+        Complete an inference step with the given values.
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
@@ -243,6 +229,9 @@ class Agent:
         :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
         :param reward: the reward obtained by the combination of current observation, next observation and action in-between
         :param agent_observation_next: the next observation of the agent
+        :param inference_step_current: the current inference step in the current episode
+        :param inference_episode_current: the current inference episode
+        :param inference_episode_volley: the number of inference episodes in the volley
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -259,7 +248,10 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
-        :param episode_reward: the reward obtained in the passed episode
+        :param last_step_reward: the reward obtained in the last step in the passed episode
+        :param episode_total_reward: the reward obtained in the passed episode
+        :param warmup_episode_current: the current warmup episode
+        :param warmup_episode_volley: the number of warmup episodes in the volley
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -277,7 +269,13 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
-        :param episode_reward: the reward obtained in the passed episode
+        :param last_step_reward: the reward obtained in the last step in the passed episode
+        :param episode_total_reward: the reward obtained in the passed episode
+        :param train_step_absolute: the current absolute number of train step (counting all volleys)
+        :param train_episode_current: the current train episode
+        :param train_episode_absolute: the current absolute number of train episode (counting all volleys)
+        :param train_episode_volley: the number of train episodes in the volley
+        :param train_episode_total: the total number of allowed train episodes
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -294,7 +292,10 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
-        :param episode_reward: the sum of the rewards obtained in the passed episode
+        :param last_step_reward: the reward obtained in the last step in the passed episode
+        :param episode_total_reward: the reward obtained in the passed episode
+        :param inference_episode_current: the current inference episode
+        :param inference_episode_volley: the number of inference episodes in the volley
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -302,8 +303,8 @@ class Agent:
     @property
     def trainable_variables(self):
         """
-        Get the trainable variables of the agent (usually of the internal _model of the agent).
-        Is is usually searched with the _scope environment/agent.
+        Get the trainable variables of the agent (usually of the internal model of the agent).
+        Is is usually searched with the scope environment/agent.
 
         :return: the trainable variables defined by this agent.
         """
@@ -315,7 +316,7 @@ class Agent:
         """
         Return the integer number of warm-up episodes required by the agent.
 
-        :return: the integer number of warm-up episodes required by the agent internal _model
+        :return: the integer number of warm-up episodes required by the agent internal model
         """
         # Abstract property, it should be implemented on a child class basis
         raise NotImplementedError()

@@ -1,3 +1,13 @@
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
+
 # Import packages
 
 import logging
@@ -10,7 +20,15 @@ from usienarl import ExplorationPolicy, Interface, SpaceType
 
 class BoltzmannExplorationPolicy(ExplorationPolicy):
     """
-    TODO: summary
+    Boltzmann exploration policy.
+
+    According to this policy, a sampling of the actions predicted by the agent inner model is executed to decide the
+    best next action. The sampling is done using a softmax over the actions values with an associated temperature.
+
+    When updating the policy, the temperature decreases by its decay value.
+
+    Supported action spaces:
+        - discrete
     """
 
     def __init__(self,

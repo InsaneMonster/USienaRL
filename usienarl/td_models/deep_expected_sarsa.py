@@ -2,7 +2,6 @@
 
 import tensorflow
 import numpy
-import enum
 
 # Import required src
 
@@ -12,16 +11,15 @@ from usienarl.libs import SumTree
 
 class Buffer:
     """
-    TODO: summary
-    Prioritized experience replay memory. It uses a sum tree to store not only the samples but also the priority of
+    Prioritized experience replay buffer. It uses a sum tree to store not only the samples but also the priority of
     the samples, where the priority of the samples is a representation of the probability of a sample.
 
-    When adding a new sample, the default priority value of the new node associated with such sample is set to
+    When storing a new sample, the default priority value of the new node associated with such sample is set to
     the maximum defined priority. This value is iteratively changed by the algorithm when update is called.
 
     When getting the samples, a priority segment inversely proportional to the amount of required samples is generated.
     Samples are then uniformly taken for that segment, and stored in a minibatch which is returned.
-    Also, a weight to compensate for the over-presence of higher priority samples is returned by the get_sample method,
+    Also, a weight to compensate for the over-presence of higher priority samples is returned by the get method,
     along with the minibatch as second returned value.
     """
 
@@ -129,28 +127,18 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
 
-# Define update rules for the model
-
-class UpdateRule(enum.Enum):
-    """
-    TODO: summary
-    """
-    q_learning = 0
-    sarsa = 1
-    expected_sarsa = 2
-
-
 class Estimator:
     """
-    Estimator defining the real DQN _model. It is used to define two identical models: target network and q-network.
+    Estimator defining the real Deep Expected SARSA model. It is used to define two identical models:
+    target network and main-network.
 
     It is generated given the size of the observation and action spaces and the hidden layer config defining the
-    hidden layers of the DQN.
+    hidden layers of the network.
     """
 
     def __init__(self,
                  scope: str,
-                 observation_space_shape, action_space_shape,
+                 observation_space_shape, agent_action_space_shape,
                  hidden_layers_config: Config):
         self.scope: str = scope
         with tensorflow.variable_scope(self.scope):
@@ -160,9 +148,9 @@ class Estimator:
             hidden_layers_output = hidden_layers_config.apply_hidden_layers(self.inputs)
             # Define outputs as an array of neurons of size NxA and with linear activation functions
             # Define the targets for learning with the same NxA adaptable size
-            # Note: N is the number of examples and A the size of the action space (DQN only supports discrete actions spaces)
-            self.outputs = tensorflow.layers.dense(hidden_layers_output, *action_space_shape, name="outputs")
-            self.targets = tensorflow.placeholder(shape=[None, *action_space_shape], dtype=tensorflow.float32, name="targets")
+            # Note: N is the number of examples and A the size of the action space (deep-nn only supports discrete actions spaces)
+            self.outputs = tensorflow.layers.dense(hidden_layers_output, *agent_action_space_shape, name="outputs")
+            self.targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self.loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
             # Define the absolute error
@@ -174,14 +162,20 @@ class Estimator:
             self.weight_parameters = sorted(self.weight_parameters, key=lambda parameter: parameter.name)
 
 
-class DeepNN(Model):
+class DeepExpectedSARSA(Model):
     """
-    DQN (Deep Q-Network) _model. The _model is a deep neural network which hidden layers can be defined by a config
-    parameter. It uses a target network and a q-network to correctly evaluate the expected future reward in order
+    Deep Expected SARSA model with Expected SARSA update rule.
+    The model is a deep neural network which hidden layers can be defined by a config parameter.
+    It uses a target network and a main network to correctly evaluate the expected future reward in order
     to stabilize learning.
 
-    In order to synchronize the target network and the q-network, every some interval steps the weight have to be copied
-    from the q-network to the target network.
+    In order to synchronize the target network and the main network, every some interval steps the weight have to be
+    copied from the main network to the target network.
+
+    The update rule is the following (Bellman equation):
+    Q(s, a) = R + gamma * mean_a(Q(s'))
+    It uses the mean of the q-values estimated at the next state to update the estimate of the q-values at the current
+    state.
 
     Supported observation spaces:
         - discrete
@@ -197,22 +191,20 @@ class DeepNN(Model):
                  buffer_capacity: int,
                  minimum_sample_probability: float, random_sample_trade_off: float,
                  importance_sampling_value: float, importance_sampling_value_increment: float,
-                 hidden_layers_config: Config,
-                 update_rule: UpdateRule = UpdateRule.q_learning):
-        # Define deep-nn model attributes
+                 hidden_layers_config: Config):
+        # Define model attributes
         self.learning_rate: float = learning_rate
         self.discount_factor: float = discount_factor
-        # Define internal deep-nn model attributes
-        self._update_rule: UpdateRule = update_rule
+        # Define internal model attributes
         self._buffer_capacity: int = buffer_capacity
         self._minimum_sample_probability: float = minimum_sample_probability
         self._random_sample_trade_off: float = random_sample_trade_off
         self._importance_sampling_value: float = importance_sampling_value
         self._importance_sampling_value_increment: float = importance_sampling_value_increment
         self._hidden_layers_config: Config = hidden_layers_config
-        # Define deep-nn model empty attributes
+        # Define model empty attributes
         self.buffer: Buffer = None
-        # Define internal deep-nn model empty attributes
+        # Define internal model empty attributes
         self._target_network: Estimator = None
         self._main_network: Estimator = None
         self._target_network_inputs = None
@@ -226,7 +218,7 @@ class DeepNN(Model):
         self._optimizer = None
         self._weight_copier = None
         # Generate the base model
-        super(DeepNN, self).__init__(name)
+        super(DeepExpectedSARSA, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_observation_space_types.append(SpaceType.continuous)
@@ -235,21 +227,20 @@ class DeepNN(Model):
     def _define_graph(self):
         # Define two estimator, one for target network and one for main network, with identical structure
         self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
-                                       self._observation_space_shape, self._action_space_shape,
+                                       self._observation_space_shape, self._agent_action_space_shape,
                                        self._hidden_layers_config)
         self._target_network = Estimator(self._scope + "/" + self._name + "/TargetNetwork",
-                                         self._observation_space_shape, self._action_space_shape,
+                                         self._observation_space_shape, self._agent_action_space_shape,
                                          self._hidden_layers_config)
-        # Assign the main network properties to the model properties (main network is the actual model)
+        # Assign main and target networks to the model attributes
         self._main_network_inputs = self._main_network.inputs
         self._main_network_outputs = self._main_network.outputs
+        self._target_network_outputs = self._target_network.outputs
+        self._target_network_inputs = self._target_network.inputs
         self._targets = self._main_network.targets
         self._absolute_error = self._main_network.absolute_error
         self._loss = self._main_network.loss
         self._loss_weights = self._main_network.loss_weights
-        # Assign the target network outputs and inputs to the specific target outputs/inputs of the model
-        self._target_network_outputs = self._target_network.outputs
-        self._target_network_inputs = self._target_network.inputs
         # Define the optimizer
         self._optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
         # Define the initializer
@@ -268,10 +259,19 @@ class DeepNN(Model):
     def get_all_actions(self,
                         session,
                         observation_current):
-        # Generate a one-hot encoded version of the observation
-        observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-        # Return all the predicted q-values given the current observation
-        return session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_one_hot]})
+        # Save by default the observation current input of the model to the given data
+        observation_current_input = observation_current
+        # Generate a one-hot encoded version of the observation if observation space is discrete
+        if self._observation_space_type == SpaceType.discrete:
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            observation_current_input = observation_current_one_hot
+        # Compute the q-values predicted by main and target networks
+        main_network_values = session.run(self._main_network_outputs,
+                                          feed_dict={self._main_network_inputs: [observation_current_input]})
+        target_network_values = session.run(self._target_network_outputs,
+                                            feed_dict={self._target_network_inputs: [observation_current_input]})
+        # Return the average of the q-values
+        return (main_network_values + target_network_values) / 2
 
     def get_best_action(self,
                         session,
@@ -316,13 +316,17 @@ class DeepNN(Model):
         # Next observation is estimated by the target network
         q_values_current: numpy.ndarray = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: observations_current_input})
         q_values_next: numpy.ndarray = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: observations_next_input})
-        # Apply Bellman equation with the required update rule (Q-Learning, SARSA or Expected SARSA)
-        if self._update_rule == UpdateRule.q_learning:
-            self._q_learning_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
-        elif self._update_rule == UpdateRule.sarsa:
-            self._sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
-        else:
-            self._expected_sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next, rewards, self.discount_factor)
+        # Apply Bellman equation with the Expected SARSA update rule
+        for sample_index in range(len(batch)):
+            # Extract current sample values
+            observation_next = observations_next[sample_index]
+            action = actions[sample_index]
+            reward: float = rewards[sample_index]
+            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
+            if observation_next is None:
+                q_values_current[sample_index, action] = reward
+            else:
+                q_values_current[sample_index, action] = reward + self.discount_factor * numpy.average(q_values_next[sample_index])
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
                                                        feed_dict={
@@ -346,87 +350,3 @@ class DeepNN(Model):
     def outputs_name(self) -> str:
         # Get the _name of the outputs of the tensorflow graph
         return "MainNetwork/outputs"
-
-    @staticmethod
-    def _q_learning_update_rule(batch_size: int,
-                                observations_next, actions,
-                                q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
-                                rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using q-learning update rule for the Bellman equation:
-        Q(s, a) = R + gamma * max_a(Q(s'))
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using Q-Learning Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                q_values_current[sample_index, action] = rewards + discount_factor * numpy.max(q_values_next[sample_index])
-
-    @staticmethod
-    def _sarsa_update_rule(batch_size: int,
-                           observations_next, actions,
-                           q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
-                           rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using SARSA update rule for the Bellman equation:
-        Q(s, a) = R + gamma * Q(s', a)
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using SARSA Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                q_values_current[sample_index, action] = rewards + discount_factor * q_values_next[sample_index, action]
-
-    @staticmethod
-    def _expected_sarsa_update_rule(batch_size: int,
-                                    observations_next, actions,
-                                    q_values_current: numpy.ndarray, q_values_next: numpy.ndarray,
-                                    rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using Expected SARSA update rule for the Bellman equation:
-        Q(s, a) = R + gamma * mean_a(Q(s'))
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next: the q-values output for the next observation (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using Expected SARSA Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                q_values_current[sample_index, action] = rewards + discount_factor * numpy.average(q_values_next[sample_index])

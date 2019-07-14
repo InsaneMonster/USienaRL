@@ -6,7 +6,7 @@ import os
 
 # Import usienarl basics
 
-from usienarl import Config, LayerType, run_experiments, command_line_parse
+from usienarl import Config, LayerType, run_experiment, command_line_parse
 
 # Import usienarl experiments
 
@@ -14,7 +14,7 @@ from usienarl.experiments import PolicyOptimizationExperiment, QLearningExperime
 
 # Import usienarl q-learning models
 
-from usienarl.models.temporal_difference import DeepNN, DoubleDQN, DuelingDoubleDQN
+from td_models import DeepQLearning, DoubleDQN, DuelingDeepQLearning
 
 # Import usienarl memories
 
@@ -25,22 +25,22 @@ from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy, Boltzm
 
 # Import usienarl policy optimization models
 
-from usienarl.models.policy_optimization import VanillaPolicyGradient
+from po_models import VanillaPolicyGradient
 
 # Import OpenAI environment
 
-from benchmarks.src.openai_environment import OpenAIEnvironment
+from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
 
 # Define utility functions to run the experiment
 
 
-def _define_dqn_model(config: Config) -> DeepNN:
+def _define_dqn_model(config: Config) -> DeepQLearning:
     # Define attributes
     weight_copy_step_interval: int = 25
     learning_rate: float = 0.001
     discount_factor: float = 0.99
     # Return the _model
-    return DeepNN("dqn", learning_rate, discount_factor, config, weight_copy_step_interval)
+    return DeepQLearning("dqn", learning_rate, discount_factor, config, weight_copy_step_interval)
 
 
 def _define_ddqn_model(config: Config) -> DoubleDQN:
@@ -52,13 +52,13 @@ def _define_ddqn_model(config: Config) -> DoubleDQN:
     return DoubleDQN("ddqn", learning_rate, discount_factor, config, weight_copy_step_interval)
 
 
-def _define_dddqn_model(config: Config) -> DuelingDoubleDQN:
+def _define_dddqn_model(config: Config) -> DuelingDeepQLearning:
     # Define attributes
     weight_copy_step_interval: int = 25
     learning_rate: float = 0.001
     discount_factor: float = 0.99
     # Return the _model
-    return DuelingDoubleDQN("dddqn", learning_rate, discount_factor, config, weight_copy_step_interval)
+    return DuelingDeepQLearning("dddqn", learning_rate, discount_factor, config, weight_copy_step_interval)
 
 
 def _define_epsilon_greedy_explorer() -> EpsilonGreedyExplorationPolicy:
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     validation_success_threshold: float = -110.0
     test_success_threshold: float = 0.0
     # Generate the OpenAI environment
-    environment: OpenAIEnvironment = OpenAIEnvironment(environment_name)
+    environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define NN for Q-Learning
     q_learning_nn_config: Config = Config()
     q_learning_nn_config.add_hidden_layer(LayerType.dense, [50, tensorflow.nn.relu])
@@ -165,9 +165,9 @@ if __name__ == "__main__":
     policy_optimization_nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
     policy_optimization_nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
     # Define Q-Learning models
-    model_dqn: DeepNN = _define_dqn_model(q_learning_nn_config)
+    model_dqn: DeepQLearning = _define_dqn_model(q_learning_nn_config)
     model_ddqn: DoubleDQN = _define_ddqn_model(q_learning_nn_config)
-    model_dddqn: DuelingDoubleDQN = _define_dddqn_model(q_learning_nn_config)
+    model_dddqn: DuelingDeepQLearning = _define_dddqn_model(q_learning_nn_config)
     # Define exploration_policies
     epsilon_greedy_explorer: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_explorer()
     boltzmann_explorer: BoltzmannExplorationPolicy = _define_boltzmann_explorer()
@@ -191,24 +191,24 @@ if __name__ == "__main__":
     training_episodes: int = 250
     validation_episodes: int = 100
     max_training_episodes: int = 15000
-    run_experiments(q_learning_experiments, experiment_iterations_number,
-                    training_episodes, max_training_episodes, validation_episodes,
-                    testing_episodes, test_cycles,
-                    False,
-                    render_during_training, render_during_validation, render_during_test,
-                    workspace_path, __file__,
-                    logger)
+    run_experiment(q_learning_experiments, experiment_iterations_number,
+                   training_episodes, max_training_episodes, validation_episodes,
+                   testing_episodes, test_cycles,
+                   False,
+                   render_during_training, render_during_validation, render_during_test,
+                   workspace_path, __file__,
+                   logger)
     # Run Policy Optimization experiments
     training_episodes: int = 1000
     validation_episodes: int = 100
     max_training_episodes: int = 50000
-    run_experiments(policy_optimization_experiments, experiment_iterations_number,
-                    training_episodes, max_training_episodes, validation_episodes,
-                    testing_episodes, test_cycles,
-                    False,
-                    render_during_training, render_during_validation, render_during_test,
-                    workspace_path, __file__,
-                    logger)
+    run_experiment(policy_optimization_experiments, experiment_iterations_number,
+                   training_episodes, max_training_episodes, validation_episodes,
+                   testing_episodes, test_cycles,
+                   False,
+                   render_during_training, render_during_validation, render_during_test,
+                   workspace_path, __file__,
+                   logger)
 
 
 

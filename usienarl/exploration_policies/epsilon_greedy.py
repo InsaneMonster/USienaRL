@@ -1,3 +1,13 @@
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
+
 # Import packages
 
 import logging
@@ -10,7 +20,16 @@ from usienarl import ExplorationPolicy, Interface, SpaceType
 
 class EpsilonGreedyExplorationPolicy(ExplorationPolicy):
     """
-    TODO: summary
+    Epsilon greedy exploration policy.
+
+    According to this policy, the best action predicted by the agent inner model is used if a certain value,
+    the exploration rate, is below a certain threshold.
+
+    When updating the policy, the exploration rate decreases by its decay value.
+
+    Supported action spaces:
+        - discrete
+        - continuous
     """
 
     def __init__(self,
@@ -54,4 +73,3 @@ class EpsilonGreedyExplorationPolicy(ExplorationPolicy):
                session):
         # Decrease the exploration rate by its decay value
         self._exploration_rate = max(self._exploration_rate_min, self._exploration_rate - self._exploration_rate_decay)
-

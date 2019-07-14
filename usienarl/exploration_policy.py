@@ -1,3 +1,13 @@
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
+
 # Import packages
 
 import logging
@@ -9,7 +19,12 @@ from usienarl import Interface, SpaceType
 
 class ExplorationPolicy:
     """
-    TODO: summary
+    Base abstract class for exploration policies.
+    An exploration policy act similar to a model, predicting actions and being updated if necessary. It also requires
+    to be generated before being used.
+
+    For each exploration policy, a set of supported action space types is defined. To define a novel exploration policy,
+    implement the abstract class in a new specific child class.
     """
 
     def __init__(self):

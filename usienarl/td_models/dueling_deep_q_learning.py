@@ -133,7 +133,13 @@ class Buffer:
 
 class UpdateRule(enum.Enum):
     """
-    TODO: summary
+    The available update rules of the dueling deep-nn model with respect to the Bellman equation:
+        - Q-Learning: using the index of the max of the predicted q-value at the next state by the main network
+        to compute an estimate with the target network used to update predicted q-value at current state
+        - SARSA: using the action estimated according to the current policy applied on the average of the main
+         and the target network at the next state
+        - Expected SARSA: using the mean of the q-values estimated at the next state by the main network where the
+        next action is still chosen according to the averaged q-values policy
     """
     q_learning = 0
     sarsa = 1
@@ -142,27 +148,32 @@ class UpdateRule(enum.Enum):
 
 class Estimator:
     """
-    Estimator defining the real DDQN _model. It is used to define two identical models: target network and q-network.
+    Estimator defining the real dueling model. It is used to define two identical models: target network and q-network.
 
     It is generated given the size of the observation and action spaces and the hidden layer config defining the
-    hidden layers of the DDQN.
+    hidden layers of the dueling deep neural network.
     """
 
     def __init__(self,
                  scope: str,
-                 observation_space_shape, action_space_shape,
+                 observation_space_shape, agent_action_space_shape,
                  hidden_layers_config: Config):
         self.scope = scope
         with tensorflow.variable_scope(self.scope):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self.inputs = tensorflow.placeholder(shape=[None, *observation_space_shape], dtype=tensorflow.float32, name="inputs")
-            # Define the estimator network hidden layers from the config
-            hidden_layers_output = hidden_layers_config.apply_hidden_layers(self.inputs)
-            # Define outputs as an array of neurons of size NxA and with linear activation functions
-            # Define the targets for learning with the same NxA adaptable size
-            # Note: N is the number of examples and A the size of the action space (DDQN only supports discrete actions spaces)
-            self.outputs = tensorflow.layers.dense(hidden_layers_output, *action_space_shape, name="outputs")
-            self.targets = tensorflow.placeholder(shape=[None, *action_space_shape], dtype=tensorflow.float32, name="targets")
+            # Define the estimator network hidden layers from the config with two equal streams for value and advantage
+            hidden_value_stream_output = hidden_layers_config.apply_hidden_layers(self.inputs)
+            hidden_advantage_stream_output = hidden_layers_config.apply_hidden_layers(self.inputs)
+            # Define the value and the advantage computation
+            self._value = tensorflow.layers.dense(hidden_value_stream_output, 1, None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
+            self._advantage = tensorflow.layers.dense(hidden_advantage_stream_output, *agent_action_space_shape, None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="advantage")
+            # Define outputs as an array of neurons of size Nx(A) where N is the number of examples and A the shape of the action space
+            # and whose value is given by the following equation:
+            # Q(s,a) = V(s) + (A(s,a) - 1/|A| * sum A(s,a')) aka the aggregation layer
+            self.outputs = self._value + tensorflow.subtract(self._advantage, tensorflow.reduce_mean(self._advantage, 1, True), name="outputs")
+            # Define the targets for learning with the same Nx(A) adaptable size where N is the number of examples and A the shape of the action space
+            self.targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self.loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
             # Define the absolute error
@@ -176,18 +187,24 @@ class Estimator:
             self.weight_parameters = sorted(self.weight_parameters, key=lambda parameter: parameter.name)
 
 
-class DoubleDeepNN(Model):
+class DuelingDeepQLearning(Model):
     """
-    DDQN (Double Deep Q-Network) _model. The _model is a deep neural network which hidden layers can be defined by a config
-    parameter. It uses a target network and a q-network to correctly evaluate the expected future reward in order
+    Dueling Double Deep Q-Learning (DDDQN) model with Q-Learning update rule.
+    The model is a deep neural network which hidden layers can be defined by a config parameter.
+    It uses a target network and a main network to correctly evaluate the expected future reward in order
     to stabilize learning.
 
-    In order to synchronize the target network and the q-network, every some interval steps the weight have to be copied
-    from the q-network to the target network.
+    In order to synchronize the target network and the main network, every some interval steps the weight have to be
+    copied from the main network to the target network.
 
-    It is further enhanced by the update process of the q-value. In the DDQN the q-network estimates the outputs given
-    the current state, but the best predicted action (the index of the best predicted output) is chosen by the target
-    network.
+    The update rule is the following (Bellman equation):
+    Q(s, a) = R + gamma * max_a(Q(s')) where the max q-value action is estimated by the main network
+    It uses the index of the max of the predicted q-value at the next state by the main network to compute an estimate
+    with the target network used to update predicted q-value at current state.
+
+    The DDDQN divide the output stream in advantage function and value function, making sure they are also identifiable
+    (to make backpropagation still possible), and summing up to compute the outputs by the aggregation layer:
+    Q(s,a) = V(s) + (A(s,a) - 1/|A| * sum A(s,a'))
 
     Supported observation spaces:
         - discrete
@@ -205,10 +222,10 @@ class DoubleDeepNN(Model):
                  importance_sampling_value: float, importance_sampling_value_increment: float,
                  hidden_layers_config: Config,
                  update_rule: UpdateRule = UpdateRule.q_learning):
-        # Define deep-nn model attributes
+        # Define model attributes
         self.learning_rate: float = learning_rate
         self.discount_factor: float = discount_factor
-        # Define internal deep-nn model attributes
+        # Define internal model attributes
         self._update_rule: UpdateRule = update_rule
         self._buffer_capacity: int = buffer_capacity
         self._minimum_sample_probability: float = minimum_sample_probability
@@ -216,9 +233,9 @@ class DoubleDeepNN(Model):
         self._importance_sampling_value: float = importance_sampling_value
         self._importance_sampling_value_increment: float = importance_sampling_value_increment
         self._hidden_layers_config: Config = hidden_layers_config
-        # Define deep-nn model empty attributes
+        # Define model empty attributes
         self.buffer: Buffer = None
-        # Define internal deep-nn model empty attributes
+        # Define internal model empty attributes
         self._target_network: Estimator = None
         self._main_network: Estimator = None
         self._target_network_inputs = None
@@ -232,7 +249,7 @@ class DoubleDeepNN(Model):
         self._optimizer = None
         self._weight_copier = None
         # Generate the base model
-        super(DoubleDeepNN, self).__init__(name)
+        super(DuelingDeepQLearning, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_observation_space_types.append(SpaceType.continuous)
@@ -241,21 +258,20 @@ class DoubleDeepNN(Model):
     def _define_graph(self):
         # Define two estimator, one for target network and one for main network, with identical structure
         self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
-                                       self._observation_space_shape, self._action_space_shape,
+                                       self._observation_space_shape, self._agent_action_space_shape,
                                        self._hidden_layers_config)
         self._target_network = Estimator(self._scope + "/" + self._name + "/TargetNetwork",
-                                         self._observation_space_shape, self._action_space_shape,
+                                         self._observation_space_shape, self._agent_action_space_shape,
                                          self._hidden_layers_config)
-        # Assign the main network properties to the model properties (main network is the actual model)
+        # Assign main and target networks to the model attributes
         self._main_network_inputs = self._main_network.inputs
         self._main_network_outputs = self._main_network.outputs
+        self._target_network_outputs = self._target_network.outputs
+        self._target_network_inputs = self._target_network.inputs
         self._targets = self._main_network.targets
         self._absolute_error = self._main_network.absolute_error
         self._loss = self._main_network.loss
         self._loss_weights = self._main_network.loss_weights
-        # Assign the target network outputs and inputs to the specific target outputs/inputs of the model
-        self._target_network_outputs = self._target_network.outputs
-        self._target_network_inputs = self._target_network.inputs
         # Define the optimizer
         self._optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
         # Define the initializer
@@ -275,11 +291,15 @@ class DoubleDeepNN(Model):
     def get_all_actions(self,
                         session,
                         observation_current):
-        # Generate a one-hot encoded version of the observation
-        observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-        # Return all the predicted q-values given the current observation
-        return session.run(self._main_network_outputs,
-                           feed_dict={self._main_network_inputs: [observation_current_one_hot]})
+        # Save by default the observation current input of the model to the given data
+        observation_current_input = observation_current
+        # Generate a one-hot encoded version of the observation if observation space is discrete
+        if self._observation_space_type == SpaceType.discrete:
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[
+                observation_current]
+            observation_current_input = observation_current_one_hot
+        # Return the q-values predicted by the main network
+        return session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_input]})
 
     def get_best_action(self,
                         session,
@@ -309,31 +329,41 @@ class DoubleDeepNN(Model):
                session,
                batch: []):
         # Unpack the batch into numpy arrays
-        observations_current, actions, rewards, observations_next, weights = batch[0], batch[1], batch[2], batch[3], batch[4]
+        observations_current, actions, rewards, observations_next, weights = batch[0], batch[1], batch[2], batch[3], \
+                                                                             batch[4]
         # Define the input observations to the model (to support both space types)
         observations_current_input = observations_current
         observations_next_input = observations_next
         # Generate a one-hot encoded version of the observations if space type is discrete
         if self._observation_space_type == SpaceType.discrete:
-            observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
-            observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
+            observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[
+                observations_current.reshape(-1)]
+            observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[
+                observations_next.reshape(-1)]
             # Set the model input to the one-hot encoded representation
             observations_current_input = observations_current_one_hot
             observations_next_input = observations_next_one_hot
         # Get the q-values from the model at both current observations and next observations
         # Next observation is estimated by the target network
-        q_values_current: numpy.ndarray = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: observations_current_input})
-        q_values_next_main_network: numpy.ndarray = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: observations_next_input})
-        q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: observations_next_input})
-        # Apply Bellman equation with the required update rule (Q-Learning, SARSA or Expected SARSA)
-        if self._update_rule == UpdateRule.q_learning:
-            self._q_learning_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_main_network, q_values_next_target_network, rewards, self.discount_factor)
-        elif self._update_rule == UpdateRule.sarsa:
-            self._sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_main_network, q_values_next_target_network, rewards, self.discount_factor)
-        elif self._update_rule == UpdateRule.expected_sarsa:
-            self._expected_sarsa_update_rule(len(batch), observations_next, actions, q_values_current, q_values_next_main_network, rewards, self.discount_factor)
-        else:
-            raise TypeError("")
+        q_values_current: numpy.ndarray = session.run(self._main_network_outputs,
+                                                      feed_dict={self._main_network_inputs: observations_current_input})
+        q_values_next_main_network: numpy.ndarray = session.run(self._main_network_outputs,
+                                                                feed_dict={self._main_network_inputs: observations_next_input})
+        q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs,
+                                                                  feed_dict={self._target_network_inputs: observations_next_input})
+        # Apply Bellman equation with the Q-Learning update rule
+        for sample_index in range(len(batch)):
+            # Extract current sample values
+            observation_next = observations_next[sample_index]
+            action = actions[sample_index]
+            reward: float = rewards[sample_index]
+            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
+            if observation_next is None:
+                q_values_current[sample_index, action] = reward
+            else:
+                # Predict the best action index with the main network and execute the update with the target network
+                best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index])
+                q_values_current[sample_index, action] = rewards + self.discount_factor * q_values_next_target_network[sample_index, best_action_index]
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
                                                        feed_dict={
@@ -357,96 +387,3 @@ class DoubleDeepNN(Model):
     def outputs_name(self) -> str:
         # Get the _name of the outputs of the tensorflow graph
         return "MainNetwork/outputs"
-
-    @staticmethod
-    def _q_learning_update_rule(batch_size: int,
-                                observations_next, actions,
-                                q_values_current: numpy.ndarray,
-                                q_values_next_main_network: numpy.ndarray, q_values_next_target_network: numpy.ndarray,
-                                rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using q-learning update rule for the Bellman equation:
-        Q(s, a) = R + gamma * max_a(Q(s')) where the index of the max is computed by the main network.
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next_target_network: the q-values output for the next observation as predicted by the main network (used to update the target)
-        :param q_values_next_target_network: the q-values output for the next observation as predicted by the target network (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using Q-Learning Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                # Predict the best action index with the main network and execute the update with the target network
-                best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index])
-                q_values_current[sample_index, action] = rewards + discount_factor * q_values_next_target_network[sample_index, best_action_index]
-
-    @staticmethod
-    def _sarsa_update_rule(batch_size: int,
-                           observations_next, actions,
-                           q_values_current: numpy.ndarray,
-                           q_values_next_main_network: numpy.ndarray, q_values_next_target_network: numpy.ndarray,
-                           rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using SARSA update rule for the Bellman equation:
-        Q(s, a) = R + gamma * Q(s', a) where Q(s', a) uses as action index the max of the sum of the two estimators.
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next_target_network: the q-values output for the next observation as predicted by the main network (used to update the target)
-        :param q_values_next_target_network: the q-values output for the next observation as predicted by the target network (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using SARSA Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                # Choose the best action index according to the sum of main and target networks q-values and execute the update with the target network
-                best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index] + q_values_next_target_network[sample_index])
-                q_values_current[sample_index, action] = rewards + discount_factor * q_values_next_target_network[sample_index, best_action_index]
-
-    @staticmethod
-    def _expected_sarsa_update_rule(batch_size: int,
-                                    observations_next, actions,
-                                    q_values_current: numpy.ndarray, q_values_next_main_network: numpy.ndarray,
-                                    rewards, discount_factor: float):
-        """
-        Update the Q-Values target to be estimated by the _model using Expected SARSA update rule for the Bellman equation:
-        Q(s, a) = R + gamma * mean_a(Q(s')) where the mean is estimated by the main network.
-
-        :param observations_next: the next observation for each sample
-        :param actions: the actions taken by the agent at each sample
-        :param q_values_current: the q-values output for the current observation (the target to be updated)
-        :param q_values_next_main_network: the q-values output for the next observation as predicted by the main network (used to update the target)
-        :param rewards: the rewards obtained by the agent at each sample
-        :param discount_factor: the discount factor set for the _model, i.e. gamma
-        """
-        for sample_index in range(batch_size):
-            # Extract current sample values
-            observation_next = observations_next[sample_index]
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            # Update the q-values for current observation using Expected SARSA Bellman equation
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
-                q_values_current[sample_index, action] = reward
-            else:
-                q_values_current[sample_index, action] = rewards + discount_factor * numpy.average(q_values_next_main_network[sample_index])
-

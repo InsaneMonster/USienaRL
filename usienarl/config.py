@@ -1,15 +1,23 @@
-# Import tensorflow
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
+# Import packages
+
+import logging
 import tensorflow
+import enum
 
-# Import enum
-
-from enum import Enum
 
 # Define layer types for tensorflow neural networks definition
 
-
-class LayerType(Enum):
+class LayerType(enum.Enum):
     """
     Layer types for layer definition.
 
@@ -39,7 +47,7 @@ class Config:
     """
     Wrapper class used to define neural networks.
 
-    Parts (like hidden layers) of a tensorflow neural network _model can be defined by it.
+    Parts (like hidden layers) of a tensorflow neural network model can be defined by it.
     """
 
     def __init__(self):
@@ -63,6 +71,7 @@ class Config:
         self._hidden_layers_config.append(hidden_layer_config)
 
     def apply_hidden_layers(self,
+                            logger: logging.Logger,
                             input_layer):
         """
         Apply the hidden layer to the network on the given input layer.
@@ -118,7 +127,7 @@ class Config:
                 hidden_layer = tensorflow.layers.max_pooling3d(hidden_layer_input, *layer_parameters)
             # An error occurred, print error message and break
             else:
-                print("Error, layer type not supported, application of hidden layers interrupted!")
+                logger.info("Error, layer type not supported, application of hidden layers interrupted!")
                 return
             # Add the last defined layer in the layers list
             hidden_layers.append(hidden_layer)

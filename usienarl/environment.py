@@ -1,3 +1,13 @@
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
+
 # Import packages
 
 import enum
@@ -16,9 +26,8 @@ class SpaceType(enum.Enum):
     Usually, the discrete space has greater size than the continuous one (it requires more variables one-hot encoded
     to properly define each state, while in continuous it is defined by all the values in the state itself).
 
-    Except for the properties and the setup method, all the methods can be used with tensorflow (which means, the
-    environment can run on tensorflow). Usually, environments doesn't require tensorflow, in this case the child class
-    will have a default value of None for the session in each method.
+    Except for the properties and the setup method, all the methods can be used with tensorflow by the mean of its
+    session.
     """
     discrete = 1
     continuous = 2
@@ -26,12 +35,13 @@ class SpaceType(enum.Enum):
 
 class Environment:
     """
-    Base class for each environment. It should not be used by itself, and should be extended instead.
+    Base environment abstract class.
 
     The environment is not created until the setup method is called.
+    The environment template is inspired by the gym environment and as such should be pretty standard in a
+    reinforcement learning research setting.
 
-    Attributes:
-        - _name: the string _name of the environment
+    To define your own environment, implement the abstract class in a specific child class.
     """
 
     def __init__(self,

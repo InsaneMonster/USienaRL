@@ -14,7 +14,7 @@ import logging
 # Import required src
 
 from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
-from usienarl.models.temporal_difference import Tabular
+from td_models import TabularQLearning
 
 
 class TDTabularAgent(Agent):
@@ -25,11 +25,11 @@ class TDTabularAgent(Agent):
 
     def __init__(self,
                  name: str,
-                 model: Tabular,
+                 model: TabularQLearning,
                  exploration_policy: ExplorationPolicy,
                  batch_size: int = 1):
         # Define tabular agent attributes
-        self._model: Tabular = model
+        self._model: TabularQLearning = model
         self._exploration_policy: ExplorationPolicy = exploration_policy
         # Define internal agent attributes
         self._batch_size: int = batch_size

@@ -23,7 +23,7 @@ class QLearningExperiment(Experiment):
                  model: TemporalDifferenceModel,
                  memory: Memory, batch_size: int,
                  explorer: ExplorationPolicy):
-        # Define temporal_difference experiment attributes
+        # Define td_models experiment attributes
         # Define the memory: set also the number of pre-training episodes depending on the memory requirements and _capacity
         self._memory: Memory = memory
         self._batch_size: int = batch_size
@@ -138,8 +138,8 @@ class QLearningExperiment(Experiment):
         # Save the _model
         logger.info("Saving the _model...")
         if experiment_number >= 0:
-            model_saver.save(session, save_path + "/" + self._name + "_" + str(experiment_number))
+            model_saver.save(session, save_path + "/" + self.name + "_" + str(experiment_number))
         else:
-            model_saver.save(session, save_path + "/" + self._name)
+            model_saver.save(session, save_path + "/" + self.name)
         # Return the reached step
         return step + start_step

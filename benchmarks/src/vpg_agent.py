@@ -2,10 +2,11 @@
 # Copyright (C) 2019 Luca Pasqualini
 # University of Siena - Artificial Intelligence Laboratory - SAILab
 #
-# USienaRL is licensed under a MIT License.
+#
+# USienaRL is licensed under a BSD 3-Clause.
 #
 # You should have received a copy of the license along with this
-# work. If not, see <https://opensource.org/licenses/MIT>.
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
 # Import packages
 
@@ -14,14 +15,14 @@ import logging
 # Import required src
 
 from usienarl import Agent, Interface, SpaceType
-from usienarl.models.policy_optimization import VanillaPolicyGradient
+from usienarl.po_models import VanillaPolicyGradient
 from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy
 
 
 class VPGAgent(Agent):
     """
-    TODO: summary
-
+    Vanilla Policy Gradient agent.
+    It is supplied with a VPG model and an optional epsilon greedy exploration policy.
     """
 
     def __init__(self,

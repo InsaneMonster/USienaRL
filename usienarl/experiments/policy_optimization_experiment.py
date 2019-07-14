@@ -83,9 +83,9 @@ class PolicyOptimizationExperiment(Experiment):
         logger.info("Executed " + str(update_count) + " updates count in " + str(step) + " steps")
         logger.info("Saving the _model...")
         if experiment_number >= 0:
-            model_saver.save(session, save_path + "/" + self._name + "_" + str(experiment_number))
+            model_saver.save(session, save_path + "/" + self.name + "_" + str(experiment_number))
         else:
-            model_saver.save(session, save_path + "/" + self._name)
+            model_saver.save(session, save_path + "/" + self.name)
         # Return the reached step
         return step + start_step
 
