@@ -149,7 +149,7 @@ class Experiment:
                 # Set the observation next to None if final state is reached
                 if episode_done:
                     observation_next = None
-                self._agent.complete_step_warmup(logger, session,
+                self._agent.complete_step_warmup(logger, session, self._interface,
                                                  observation_current, agent_action, reward, observation_next,
                                                  step, episode, episodes)
                 # Render if required
@@ -165,7 +165,7 @@ class Experiment:
             # Compute total and average reward over the steps in the episode
             episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
             # Complete the episode and send back information to the agent
-            self._agent.complete_episode_warmup(logger, session,
+            self._agent.complete_episode_warmup(logger, session, self._interface,
                                                 episode_rewards[-1], episode_total_reward,
                                                 episode, episodes)
 
@@ -203,7 +203,7 @@ class Experiment:
                 # Set the observation next to None if final state is reached
                 if episode_done:
                     observation_next = None
-                self._agent.complete_step_train(logger, session,
+                self._agent.complete_step_train(logger, session, self._interface,
                                                 observation_current, agent_action, reward, observation_next,
                                                 step, self._trained_steps,
                                                 episode, self._trained_episodes,
@@ -224,7 +224,7 @@ class Experiment:
             episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
             episode_average_reward: float = numpy.average(numpy.array(episode_rewards))
             # Complete the episode and send back information to the agent
-            self._agent.complete_episode_train(logger, session,
+            self._agent.complete_episode_train(logger, session, self._interface,
                                                episode_rewards[-1], episode_total_reward,
                                                self._trained_steps,
                                                episode, self._trained_episodes,
@@ -271,7 +271,7 @@ class Experiment:
                 # Set the observation next to None if final state is reached
                 if episode_done:
                     observation_next = None
-                self._agent.complete_step_inference(logger, session,
+                self._agent.complete_step_inference(logger, session, self._interface,
                                                     observation_current, agent_action, reward, observation_next,
                                                     step, episode, episodes)
                 # Render if required
@@ -288,7 +288,7 @@ class Experiment:
             episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
             episode_average_reward: float = numpy.average(numpy.array(episode_rewards))
             # Complete the episode and send back information to the agent
-            self._agent.complete_episode_inference(logger, session,
+            self._agent.complete_episode_inference(logger, session, self._interface,
                                                    episode_rewards[-1], episode_total_reward,
                                                    episode, episodes)
             # Add the episode rewards to the volley

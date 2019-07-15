@@ -2,10 +2,11 @@
 # Copyright (C) 2019 Luca Pasqualini
 # University of Siena - Artificial Intelligence Laboratory - SAILab
 #
-# USienaRL is licensed under a MIT License.
+#
+# USienaRL is licensed under a BSD 3-Clause.
 #
 # You should have received a copy of the license along with this
-# work. If not, see <https://opensource.org/licenses/MIT>.
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
 # Import packages
 
@@ -14,29 +15,33 @@ import logging
 # Import required src
 
 from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
-from td_models import TabularQLearning
+from usienarl.td_models import TabularExpectedSARSA
 
 
-class TDTabularAgent(Agent):
+class TabularExpectedSARSAAgent(Agent):
     """
-    TODO: summary
+    Tabular Expected SARSA agent.
 
+    It is supplied with a Tabular Expected SARSA model and an exploration policy.
+
+    The batch size define how many steps from the prioritized experience replay built-in buffer should be fed into
+    the model when updating. The agent uses a 1-step temporal difference algorithm, i.e. it is updated at every step.
     """
 
     def __init__(self,
                  name: str,
-                 model: TabularQLearning,
+                 model: TabularExpectedSARSA,
                  exploration_policy: ExplorationPolicy,
                  batch_size: int = 1):
         # Define tabular agent attributes
-        self._model: TabularQLearning = model
+        self._model: TabularExpectedSARSA = model
         self._exploration_policy: ExplorationPolicy = exploration_policy
         # Define internal agent attributes
         self._batch_size: int = batch_size
         self._current_absolute_errors = None
         self._current_loss = None
         # Generate base agent
-        super(TDTabularAgent, self).__init__(name)
+        super(TabularExpectedSARSAAgent, self).__init__(name)
 
     def _generate(self,
                   logger: logging.Logger,
@@ -96,6 +101,7 @@ class TDTabularAgent(Agent):
     def complete_step_warmup(self,
                              logger: logging.Logger,
                              session,
+                             interface: Interface,
                              agent_observation_current,
                              agent_action, reward: float,
                              agent_observation_next,
@@ -108,6 +114,7 @@ class TDTabularAgent(Agent):
     def complete_step_train(self,
                             logger: logging.Logger,
                             session,
+                            interface: Interface,
                             agent_observation_current,
                             agent_action,
                             reward: float,
@@ -127,6 +134,7 @@ class TDTabularAgent(Agent):
     def complete_step_inference(self,
                                 logger: logging.Logger,
                                 session,
+                                interface: Interface,
                                 agent_observation_current,
                                 agent_action,
                                 reward: float,
@@ -139,6 +147,7 @@ class TDTabularAgent(Agent):
     def complete_episode_warmup(self,
                                 logger: logging.Logger,
                                 session,
+                                interface: Interface,
                                 last_step_reward: float,
                                 episode_total_reward: float,
                                 warmup_episode_current: int,
@@ -148,6 +157,7 @@ class TDTabularAgent(Agent):
     def complete_episode_train(self,
                                logger: logging.Logger,
                                session,
+                               interface: Interface,
                                last_step_reward: float,
                                episode_total_reward: float,
                                train_step_absolute: int,
@@ -159,6 +169,7 @@ class TDTabularAgent(Agent):
     def complete_episode_inference(self,
                                    logger: logging.Logger,
                                    session,
+                                   interface: Interface,
                                    last_step_reward: float,
                                    episode_total_reward: float,
                                    inference_episode_current: int,

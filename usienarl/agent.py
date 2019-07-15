@@ -158,6 +158,7 @@ class Agent:
     def complete_step_warmup(self,
                              logger: logging.Logger,
                              session,
+                             interface: Interface,
                              agent_observation_current,
                              agent_action,
                              reward: float,
@@ -170,6 +171,7 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param agent_observation_current: the current observation of the agent
         :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
         :param reward: the reward obtained by the combination of current observation, next observation and action in-between
@@ -184,6 +186,7 @@ class Agent:
     def complete_step_train(self,
                             logger: logging.Logger,
                             session,
+                            interface: Interface,
                             agent_observation_current,
                             agent_action,
                             reward: float,
@@ -196,6 +199,7 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param agent_observation_current: the current observation of the agent
         :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
         :param reward: the reward obtained by the combination of current observation, next observation and action in-between
@@ -213,6 +217,7 @@ class Agent:
     def complete_step_inference(self,
                                 logger: logging.Logger,
                                 session,
+                                interface: Interface,
                                 agent_observation_current,
                                 agent_action,
                                 reward: float,
@@ -225,6 +230,7 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param agent_observation_current: the current observation of the agent
         :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
         :param reward: the reward obtained by the combination of current observation, next observation and action in-between
@@ -239,6 +245,7 @@ class Agent:
     def complete_episode_warmup(self,
                                 logger: logging.Logger,
                                 session,
+                                interface: Interface,
                                 last_step_reward: float,
                                 episode_total_reward: float,
                                 warmup_episode_current: int,
@@ -248,6 +255,7 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param last_step_reward: the reward obtained in the last step in the passed episode
         :param episode_total_reward: the reward obtained in the passed episode
         :param warmup_episode_current: the current warmup episode
@@ -259,6 +267,7 @@ class Agent:
     def complete_episode_train(self,
                                logger: logging.Logger,
                                session,
+                               interface: Interface,
                                last_step_reward: float,
                                episode_total_reward: float,
                                train_step_absolute: int,
@@ -269,6 +278,7 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param last_step_reward: the reward obtained in the last step in the passed episode
         :param episode_total_reward: the reward obtained in the passed episode
         :param train_step_absolute: the current absolute number of train step (counting all volleys)
@@ -283,6 +293,7 @@ class Agent:
     def complete_episode_inference(self,
                                    logger: logging.Logger,
                                    session,
+                                   interface: Interface,
                                    last_step_reward: float,
                                    episode_total_reward: float,
                                    inference_episode_current: int,
@@ -292,6 +303,7 @@ class Agent:
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any
+        :param interface: the interface between the agent and the environment
         :param last_step_reward: the reward obtained in the last step in the passed episode
         :param episode_total_reward: the reward obtained in the passed episode
         :param inference_episode_current: the current inference episode

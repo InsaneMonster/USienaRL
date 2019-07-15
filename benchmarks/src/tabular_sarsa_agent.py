@@ -14,84 +14,85 @@ import logging
 
 # Import required src
 
-from usienarl import Agent, Interface, SpaceType
-from usienarl.po_models import VanillaPolicyGradient
-from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy
+from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
+from usienarl.td_models import TabularSARSA
 
 
-class VPGAgent(Agent):
+class TabularSARSAAgent(Agent):
     """
-    Vanilla Policy Gradient agent.
-    It is supplied with a VPG model and an optional epsilon greedy exploration policy.
+    Tabular SARSA agent.
 
-    The updates per training volley define how many updates should be execute by the model in each train volley. For
-    example if the volley is 1000 episodes long and the number of updates per volley is 10, the agent will be updated
-    every 100 episodes.
+    It is supplied with a Tabular SARSA model and an exploration policy.
+
+    The batch size define how many steps from the prioritized experience replay built-in buffer should be fed into
+    the model when updating. The agent uses a 1-step temporal difference algorithm, i.e. it is updated at every step.
     """
 
     def __init__(self,
                  name: str,
-                 model: VanillaPolicyGradient,
-                 updates_per_training_volley: int,
-                 epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = None):
-        # Define VPG agent attributes
-        self.updates_per_training_volley: int = updates_per_training_volley
-        # Define tensorflow model
-        self._model: VanillaPolicyGradient = model
-        # Define epsilon greedy exploration policy, if any
-        self._exploration_policy: EpsilonGreedyExplorationPolicy = epsilon_greedy_exploration_policy
+                 model: TabularSARSA,
+                 exploration_policy: ExplorationPolicy,
+                 batch_size: int = 1):
+        # Define tabular agent attributes
+        self._model: TabularSARSA = model
+        self._exploration_policy: ExplorationPolicy = exploration_policy
         # Define internal agent attributes
-        self._current_value_estimate = None
-        self._current_policy_loss = None
-        self._current_value_loss = None
+        self._batch_size: int = batch_size
+        self._current_absolute_errors = None
+        self._current_loss = None
+        self._next_warmup_action = None
+        self._next_train_action = None
         # Generate base agent
-        super(VPGAgent, self).__init__(name)
+        super(TabularSARSAAgent, self).__init__(name)
 
     def _generate(self,
                   logger: logging.Logger,
                   observation_space_type: SpaceType, observation_space_shape,
                   agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
-        # Generate the model and check if it's successful, stop if not successful
-        if self._model.generate(logger, self._scope + "/" + self._name,
-                                observation_space_type, observation_space_shape,
-                                agent_action_space_type, agent_action_space_shape):
-            # Generate the exploration policy, if any, and return a flag stating is generation is successful
-            if self._exploration_policy is None:
-                return True
-            else:
-                return self._exploration_policy.generate(logger, agent_action_space_type, agent_action_space_shape)
+        # Generate the exploration policy and check if it's successful, stop if not successful
+        if self._exploration_policy.generate(logger, agent_action_space_type, agent_action_space_shape):
+            # Generate the _model and return a flag stating if generation was successful
+            return self._model.generate(logger, self._scope + "/" + self._name,
+                                        observation_space_type, observation_space_shape,
+                                        agent_action_space_type, agent_action_space_shape)
         return False
 
     def initialize(self,
                    logger: logging.Logger,
                    session):
         # Reset internal agent attributes
-        self._current_value_estimate = None
-        self._current_policy_loss = None
-        self._current_value_loss = None
-        # Initialize the _model
+        self._current_absolute_errors = None
+        self._current_loss = None
+        self._next_warmup_action = None
+        self._next_train_action = None
+        # Initialize the model
         self._model.initialize(logger, session)
+        # Initialize the exploration policy
+        self._exploration_policy.initialize(logger, session)
 
     def act_warmup(self,
                    logger: logging.Logger,
                    session,
                    interface: Interface,
                    agent_observation_current):
-        pass
+        # Act randomly or with the already chosen random action, if any
+        action = self._next_warmup_action
+        if self._next_warmup_action is None:
+            action = interface.get_random_agent_action(logger, session)
+        # Return the random action
+        return action
 
     def act_train(self,
                   logger: logging.Logger,
                   session,
                   interface: Interface,
                   agent_observation_current):
-        # If there is no exploration policy just use the model best prediction (it is still inherently exploring)
-        best_action, self._current_value_estimate = self._model.get_best_action(session, agent_observation_current)
-        # Use the given epsilon greedy model otherwise
-        # Note: epsilon greedy just requires the best action to be supplied by the model
-        if self._exploration_policy is not None:
-            action = self._exploration_policy.act(logger, session, interface, None, best_action)
-        else:
-            action = best_action
+        # Get all actions and the best action predicted by the model or with the already predicted action, if any
+        action = self._next_train_action
+        if self._next_train_action is None:
+            best_action, all_actions = self._model.get_best_action_and_all_actions(session, agent_observation_current)
+            # Act according to the exploration policy
+            action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
         # Return the exploration action
         return action
 
@@ -100,8 +101,8 @@ class VPGAgent(Agent):
                       session,
                       interface: Interface,
                       agent_observation_current):
-        # Predict the action with the model
-        action, _ = self._model.get_best_action(session, agent_observation_current)
+        # Act with the best policy according to the model
+        action = self._model.get_best_action(session, agent_observation_current)
         # Return the predicted action
         return action
 
@@ -110,13 +111,15 @@ class VPGAgent(Agent):
                              session,
                              interface: Interface,
                              agent_observation_current,
-                             agent_action,
-                             reward: float,
+                             agent_action, reward: float,
                              agent_observation_next,
                              warmup_step_current: int,
                              warmup_episode_current: int,
                              warmup_episode_volley: int):
-        pass
+        # Choose randomly the next action
+        self._next_warmup_action = interface.get_random_agent_action(logger, session)
+        # Save the current step in the buffer
+        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, self._next_warmup_action)
 
     def complete_step_train(self,
                             logger: logging.Logger,
@@ -129,8 +132,18 @@ class VPGAgent(Agent):
                             train_step_current: int, train_step_absolute: int,
                             train_episode_current: int, train_episode_absolute: int,
                             train_episode_volley: int, train_episode_total: int):
-        # Save the current step in the buffer together with the current value estimate
-        self._model.buffer.store(agent_observation_current, agent_action, reward, self._current_value_estimate)
+        # Predict the next action according to the next observation and the exploration policy
+        best_action, all_actions = self._model.get_best_action_and_all_actions(session, agent_observation_next)
+        # Act according to the exploration policy
+        self._next_train_action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
+        # Save the current step in the buffer
+        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, self._next_train_action)
+        # Update the model and save current loss and absolute errors
+        summary, self._current_loss, self._current_absolute_errors = self._model.update(session, self._model.buffer.get(self._batch_size))
+        # Update the buffer with the computed absolute error
+        self._model.buffer.update(self._current_absolute_errors)
+        # Update the summary at the absolute current step
+        self._summary_writer.add_summary(summary, train_step_absolute)
 
     def complete_step_inference(self,
                                 logger: logging.Logger,
@@ -153,7 +166,8 @@ class VPGAgent(Agent):
                                 episode_total_reward: float,
                                 warmup_episode_current: int,
                                 warmup_episode_volley: int):
-        pass
+        # Reset predicted next warmup action
+        self._next_warmup_action = None
 
     def complete_episode_train(self,
                                logger: logging.Logger,
@@ -164,17 +178,10 @@ class VPGAgent(Agent):
                                train_step_absolute: int,
                                train_episode_current: int, train_episode_absolute: int,
                                train_episode_volley: int, train_episode_total: int):
-        # Update the buffer at the end of trajectory
-        self._model.buffer.finish_path(last_step_reward)
-        # Update exploration policy, if any
-        if self._exploration_policy is not None:
-            self._exploration_policy.update(logger, session)
-        # Execute update only after a certain number of trajectories each time
-        if train_episode_current % (train_episode_volley / self.updates_per_training_volley) == 0 and train_episode_current > 0:
-            # Execute the update and store policy and value loss
-            summary, self._current_policy_loss, self._current_value_loss = self._model.update(session, self._model.buffer.get())
-            # Update the summary at the absolute current step
-            self._summary_writer.add_summary(summary, train_step_absolute)
+        # Reset predicted next train action
+        self._next_train_action = None
+        # Update the exploration policy
+        self._exploration_policy.update(logger, session)
 
     def complete_episode_inference(self,
                                    logger: logging.Logger,
@@ -195,6 +202,3 @@ class VPGAgent(Agent):
     def warmup_episodes(self) -> int:
         # Return the amount of warmup episodes required by the model
         return self._model.warmup_episodes
-
-
-
