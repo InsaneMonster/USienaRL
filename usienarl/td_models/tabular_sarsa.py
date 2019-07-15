@@ -43,7 +43,7 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
     def store(self,
-              observation_current, action_current, reward: float, observation_next, action_next):
+              observation_current, action_current, reward: float, observation_next, action_next, last_step: bool):
         # Find the current max priority on the tree leafs
         max_priority: float = numpy.max(self._sum_tree.leafs)
         # If the max priority is zero set it to the minimum defined
@@ -51,7 +51,7 @@ class Buffer:
             max_priority = self._MINIMUM_ALLOWED_PRIORITY
         # Set the max priority as the default one for this new sample
         # Note: we set the max priority for each new sample and then improve on it iteratively during training
-        self._sum_tree.add((observation_current, action_current, reward, observation_next, action_next), max_priority)
+        self._sum_tree.add((observation_current, action_current, reward, observation_next, action_next, last_step), max_priority)
 
     def get(self,
             amount: int = 0):
@@ -64,6 +64,7 @@ class Buffer:
         rewards: [] = []
         observations_next: [] = []
         actions_next: [] = []
+        last_steps: [] = []
         # Define the returned arrays of indexes and weights
         self._sum_tree_last_sampled_indexes = numpy.empty((amount,), dtype=numpy.int32)
         importance_sampling_weights = numpy.empty((amount, 1), dtype=numpy.float32)
@@ -102,8 +103,9 @@ class Buffer:
             rewards.append(leaf_data[2])
             observations_next.append(leaf_data[3])
             actions_next.append(leaf_data[4])
+            last_steps.append(leaf_data[5])
         # Return the sample (minibatch) with related weights
-        return [numpy.array(observations_current), numpy.array(actions_current), numpy.array(rewards), numpy.array(observations_next), numpy.array(actions_next), importance_sampling_weights]
+        return [numpy.array(observations_current), numpy.array(actions_current), numpy.array(rewards), numpy.array(observations_next), numpy.array(actions_next), numpy.array(last_steps), importance_sampling_weights]
 
     def update(self,
                absolute_errors: []):
@@ -180,8 +182,9 @@ class TabularSARSA(Model):
         self._supported_action_space_types.append(SpaceType.discrete)
 
     def _define_graph(self):
-        # Set the buffer for the tabular temporal difference algorithm
-        self.buffer = Buffer(self._buffer_capacity, self._minimum_sample_probability, self._random_sample_trade_off, self._importance_sampling_value, self._importance_sampling_value_increment)
+        # Set the buffer
+        self.buffer = Buffer(self._buffer_capacity, self._minimum_sample_probability, self._random_sample_trade_off,
+                             self._importance_sampling_value, self._importance_sampling_value_increment)
         # Define the tensorflow _model
         with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define inputs of the _model as a float adaptable array with size Nx(S) where N is the number of examples and (O) is the shape of the observations space
@@ -207,7 +210,7 @@ class TabularSARSA(Model):
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define the _summary operation for this graph with loss and absolute error summaries
-            self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
+            self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
 
     def get_all_actions(self,
                         session,
@@ -221,7 +224,7 @@ class TabularSARSA(Model):
                         session,
                         observation_current):
         # Return the predicted action given the current observation
-        return numpy.argmax(self.get_all_actions(session, observation_current))[0]
+        return numpy.argmax(self.get_all_actions(session, observation_current))
 
     def get_best_action_and_all_actions(self,
                                         session,
@@ -229,13 +232,13 @@ class TabularSARSA(Model):
         # Get all actions
         all_actions = self.get_all_actions(session, observation_current)
         # Return the best action and all the actions
-        return numpy.argmax(all_actions)[0], all_actions
+        return numpy.argmax(all_actions), all_actions
 
     def update(self,
                session,
                batch: []):
         # Unpack the batch into numpy arrays
-        observations_current, actions_current, rewards, observations_next, actions_next, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
+        observations_current, actions_current, rewards, observations_next, actions_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5], batch[6]
         # Generate a one-hot encoded version of the observations
         observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
         observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
@@ -243,14 +246,14 @@ class TabularSARSA(Model):
         q_values_current: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_current_one_hot})
         q_values_next: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_next_one_hot})
         # Apply Bellman equation with the SARSA update rule
-        for sample_index in range(len(batch)):
+        for sample_index in range(len(actions_current)):
             # Extract current sample values
-            observation_next = observations_next[sample_index]
             action_current = actions_current[sample_index]
             action_next = actions_next[sample_index]
             reward: float = rewards[sample_index]
+            last_step: bool = last_steps[sample_index]
             # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
+            if last_step:
                 q_values_current[sample_index, action_current] = reward
             else:
                 q_values_current[sample_index, action_current] = reward + self.discount_factor * q_values_next[sample_index, action_next]

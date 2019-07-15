@@ -11,6 +11,7 @@
 # Import packages
 
 import logging
+import numpy
 
 # Import required src
 
@@ -108,8 +109,16 @@ class TabularQLearningAgent(Agent):
                              warmup_step_current: int,
                              warmup_episode_current: int,
                              warmup_episode_volley: int):
+        # Adjust the next observation if None (final step)
+        last_step: bool = False
+        if agent_observation_next is None:
+            last_step = True
+            if self._observation_space_type == SpaceType.discrete:
+                agent_observation_next = 0
+            else:
+                agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
         # Save the current step in the buffer
-        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next)
+        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, last_step)
 
     def complete_step_train(self,
                             logger: logging.Logger,
@@ -122,8 +131,16 @@ class TabularQLearningAgent(Agent):
                             train_step_current: int, train_step_absolute: int,
                             train_episode_current: int, train_episode_absolute: int,
                             train_episode_volley: int, train_episode_total: int):
+        # Adjust the next observation if None (final step)
+        last_step: bool = False
+        if agent_observation_next is None:
+            last_step = True
+            if self._observation_space_type == SpaceType.discrete:
+                agent_observation_next = 0
+            else:
+                agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
         # Save the current step in the buffer
-        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next)
+        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, last_step)
         # Update the model and save current loss and absolute errors
         summary, self._current_loss, self._current_absolute_errors = self._model.update(session, self._model.buffer.get(self._batch_size))
         # Update the buffer with the computed absolute error

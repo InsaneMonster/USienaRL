@@ -12,16 +12,15 @@ from usienarl.libs import SumTree
 
 class Buffer:
     """
-    TODO: summary
-    Prioritized experience replay memory. It uses a sum tree to store not only the samples but also the priority of
+    Prioritized experience replay buffer. It uses a sum tree to store not only the samples but also the priority of
     the samples, where the priority of the samples is a representation of the probability of a sample.
 
-    When adding a new sample, the default priority value of the new node associated with such sample is set to
+    When storing a new sample, the default priority value of the new node associated with such sample is set to
     the maximum defined priority. This value is iteratively changed by the algorithm when update is called.
 
     When getting the samples, a priority segment inversely proportional to the amount of required samples is generated.
     Samples are then uniformly taken for that segment, and stored in a minibatch which is returned.
-    Also, a weight to compensate for the over-presence of higher priority samples is returned by the get_sample method,
+    Also, a weight to compensate for the over-presence of higher priority samples is returned by the get method,
     along with the minibatch as second returned value.
     """
 
@@ -45,7 +44,7 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
     def store(self,
-              observation_current, action, reward: float, observation_next):
+              observation_current, action, reward: float, observation_next, last_step: bool):
         # Find the current max priority on the tree leafs
         max_priority: float = numpy.max(self._sum_tree.leafs)
         # If the max priority is zero set it to the minimum defined
@@ -53,7 +52,7 @@ class Buffer:
             max_priority = self._MINIMUM_ALLOWED_PRIORITY
         # Set the max priority as the default one for this new sample
         # Note: we set the max priority for each new sample and then improve on it iteratively during training
-        self._sum_tree.add((observation_current, action, reward, observation_next), max_priority)
+        self._sum_tree.add((observation_current, action, reward, observation_next, last_step), max_priority)
 
     def get(self,
             amount: int = 0):
@@ -65,6 +64,7 @@ class Buffer:
         actions: [] = []
         rewards: [] = []
         observations_next: [] = []
+        last_steps: [] = []
         # Define the returned arrays of indexes and weights
         self._sum_tree_last_sampled_indexes = numpy.empty((amount,), dtype=numpy.int32)
         importance_sampling_weights = numpy.empty((amount, 1), dtype=numpy.float32)
@@ -102,8 +102,9 @@ class Buffer:
             actions.append(leaf_data[1])
             rewards.append(leaf_data[2])
             observations_next.append(leaf_data[3])
+            last_steps.append((leaf_data[4]))
         # Return the sample (minibatch) with related weights
-        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), importance_sampling_weights]
+        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), numpy.array(last_steps), importance_sampling_weights]
 
     def update(self,
                absolute_errors: []):
@@ -127,23 +128,6 @@ class Buffer:
             self._sum_tree.update(sum_tree_index, priority_value)
         # Reset the last sampled sum tree indexes for the next update
         self._sum_tree_last_sampled_indexes = None
-
-
-# Define update rules for the model
-
-class UpdateRule(enum.Enum):
-    """
-    The available update rules of the dueling deep-nn model with respect to the Bellman equation:
-        - Q-Learning: using the index of the max of the predicted q-value at the next state by the main network
-        to compute an estimate with the target network used to update predicted q-value at current state
-        - SARSA: using the action estimated according to the current policy applied on the average of the main
-         and the target network at the next state
-        - Expected SARSA: using the mean of the q-values estimated at the next state by the main network where the
-        next action is still chosen according to the averaged q-values policy
-    """
-    q_learning = 0
-    sarsa = 1
-    expected_sarsa = 2
 
 
 class Estimator:
@@ -220,13 +204,11 @@ class DuelingDeepQLearning(Model):
                  buffer_capacity: int,
                  minimum_sample_probability: float, random_sample_trade_off: float,
                  importance_sampling_value: float, importance_sampling_value_increment: float,
-                 hidden_layers_config: Config,
-                 update_rule: UpdateRule = UpdateRule.q_learning):
+                 hidden_layers_config: Config):
         # Define model attributes
         self.learning_rate: float = learning_rate
         self.discount_factor: float = discount_factor
         # Define internal model attributes
-        self._update_rule: UpdateRule = update_rule
         self._buffer_capacity: int = buffer_capacity
         self._minimum_sample_probability: float = minimum_sample_probability
         self._random_sample_trade_off: float = random_sample_trade_off
@@ -256,6 +238,9 @@ class DuelingDeepQLearning(Model):
         self._supported_action_space_types.append(SpaceType.discrete)
 
     def _define_graph(self):
+        # Set the buffer
+        self.buffer = Buffer(self._buffer_capacity, self._minimum_sample_probability, self._random_sample_trade_off,
+                             self._importance_sampling_value, self._importance_sampling_value_increment)
         # Define two estimator, one for target network and one for main network, with identical structure
         self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
                                        self._observation_space_shape, self._agent_action_space_shape,
@@ -286,7 +271,7 @@ class DuelingDeepQLearning(Model):
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define the _summary operation for this graph with loss and absolute error summaries
-            self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
+            self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
 
     def get_all_actions(self,
                         session,
@@ -295,8 +280,7 @@ class DuelingDeepQLearning(Model):
         observation_current_input = observation_current
         # Generate a one-hot encoded version of the observation if observation space is discrete
         if self._observation_space_type == SpaceType.discrete:
-            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[
-                observation_current]
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             observation_current_input = observation_current_one_hot
         # Return the q-values predicted by the main network
         return session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_input]})
@@ -305,7 +289,7 @@ class DuelingDeepQLearning(Model):
                         session,
                         observation_current):
         # Return the predicted action given the current observation
-        return numpy.argmax(self.get_all_actions(session, observation_current))[0]
+        return numpy.argmax(self.get_all_actions(session, observation_current))
 
     def get_best_action_and_all_actions(self,
                                         session,
@@ -313,7 +297,7 @@ class DuelingDeepQLearning(Model):
         # Get all actions
         all_actions = self.get_all_actions(session, observation_current)
         # Return the best action and all the actions
-        return numpy.argmax(all_actions)[0], all_actions
+        return numpy.argmax(all_actions), all_actions
 
     def copy_weight(self,
                     session):
@@ -329,17 +313,14 @@ class DuelingDeepQLearning(Model):
                session,
                batch: []):
         # Unpack the batch into numpy arrays
-        observations_current, actions, rewards, observations_next, weights = batch[0], batch[1], batch[2], batch[3], \
-                                                                             batch[4]
+        observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
         # Define the input observations to the model (to support both space types)
         observations_current_input = observations_current
         observations_next_input = observations_next
         # Generate a one-hot encoded version of the observations if space type is discrete
         if self._observation_space_type == SpaceType.discrete:
-            observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[
-                observations_current.reshape(-1)]
-            observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[
-                observations_next.reshape(-1)]
+            observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
+            observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
             # Set the model input to the one-hot encoded representation
             observations_current_input = observations_current_one_hot
             observations_next_input = observations_next_one_hot
@@ -352,18 +333,18 @@ class DuelingDeepQLearning(Model):
         q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs,
                                                                   feed_dict={self._target_network_inputs: observations_next_input})
         # Apply Bellman equation with the Q-Learning update rule
-        for sample_index in range(len(batch)):
+        for sample_index in range(len(actions)):
             # Extract current sample values
-            observation_next = observations_next[sample_index]
             action = actions[sample_index]
             reward: float = rewards[sample_index]
+            last_step: bool = last_steps[sample_index]
             # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
+            if last_step:
                 q_values_current[sample_index, action] = reward
             else:
                 # Predict the best action index with the main network and execute the update with the target network
                 best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index])
-                q_values_current[sample_index, action] = rewards + self.discount_factor * q_values_next_target_network[sample_index, best_action_index]
+                q_values_current[sample_index, action] = reward + self.discount_factor * q_values_next_target_network[sample_index, best_action_index]
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
                                                        feed_dict={

@@ -32,9 +32,9 @@ class Model:
 
     def __init__(self,
                  name: str):
-        # Define _model attributes
+        # Define model attributes
         self._name: str = name
-        # Define empty _model attributes
+        # Define empty model attributes
         self._initializer = None
         self._summary = None
         self._scope: str = None
@@ -67,13 +67,13 @@ class Model:
         :return: True if the model generation is successful, False otherwise
         """
         logger.info("Generating model " + self._name + " with scope " + scope + "...")
-        # Set _model attributes
+        # Set model attributes
         self._observation_space_type = observation_space_type
         self._observation_space_shape = observation_space_shape
         self._agent_action_space_type = agent_action_space_type
         self._agent_action_space_shape = agent_action_space_shape
         self._scope = scope
-        # Check whether or not the observation space and the action space types are supported by the _model
+        # Check whether or not the observation space and the action space types are supported by the model
         observation_space_type_supported: bool = False
         for space_type in self._supported_observation_space_types:
             if self._observation_space_type == space_type:
@@ -91,9 +91,9 @@ class Model:
             logger.error("Error during generation of model: action space type not supported")
             return False
         logger.info("Model generation successful")
-        # Define the tensorflow _model graph
+        # Define the tensorflow model graph
         self._define_graph()
-        # Define the tensorflow _summary for tensorboard
+        # Define the tensorflow summary for tensorboard
         self._define_summary()
         # Returns True to state success
         return True
@@ -108,7 +108,7 @@ class Model:
         :param logger: the logger used to print the model information, warnings and errors
         :param session: the session of tensorflow currently running
         """
-        # Initialize the _model running the session on the appropriate tensorflow operation
+        # Initialize the model running the session on the appropriate tensorflow operation
         session.run(self._initializer)
         logger.info("Model initialized to default state")
 
@@ -120,7 +120,7 @@ class Model:
 
         :return: the trainable tensorflow variables.
         """
-        # Get the training variables of the _model under its _scope: usually, the training variables of the tensorflow graph
+        # Get the training variables of the model under its scope: usually, the training variables of the tensorflow graph
         return tensorflow.trainable_variables(self._scope + "/" + self._name + "/")
 
     def _define_graph(self):

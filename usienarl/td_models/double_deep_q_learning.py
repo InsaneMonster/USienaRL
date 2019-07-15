@@ -44,7 +44,7 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
     def store(self,
-              observation_current, action, reward: float, observation_next):
+              observation_current, action, reward: float, observation_next, last_step: bool):
         # Find the current max priority on the tree leafs
         max_priority: float = numpy.max(self._sum_tree.leafs)
         # If the max priority is zero set it to the minimum defined
@@ -52,7 +52,7 @@ class Buffer:
             max_priority = self._MINIMUM_ALLOWED_PRIORITY
         # Set the max priority as the default one for this new sample
         # Note: we set the max priority for each new sample and then improve on it iteratively during training
-        self._sum_tree.add((observation_current, action, reward, observation_next), max_priority)
+        self._sum_tree.add((observation_current, action, reward, observation_next, last_step), max_priority)
 
     def get(self,
             amount: int = 0):
@@ -64,6 +64,7 @@ class Buffer:
         actions: [] = []
         rewards: [] = []
         observations_next: [] = []
+        last_steps: [] = []
         # Define the returned arrays of indexes and weights
         self._sum_tree_last_sampled_indexes = numpy.empty((amount,), dtype=numpy.int32)
         importance_sampling_weights = numpy.empty((amount, 1), dtype=numpy.float32)
@@ -101,8 +102,9 @@ class Buffer:
             actions.append(leaf_data[1])
             rewards.append(leaf_data[2])
             observations_next.append(leaf_data[3])
+            last_steps.append(leaf_data[4])
         # Return the sample (minibatch) with related weights
-        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), importance_sampling_weights]
+        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), numpy.array(last_steps), importance_sampling_weights]
 
     def update(self,
                absolute_errors: []):
@@ -226,6 +228,9 @@ class DoubleDeepQLearning(Model):
         self._supported_action_space_types.append(SpaceType.discrete)
 
     def _define_graph(self):
+        # Set the buffer
+        self.buffer = Buffer(self._buffer_capacity, self._minimum_sample_probability, self._random_sample_trade_off,
+                             self._importance_sampling_value, self._importance_sampling_value_increment)
         # Define two estimator, one for target network and one for main network, with identical structure
         self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
                                        self._observation_space_shape, self._agent_action_space_shape,
@@ -256,7 +261,7 @@ class DoubleDeepQLearning(Model):
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define the _summary operation for this graph with loss and absolute error summaries
-            self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
+            self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
 
     def get_all_actions(self,
                         session,
@@ -275,7 +280,7 @@ class DoubleDeepQLearning(Model):
                         session,
                         observation_current):
         # Return the predicted action given the current observation
-        return numpy.argmax(self.get_all_actions(session, observation_current))[0]
+        return numpy.argmax(self.get_all_actions(session, observation_current))
 
     def get_best_action_and_all_actions(self,
                                         session,
@@ -283,7 +288,7 @@ class DoubleDeepQLearning(Model):
         # Get all actions
         all_actions = self.get_all_actions(session, observation_current)
         # Return the best action and all the actions
-        return numpy.argmax(all_actions)[0], all_actions
+        return numpy.argmax(all_actions), all_actions
 
     def copy_weight(self,
                     session):
@@ -299,7 +304,7 @@ class DoubleDeepQLearning(Model):
                session,
                batch: []):
         # Unpack the batch into numpy arrays
-        observations_current, actions, rewards, observations_next, weights = batch[0], batch[1], batch[2], batch[3], batch[4]
+        observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
         # Define the input observations to the model (to support both space types)
         observations_current_input = observations_current
         observations_next_input = observations_next
@@ -316,18 +321,18 @@ class DoubleDeepQLearning(Model):
         q_values_next_main_network: numpy.ndarray = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: observations_next_input})
         q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: observations_next_input})
         # Apply Bellman equation with the Q-Learning update rule
-        for sample_index in range(len(batch)):
+        for sample_index in range(len(actions)):
             # Extract current sample values
-            observation_next = observations_next[sample_index]
             action = actions[sample_index]
             reward: float = rewards[sample_index]
+            last_step: bool = last_steps[sample_index]
             # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if observation_next is None:
+            if last_step:
                 q_values_current[sample_index, action] = reward
             else:
                 # Predict the best action index with the main network and execute the update with the target network
                 best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index])
-                q_values_current[sample_index, action] = rewards + self.discount_factor * q_values_next_target_network[sample_index, best_action_index]
+                q_values_current[sample_index, action] = reward + self.discount_factor * q_values_next_target_network[sample_index, best_action_index]
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
                                                        feed_dict={

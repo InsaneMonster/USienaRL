@@ -45,6 +45,10 @@ class Agent:
         # Define empty agent attributes
         self._scope: str = None
         self._summary_writer = None
+        self._observation_space_type: SpaceType = None
+        self._observation_space_shape = None
+        self._agent_action_space_type: SpaceType = None
+        self._agent_action_space_shape = None
 
     def setup(self,
               logger: logging.Logger,
@@ -68,6 +72,10 @@ class Agent:
         logger.info("Setup of agent " + self._name + " with scope " + scope + "...")
         # Reset agent attributes
         self._scope = scope
+        self._observation_space_type: SpaceType = observation_space_type
+        self._observation_space_shape = observation_space_shape
+        self._agent_action_space_type: SpaceType = agent_action_space_type
+        self._agent_action_space_shape = agent_action_space_shape
         # Reset the _summary writer
         self._summary_writer = tensorflow.summary.FileWriter(summary_path, graph=tensorflow.get_default_graph())
         logger.info("A Tensorboard summary for the agent will be updated during training of its internal model")

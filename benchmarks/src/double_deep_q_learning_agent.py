@@ -16,14 +16,17 @@ import numpy
 # Import required src
 
 from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
-from usienarl.td_models import TabularExpectedSARSA
+from usienarl.td_models import DoubleDeepQLearning
 
 
-class TabularExpectedSARSAAgent(Agent):
+class DoubleDeepQLearningAgent(Agent):
     """
-    Tabular Expected SARSA agent.
+    Double Deep Q-Learning agent.
 
-    It is supplied with a Tabular Expected SARSA model and an exploration policy.
+    It is supplied with a Double Deep Q-Learning model (DDQN) and an exploration policy.
+
+    The weight copy step interval defines after how many steps per interval the target network weights should be
+    updated with the main network weights.
 
     The batch size define how many steps from the prioritized experience replay built-in buffer should be fed into
     the model when updating. The agent uses a 1-step temporal difference algorithm, i.e. it is updated at every step.
@@ -31,18 +34,20 @@ class TabularExpectedSARSAAgent(Agent):
 
     def __init__(self,
                  name: str,
-                 model: TabularExpectedSARSA,
+                 model: DoubleDeepQLearning,
                  exploration_policy: ExplorationPolicy,
+                 weight_copy_step_interval: int,
                  batch_size: int = 1):
         # Define tabular agent attributes
-        self._model: TabularExpectedSARSA = model
+        self._model: DoubleDeepQLearning = model
         self._exploration_policy: ExplorationPolicy = exploration_policy
         # Define internal agent attributes
+        self._weight_copy_step_interval: int = weight_copy_step_interval
         self._batch_size: int = batch_size
         self._current_absolute_errors = None
         self._current_loss = None
         # Generate base agent
-        super(TabularExpectedSARSAAgent, self).__init__(name)
+        super(DoubleDeepQLearningAgent, self).__init__(name)
 
     def _generate(self,
                   logger: logging.Logger,
@@ -66,6 +71,8 @@ class TabularExpectedSARSAAgent(Agent):
         self._model.initialize(logger, session)
         # Initialize the exploration policy
         self._exploration_policy.initialize(logger, session)
+        # Run the weight copy operation to uniform main and target networks
+        self._model.copy_weight(session)
 
     def act_warmup(self,
                    logger: logging.Logger,
@@ -139,6 +146,9 @@ class TabularExpectedSARSAAgent(Agent):
                 agent_observation_next = 0
             else:
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
+        # After each weight step interval update the target network weights with the main network weights
+        if train_step_absolute % self._weight_copy_step_interval == 0:
+            self._model.copy_weight(session)
         # Save the current step in the buffer
         self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, last_step)
         # Update the model and save current loss and absolute errors

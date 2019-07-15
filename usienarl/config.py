@@ -71,7 +71,6 @@ class Config:
         self._hidden_layers_config.append(hidden_layer_config)
 
     def apply_hidden_layers(self,
-                            logger: logging.Logger,
                             input_layer):
         """
         Apply the hidden layer to the network on the given input layer.
@@ -125,9 +124,8 @@ class Config:
                 hidden_layer = tensorflow.layers.max_pooling2d(hidden_layer_input, *layer_parameters)
             elif layer_type == LayerType.max_pooling_3D:
                 hidden_layer = tensorflow.layers.max_pooling3d(hidden_layer_input, *layer_parameters)
-            # An error occurred, print error message and break
+            # An error occurred, break
             else:
-                logger.info("Error, layer type not supported, application of hidden layers interrupted!")
                 return
             # Add the last defined layer in the layers list
             hidden_layers.append(hidden_layer)
