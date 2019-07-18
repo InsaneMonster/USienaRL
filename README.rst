@@ -61,7 +61,7 @@ To choose a version, specify your extra require during install:
 - pip install usienarl[tensorflow] to install the tensorflow using cpu version
 
 **Note:** failure in specifying the extra require will cause tensorflow to not be installed, and as such the library won't
-be usable at all. For instance, this is not allowed:
+be usable at all. For instance, this is not allowed, *unless you already have tensorflow installed*:
 
 - pip install usienarl
 
