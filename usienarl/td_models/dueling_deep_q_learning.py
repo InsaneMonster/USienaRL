@@ -2,7 +2,6 @@
 
 import tensorflow
 import numpy
-import enum
 
 # Import required src
 

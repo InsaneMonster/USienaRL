@@ -308,7 +308,7 @@ class DeepSARSA(Model):
                session,
                batch: []):
         # Unpack the batch into numpy arrays
-        observations_current, actions_current, rewards, actions_next, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5], batch[6]
+        observations_current, actions_current, rewards, observations_next, actions_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5], batch[6]
         # Define the input observations to the model (to support both space types)
         observations_current_input = observations_current
         observations_next_input = observations_next
