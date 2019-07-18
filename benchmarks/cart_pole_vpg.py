@@ -17,34 +17,29 @@ import os
 # Import usienarl
 
 from usienarl import Config, LayerType, run_experiment, command_line_parse
-from usienarl.td_models import DeepExpectedSARSA
-from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy, BoltzmannExplorationPolicy
+from usienarl.po_models import VanillaPolicyGradient
+from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy
 
 # Import required src
 
-from benchmarks.src.deep_expected_sarsa_agent import DeepExpectedSARSAAgent
+from benchmarks.src.vpg_agent import VPGAgent
 from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
 from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
 
 
-def _define_desarsa_model(config: Config) -> DeepExpectedSARSA:
+def _define_vpg_model(config: Config) -> VanillaPolicyGradient:
     # Define attributes
-    learning_rate: float = 0.001
+    learning_rate_policy: float = 0.0003
+    learning_rate_advantage: float = 0.001
     discount_factor: float = 0.99
-    buffer_capacity: int = 1000
-    minimum_sample_probability: float = 0.01
-    random_sample_trade_off: float = 0.6
-    importance_sampling_value_increment: float = 0.4
-    importance_sampling_value: float = 0.001
+    value_steps_per_update: int = 80
+    lambda_parameter: float = 0.95
     # Return the _model
-    return DeepExpectedSARSA("model",
-                             learning_rate, discount_factor,
-                             buffer_capacity,
-                             minimum_sample_probability, random_sample_trade_off,
-                             importance_sampling_value, importance_sampling_value_increment,
-                             config)
+    return VanillaPolicyGradient("model", discount_factor,
+                                 learning_rate_policy, learning_rate_advantage,
+                                 value_steps_per_update, config, lambda_parameter)
 
 
 def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolicy:
@@ -56,29 +51,11 @@ def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolic
     return EpsilonGreedyExplorationPolicy(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
 
-def _define_boltzmann_exploration_policy() -> BoltzmannExplorationPolicy:
+def _define_epsilon_greedy_agent(model: VanillaPolicyGradient, exploration_policy: EpsilonGreedyExplorationPolicy = None) -> VPGAgent:
     # Define attributes
-    temperature_max: float = 1.0
-    temperature_min: float = 0.001
-    temperature_decay: float = 0.001
-    # Return the explorer
-    return BoltzmannExplorationPolicy(temperature_max, temperature_min, temperature_decay)
-
-
-def _define_epsilon_greedy_agent(model: DeepExpectedSARSA, exploration_policy:EpsilonGreedyExplorationPolicy) -> DeepExpectedSARSAAgent:
-    # Define attributes
-    weight_copy_step_interval: int = 25
-    batch_size: int = 100
+    updates_per_training_volley: int = 10
     # Return the agent
-    return DeepExpectedSARSAAgent("desarsa_egreedy_agent", model, exploration_policy, weight_copy_step_interval, batch_size)
-
-
-def _define_boltzmann_agent(model: DeepExpectedSARSA, exploration_policy: BoltzmannExplorationPolicy) -> DeepExpectedSARSAAgent:
-    # Define attributes
-    weight_copy_step_interval: int = 25
-    batch_size: int = 100
-    # Return the agent
-    return DeepExpectedSARSAAgent("desarsa_boltzmann_agent", model, exploration_policy, weight_copy_step_interval, batch_size)
+    return VPGAgent("vpg_egreedy_agent" if exploration_policy is not None else "vpg_agent", model, updates_per_training_volley, exploration_policy)
 
 
 if __name__ == "__main__":
@@ -99,30 +76,29 @@ if __name__ == "__main__":
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define Neural Network layers
     nn_config: Config = Config()
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu])
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu])
+    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
+    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
     # Define model
-    inner_model: DeepExpectedSARSA = _define_desarsa_model(nn_config)
+    inner_model: VanillaPolicyGradient = _define_vpg_model(nn_config)
     # Define exploration_policies
     epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_exploration_policy()
-    boltzmann_exploration_policy: BoltzmannExplorationPolicy = _define_boltzmann_exploration_policy()
     # Define agents
-    dddqn_epsilon_greedy_agent: DeepExpectedSARSAAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
-    dddqn_boltzmann_agent: DeepExpectedSARSAAgent = _define_boltzmann_agent(inner_model, boltzmann_exploration_policy)
+    vpg_agent: VPGAgent = _define_epsilon_greedy_agent(inner_model)
+    vpg_epsilon_greedy_agent: VPGAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
     # Define experiments
+    experiment: BenchmarkExperiment = BenchmarkExperiment("experiment", success_threshold, environment,
+                                                          vpg_agent)
     experiment_egreedy: BenchmarkExperiment = BenchmarkExperiment("eg_experiment", success_threshold, environment,
-                                                                  dddqn_epsilon_greedy_agent)
-    experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("b_experiment", success_threshold, environment,
-                                                                    dddqn_boltzmann_agent)
+                                                                  vpg_epsilon_greedy_agent)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
-    training_episodes: int = 10
+    training_episodes: int = 1000
     validation_episodes: int = 100
-    max_training_episodes: int = 1000
+    max_training_episodes: int = 100000
     episode_length_max: int = 100000
     # Run epsilon greedy experiment
-    run_experiment(experiment_egreedy,
+    run_experiment(experiment,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
@@ -131,7 +107,7 @@ if __name__ == "__main__":
                    workspace_path, __file__,
                    logger, experiment_iterations_number)
     # Run boltzmann experiment
-    run_experiment(experiment_boltzmann,
+    run_experiment(experiment_egreedy,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,

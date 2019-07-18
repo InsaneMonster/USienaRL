@@ -103,7 +103,6 @@ class Model:
                    session):
         """
         Initialize the variables of the model given the session.
-        TODO: add already trained model
 
         :param logger: the logger used to print the model information, warnings and errors
         :param session: the session of tensorflow currently running

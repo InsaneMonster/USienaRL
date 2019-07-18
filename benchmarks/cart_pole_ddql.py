@@ -131,7 +131,7 @@ if __name__ == "__main__":
                    workspace_path, __file__,
                    logger, experiment_iterations_number)
     # Run boltzmann experiment
-    run_experiment(experiment_egreedy,
+    run_experiment(experiment_boltzmann,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,

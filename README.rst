@@ -67,7 +67,7 @@ be usable at all. For instance, this is not allowed, *unless you already have te
 
 If you want to improve/modify/extends the framework, or even just try my own benchmarks at home, download or clone
 the `git repository <https://github.com/InsaneMonster/USienaRL>`_.
-You are welcome to open issues or participate in the project.
+You are welcome to open issues or participate in the project. Note that the benchmarks are built to run using tensorflow-gpu.
 
 **How to use**
 
@@ -76,5 +76,19 @@ and to the provided source code in the `repository <https://github.com/InsaneMon
 
 **Current issues**
 
-Amount of algorithms is still limited, and some implementations could fail in some specific settings. Further addition
-of models and refining of algorithms is very much welcome.
+The watch functionality of the experiment is yet untested. It could be useful to implement an easy way to pass a metagraph
+without the need to redefine the entire agent (maybe serializing the agent somehow?).
+
+An experiment can right now work only in a specific environment. It could be interesting to test multiple environments
+both from a curriculum learning perspective (it can still be done using multiple subsequent experiments, however) and from
+a generalization perspective (train one one, validate on another, etc).
+
+A way to check if environments are compatible one another would be required too if what said above is implemented.
+
+Minor issue but yet worth addressing, the results.log file output of the run_experiment method has a bad format in the table
+of results. A way to improve the spacing between elements would be great!
+
+Also, the amount of algorithms is still limited, and some implementations could fail in some specific settings. Further addition
+of models and refining of algorithms (for example, return normalization, etc) is very much welcome.
+
+Finally, the Trust Region Policy Optimization algorithm implementation is still under alpha development.

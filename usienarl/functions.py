@@ -105,7 +105,10 @@ def run_experiment(experiment: Experiment,
     experiment_results_table: dict = dict()
     for iteration in range(experiment_iterations_number):
         iteration_path: str = experiment_path
-        if experiment_iterations_number > 1:
+        # Set the iteration number to -1 if there is only one iteration
+        if experiment_iterations_number <= 1:
+            iteration = -1
+        if iteration > -1:
             iteration_path = experiment_path + "/" + str(iteration)
             if not os.path.isdir(iteration_path):
                 try:

@@ -22,7 +22,6 @@ from usienarl.interfaces import PassThroughInterface
 
 class Experiment:
     """
-    TODO: add inference only method (choose a nice name)
     Base experiment abstract class.
     An experiment is a set of commands which allows to train or test or even both a certain agent on a certain
     environment using a certain interface to translate between the two.
@@ -114,7 +113,7 @@ class Experiment:
         # Initialize tensorflow gpu configuration
         self._tensorflow_gpu_config = tensorflow.ConfigProto()
         self._tensorflow_gpu_config.gpu_options.allow_growth = True
-        logger.info("CUDA GPU device configured for Tensorflow-gpu")
+        logger.info("Tensorflow configuration is successful!")
         # Setup is successful
         logger.info("Experiment setup is successful. Now can conduct the experiment")
         return True
@@ -302,7 +301,8 @@ class Experiment:
                 training_episodes_max: int, episode_length_max: int,
                 test_episodes_per_cycle: int, test_cycles: int,
                 logger: logging.Logger,
-                render_during_training: bool = False, render_during_validation: bool = False, render_during_test: bool = False):
+                render_during_training: bool = False, render_during_validation: bool = False, render_during_test: bool = False,
+                checkpoint_path: str = None):
         """
         Conduct the experiment of the given number of training (up to the given maximum) and validation episodes
         per volley, with the associated given number of test episodes per cycle and the given number of test cycles after
@@ -322,9 +322,10 @@ class Experiment:
         :param test_episodes_per_cycle: the number of episodes to play for each test cycle after validation has passed
         :param test_cycles: the number of test cycles to execute after validation has passed
         :param logger: the logger used to print the experiment information, warnings and errors
-        :param render_during_training: boolean flag to render the environment during training
-        :param render_during_validation: boolean flag to render the environment during validation
-        :param render_during_test: boolean flag to render the environment during test
+        :param render_during_training: boolean flag to render the environment during training, default to False
+        :param render_during_validation: boolean flag to render the environment during validation, default to False
+        :param render_during_test: boolean flag to render the environment during test, default to False
+        :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model, default to None
         :return: the average and the max of the total average reward, the average and the max of the average average reward with respect to all test cycles, the training episodes required to validate and a success flag
         """
         logger.info("Conducting experiment " + self._current_id + "...")
@@ -333,6 +334,15 @@ class Experiment:
             # Initialize the environment and the agent
             self._environment.initialize(logger, session)
             self._agent.initialize(logger, session)
+            # Load the pre-trained model if required
+            if checkpoint_path is not None:
+                checkpoint = tensorflow.train.get_checkpoint_state(checkpoint_path)
+                # If checkpoint exists restore from checkpoint
+                if checkpoint and checkpoint.model_checkpoint_path:
+                    self._agent_saver.restore(session, checkpoint_path)
+                    logger.info("Model graph stored at " + checkpoint_path + " loaded successfully!")
+                else:
+                    logger.error("Checkpoint path specified is wrong: no model can be accessed at " + checkpoint_path)
             # Execute pre-training if the agent requires pre-training
             if self._agent.warmup_episodes > 0:
                 logger.info("Warming-up for " + str(self._agent.warmup_episodes) + " episodes...")
@@ -413,6 +423,73 @@ class Experiment:
             else:
                 logger.info("The experiment is not successful")
             return average_test_total_reward, max_test_total_reward, average_test_average_reward, max_test_average_reward, self._trained_episodes, success
+
+    def watch(self,
+              episode_length_max: int,
+              test_episodes_per_cycle: int, test_cycles: int,
+              logger: logging.Logger,
+              checkpoint_path: str,
+              render: bool = False):
+        """
+        Watch an experiment with an already trained agent given by the checkpoint path. The experiment needs to be
+        setup and also trained somehow to access a proper checkpoint.
+
+        Use this method to see how a saved agent model performs.
+
+        :param episode_length_max: the max length in steps of each episode
+        :param test_episodes_per_cycle: the number of episodes to play for each test cycle
+        :param test_cycles: the number of test cycles to execute
+        :param logger: the logger used to print the experiment information, warnings and errors
+        :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model
+        :param render: boolean flag to render the environment, default to True
+        """
+        logger.info("Watching experiment " + self._current_id + "...")
+        # Define the session
+        with tensorflow.Session(config=self._tensorflow_gpu_config) as session:
+            # Initialize the environment and the agent
+            self._environment.initialize(logger, session)
+            self._agent.initialize(logger, session)
+            # Load the pre-trained model if required
+            if checkpoint_path is None:
+                logger.error("Need to specify a checkpoint path to watch the experiment!")
+                return
+            else:
+                checkpoint = tensorflow.train.get_checkpoint_state(checkpoint_path)
+                # If checkpoint exists restore from checkpoint otherwise stop
+                if checkpoint and checkpoint.model_checkpoint_path:
+                    self._agent_saver.restore(session, checkpoint_path)
+                    logger.info("Model graph stored at " + checkpoint_path + " loaded successfully!")
+                else:
+                    logger.error("Checkpoint path specified is wrong: no model can be accessed at " + checkpoint_path)
+                    return
+            # Test the _model and get all cycles total and average rewards
+            test_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
+            test_average_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
+            for test in range(test_cycles):
+                # Run inference for test episodes per cycles and get the average score
+                logger.info("Testing for " + str(test_episodes_per_cycle) + " episodes...")
+                cycle_total_reward, cycle_average_reward = self._inference(logger,
+                                                                           test_episodes_per_cycle,
+                                                                           episode_length_max,
+                                                                           session,
+                                                                           render)
+                # Print validation results
+                logger.info("Testing of " + str(test_episodes_per_cycle) + " finished with following result:")
+                logger.info("Average total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(cycle_total_reward))
+                logger.info("Average scaled reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(cycle_average_reward))
+                # Save the rewards
+                test_total_rewards[test] = cycle_total_reward
+                test_average_rewards[test] = cycle_average_reward
+            # Get the average and the best total and average rewards over all cycles
+            average_test_total_reward: float = numpy.average(test_total_rewards)
+            max_test_total_reward: float = numpy.max(test_total_rewards)
+            average_test_average_reward: float = numpy.average(test_average_rewards)
+            max_test_average_reward: float = numpy.max(test_average_rewards)
+            # Print final results and outcome of the experiment
+            logger.info("Average test total reward is " + str(average_test_total_reward) + " with " + str(self._trained_episodes) + " training episodes")
+            logger.info("Average test scaled reward is " + str(average_test_average_reward) + " with " + str(self._trained_episodes) + " training episodes")
+            logger.info("Best test total reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_total_reward))
+            logger.info("Best test scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_average_reward))
 
     def _is_validated(self,
                       average_validation_total_reward: float, average_validation_average_reward: float,
