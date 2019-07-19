@@ -12,7 +12,7 @@
 
 import logging
 
-# Import required src
+# Import usienarl
 
 from usienarl import Agent, Interface, SpaceType
 from usienarl.po_models import VanillaPolicyGradient

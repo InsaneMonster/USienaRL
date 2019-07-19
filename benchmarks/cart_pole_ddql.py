@@ -21,10 +21,16 @@ from usienarl.td_models import DoubleDeepQLearning
 from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy, BoltzmannExplorationPolicy
 
 # Import required src
+# Require error handling to support both deployment and pycharm versions
 
-from benchmarks.src.double_deep_q_learning_agent import DoubleDeepQLearningAgent
-from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
-from benchmarks.src.benchmark_experiment import BenchmarkExperiment
+try:
+    from src.double_deep_q_learning_agent import DoubleDeepQLearningAgent
+    from src.openai_gym_environment import OpenAIGymEnvironment
+    from src.benchmark_experiment import BenchmarkExperiment
+except ImportError:
+    from benchmarks.src.double_deep_q_learning_agent import DoubleDeepQLearningAgent
+    from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
+    from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
 

@@ -13,7 +13,7 @@
 import gym
 import logging
 
-# Import required src
+# Import usienarl
 
 from usienarl.environment import Environment, SpaceType
 

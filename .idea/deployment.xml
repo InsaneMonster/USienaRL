@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="eliza">
+  <component name="PublishConfigData" serverName="eliza (project level)">
     <serverData>
-      <paths name="eliza">
+      <paths name="eliza (project level)">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/usienarl/workspace" local="$PROJECT_DIR$" web="/" />
           </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/usienarl" />
+            <excludedPath local="true" path="$PROJECT_DIR$/usienarl/exploration_policies" />
+            <excludedPath local="true" path="$PROJECT_DIR$/usienarl/interfaces" />
+            <excludedPath local="true" path="$PROJECT_DIR$/usienarl/libs" />
+            <excludedPath local="true" path="$PROJECT_DIR$/usienarl/po_models" />
+            <excludedPath local="true" path="$PROJECT_DIR$/usienarl/td_models" />
+            <excludedPath local="true" path="$PROJECT_DIR$/LICENSE.txt" />
+            <excludedPath local="true" path="$PROJECT_DIR$/MANIFEST.in" />
+            <excludedPath local="true" path="$PROJECT_DIR$/README.rst" />
+            <excludedPath local="true" path="$PROJECT_DIR$/setup.py" />
+          </excludedPaths>
         </serverdata>
       </paths>
     </serverData>

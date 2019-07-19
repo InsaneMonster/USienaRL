@@ -21,10 +21,16 @@ from usienarl.po_models import VanillaPolicyGradient
 from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy
 
 # Import required src
+# Require error handling to support both deployment and pycharm versions
 
-from benchmarks.src.vpg_agent import VPGAgent
-from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
-from benchmarks.src.benchmark_experiment import BenchmarkExperiment
+try:
+    from src.vpg_agent import VPGAgent
+    from src.openai_gym_environment import OpenAIGymEnvironment
+    from src.benchmark_experiment import BenchmarkExperiment
+except ImportError:
+    from benchmarks.src.vpg_agent import VPGAgent
+    from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
+    from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
 

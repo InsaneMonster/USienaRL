@@ -13,7 +13,7 @@
 import logging
 import numpy
 
-# Import required src
+# Import usienarl
 
 from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
 from usienarl.td_models import DeepQLearning
