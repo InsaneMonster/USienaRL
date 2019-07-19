@@ -92,3 +92,7 @@ Also, the amount of algorithms is still limited, and some implementations could 
 of models and refining of algorithms (for example, return normalization, etc) is very much welcome.
 
 Finally, the Trust Region Policy Optimization algorithm implementation is still under alpha development.
+
+**Changelog**
+
+- Initial beta release

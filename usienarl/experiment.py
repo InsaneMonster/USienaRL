@@ -64,7 +64,7 @@ class Experiment:
         # Define empty experiment attributes
         self._agent_saver = None
         self._metagraph_path: str = None
-        self._tensorflow_gpu_config = None
+        self._tensorflow_config = None
         self._current_id: str = None
         self._trained_steps: int = None
         self._trained_episodes: int = None
@@ -111,8 +111,8 @@ class Experiment:
         logger.info("Agent internal model will be saved after each train volley")
         logger.info("Agent internal model metagraph save path: " + self._metagraph_path)
         # Initialize tensorflow gpu configuration
-        self._tensorflow_gpu_config = tensorflow.ConfigProto()
-        self._tensorflow_gpu_config.gpu_options.allow_growth = True
+        self._tensorflow_config = tensorflow.ConfigProto()
+        self._tensorflow_config.gpu_options.allow_growth = True
         logger.info("Tensorflow configuration is successful!")
         # Setup is successful
         logger.info("Experiment setup is successful. Now can conduct the experiment")
@@ -330,7 +330,7 @@ class Experiment:
         """
         logger.info("Conducting experiment " + self._current_id + "...")
         # Define the session
-        with tensorflow.Session(config=self._tensorflow_gpu_config) as session:
+        with tensorflow.Session(config=self._tensorflow_config) as session:
             # Initialize the environment and the agent
             self._environment.initialize(logger, session)
             self._agent.initialize(logger, session)
@@ -445,7 +445,7 @@ class Experiment:
         """
         logger.info("Watching experiment " + self._current_id + "...")
         # Define the session
-        with tensorflow.Session(config=self._tensorflow_gpu_config) as session:
+        with tensorflow.Session(config=self._tensorflow_config) as session:
             # Initialize the environment and the agent
             self._environment.initialize(logger, session)
             self._agent.initialize(logger, session)
