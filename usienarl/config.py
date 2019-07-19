@@ -1,20 +1,28 @@
-# Import tensorflow
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
+# Import packages
+
+import logging
 import tensorflow
+import enum
 
-# Import enum
-
-from enum import Enum
 
 # Define layer types for tensorflow neural networks definition
 
-
-class LayerType(Enum):
+class LayerType(enum.Enum):
     """
     Layer types for layer definition.
 
     Each layer type follows the naming scheme of the relative tensorflow layer types.
-    Choosing a layer type actually will make the model use the relative tensorflow layer.
+    Choosing a layer type actually will make the _model use the relative tensorflow layer.
     """
     average_pooling_1D = 1
     average_pooling_2D = 2
@@ -116,9 +124,8 @@ class Config:
                 hidden_layer = tensorflow.layers.max_pooling2d(hidden_layer_input, *layer_parameters)
             elif layer_type == LayerType.max_pooling_3D:
                 hidden_layer = tensorflow.layers.max_pooling3d(hidden_layer_input, *layer_parameters)
-            # An error occurred, print error message and break
+            # An error occurred, break
             else:
-                print("Error, layer type not supported, application of hidden layers interrupted!")
                 return
             # Add the last defined layer in the layers list
             hidden_layers.append(hidden_layer)

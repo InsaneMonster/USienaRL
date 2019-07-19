@@ -1,6 +1,17 @@
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
+
 # Import packages
 
 import enum
+import logging
 
 # Define space types for observation and action spaces definition in the environment
 
@@ -15,9 +26,8 @@ class SpaceType(enum.Enum):
     Usually, the discrete space has greater size than the continuous one (it requires more variables one-hot encoded
     to properly define each state, while in continuous it is defined by all the values in the state itself).
 
-    Except for the properties and the setup method, all the methods can be used with tensorflow (which means, the
-    environment can run on tensorflow). Usually, environments doesn't require tensorflow, in this case the child class
-    will have a default value of None for the session in each method.
+    Except for the properties and the setup method, all the methods can be used with tensorflow by the mean of its
+    session.
     """
     discrete = 1
     continuous = 2
@@ -25,109 +35,129 @@ class SpaceType(enum.Enum):
 
 class Environment:
     """
-    Base class for each environment. It should not be used by itself, and should be extended instead.
+    Base environment abstract class.
 
     The environment is not created until the setup method is called.
+    The environment template is inspired by the gym environment and as such should be pretty standard in a
+    reinforcement learning research setting.
 
-    Attributes:
-        - name: the string name of the environment
+    To define your own environment, implement the abstract class in a specific child class.
     """
 
     def __init__(self,
                  name: str):
-        # Save the name and prepare the internal environment variable
+        # Define the _name attribute
         self.name: str = name
-        self._environment = None
 
-    def setup(self):
+    def setup(self,
+              logger: logging.Logger) -> bool:
         """
         Setup the environment.
+
+        :param logger: the logger used to print the environment information, warnings and errors
+        :return a boolean flag True if the setup is successful, false otherwise
         """
-        # Empty method, it should be implemented on a child class basis
-        pass
+        # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     def initialize(self,
+                   logger: logging.Logger,
                    session):
         """
-        Initialize the environment (should be called after setup but before the first reset.
+        Initialize the environment. Requires the environment to be setup.
 
-        :param session: the session of tensorflow currently running
+        :param logger: the logger used to print the environment information, warnings and errors
+        :param session: the session of tensorflow currently running, if any
         """
-        pass
+        # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     def close(self,
+              logger: logging.Logger,
               session):
         """
         Close the environment (e.g. the window of a rendered OpenAI environment).
 
-        :param session: the session of tensorflow currently running
+        :param logger: the logger used to print the environment information, warnings and errors
+        :param session: the session of tensorflow currently running, if any
         """
-        # Empty method, it should be implemented on a child class basis
-        pass
+        # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     def reset(self,
+              logger: logging.Logger,
               session):
         """
-        Reset the environment to its default state.
+        Reset the environment to its default state. Requires the environment to be initialized.
 
+        :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
         :return: the current state of the environment on its default state
         """
-        # Empty method, it should be implemented on a child class basis
-        return None
+        # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     def step(self,
-             action: int,
+             logger: logging.Logger,
+             action,
              session):
         """
         Execute a step on the environment with the given action. It returns back all the data describing the transition.
+        Requires the environment to be initialized.
 
+        :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
         :param action: the action executed on the environment, causing the step and the state change
-        :return: an ordered sequence of next state, reward obtained and a boolean flag indicating whether or not the episode is completed
+        :return: the next state, the reward obtained and a boolean flag indicating whether or not the episode is completed
         """
-        # Empty method, it should be implemented on a child class basis
-        return None
+        # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     def render(self,
+               logger: logging.Logger,
                session):
         """
         Render the environment.
+        Note: to render with text, it's advised to use print statement instead of the logger.
 
+        :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
         """
-        # Empty method, it should be implemented on a child class basis
-        pass
+        # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     def get_random_action(self,
+                          logger: logging.Logger,
                           session):
         """
         Get a random action from the environment.
 
+        :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
         :return: a random action of the environment in the shape supported the environment (discrete: an int, continuous: a tuple)
         """
-        return None
+        # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     @property
-    def observation_space_type(self):
+    def state_space_type(self):
         """
-        Get the type (according to its SpaceType enum definition) of the observation space of the environment.
+        Get the type (according to its SpaceType enum definition) of the state space of the environment.
 
-        :return: the SpaceType describing the observation space type of the environment
+        :return: the SpaceType describing the state space type of the environment
         """
-        # Empty property, it should be implemented on a child class basis
-        return None
+        # Abstract property, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     @property
-    def observation_space_shape(self):
+    def state_space_shape(self):
         """
-        Get the shape of the observation space of the environment.
+        Get the shape of the state space of the environment.
 
-        :return: the shape of the observation space of the environment in the form of a tuple
+        :return: the shape of the state space of the environment in the form of a tuple
         """
-        # Empty property, it should be implemented on a child class basis
-        return None
+        # Abstract property, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     @property
     def action_space_type(self):
@@ -136,8 +166,8 @@ class Environment:
 
         :return: the SpaceType describing the action space type of the environment
         """
-        # Empty property, it should be implemented on a child class basis
-        return None
+        # Abstract property, it should be implemented on a child class basis
+        raise NotImplementedError()
 
     @property
     def action_space_shape(self):
@@ -146,7 +176,7 @@ class Environment:
 
         :return: the shape of the action space of the environment in the form of a tuple
         """
-        # Empty property, it should be implemented on a child class basis
-        return None
+        # Abstract property, it should be implemented on a child class basis
+        raise NotImplementedError()
 
 

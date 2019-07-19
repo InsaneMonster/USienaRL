@@ -10,4 +10,5 @@
 
 # Import scripts
 
-from .sumtree import SumTree
+from .boltzmann import BoltzmannExplorationPolicy
+from .epsilon_greedy import EpsilonGreedyExplorationPolicy

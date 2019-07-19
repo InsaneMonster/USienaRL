@@ -10,4 +10,4 @@
 
 # Import scripts
 
-from .sumtree import SumTree
+from .pass_through import PassThroughInterface

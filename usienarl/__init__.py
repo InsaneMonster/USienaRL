@@ -1,26 +1,24 @@
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# LICENSE NOTICE
 #
-# USienaRL (University of Siena Reinforcement Learning) (c) by Luca Pasqualini - SAILab - University of Siena
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
 #
-# USienaRL is licensed under a
-# Creative Commons Attribution-ShareAlike 3.0 Unported License.
+#
+# USienaRL is licensed under a BSD 3-Clause.
 #
 # You should have received a copy of the license along with this
-# work.  If not, see <http://creativecommons.org/licenses/by-sa/3.0/>.
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
 
 # Import scripts
 
 from .config import Config, LayerType
 from .environment import Environment, SpaceType
+from .interface import Interface
+from .agent import Agent
 from .model import Model
 from .experiment import Experiment
-from .explorer import Explorer
-from .memory import Memory
-from .visualizer import Visualizer
+from .exploration_policy import ExplorationPolicy
 
 # Import functions
 
-from .functions import command_line_parse, run_experiments
+from .functions import command_line_parse, run_experiment
 

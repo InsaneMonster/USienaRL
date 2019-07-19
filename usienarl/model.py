@@ -1,3 +1,13 @@
+#
+# Copyright (C) 2019 Luca Pasqualini
+# University of Siena - Artificial Intelligence Laboratory - SAILab
+#
+#
+# USienaRL is licensed under a BSD 3-Clause.
+#
+# You should have received a copy of the license along with this
+# work. If not, see <https://opensource.org/licenses/BSD-3-Clause>.
+
 # Import packages
 
 import tensorflow
@@ -10,70 +20,59 @@ from usienarl import SpaceType
 
 class Model:
     """
-    Base class for each model. It should not be used by itself, and should be extended instead.
+    Base abstract model class.
+    A model is whatever is moving an agent, deciding actions according to one or more policies and being updated to
+    better learn those policies.
 
-    When creating an instance of a model (of a subclass of it) the model is not yet defined.
-    To define a proper tensorflow graph additional data regarding the experiment should be given, in order to adapt
-    the model to the space in which the experiment defined environment operates. Usually, experiment name (to act as
-    scope) and observation and action spaces types and sizes are required.
+    Before use, a model needs to be generated. This will make sure to define the internal structure of the model
+    (usually a tensorflow graph).
 
-    Each rebuilt model (even belonging to the same instance) will have a different tensorflow scope in the graph
-    depending on the experiment name.
-    It's like the instance defines the type of model and its hyperparameters, while the generation of the model
-    prepare such model for its effective use in a given experiment (which operates on an environment with certain
-    observation and action spaces).
-
-    Attributes:
-        - name: name of the model
-        - initializer: tensorflow operation to run to prepare the graph for training
-        - summary: tensorflow summary to use in tensorboard
-        - observation_space_shape: the shape of the observation space w.r.t. the environment on which the model is currently operating
-        - action_space_shape: the shape of the action space w.r.t. the environment on which the model is currently operating
+    To define your own model, implement the abstract class in a specific child class.
     """
 
     def __init__(self,
                  name: str):
-        # Define attributes
-        self.name: str = name
-        # Initialize environment attributes (they require the model to be generated to be effective)
-        # Those attributes will be reset each time the model is rebuilt in a new environment
+        # Define model attributes
+        self._name: str = name
+        # Define empty model attributes
+        self._initializer = None
+        self._summary = None
+        self._scope: str = None
+        self._observation_space_type: SpaceType = None
+        self._observation_space_shape = None
+        self._agent_action_space_type: SpaceType = None
+        self._agent_action_space_shape = None
         self._supported_observation_space_types: [] = []
         self._supported_action_space_types: [] = []
-        self._experiment_name: str = None
-        self._observation_space_type: SpaceType = None
-        self.observation_space_shape = None
-        self._action_space_type: SpaceType = None
-        self.action_space_shape = None
-        # Define empty general models attributes
-        self.initializer = None
-        self.summary = None
 
     def generate(self,
-                 experiment_name: str,
+                 logger: logging.Logger,
+                 scope: str,
                  observation_space_type: SpaceType, observation_space_shape,
-                 action_space_type: SpaceType, action_space_shape,
-                 logger: logging.Logger) -> bool:
+                 agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
         """
-        Generate the tensorflow model with the scope given by the format: experiment_name/model_name
-        It calls the define (which is implemented on the child class) and define_summary methods.
+        Generate the tensorflow model with the scope given by the format: experiment_name/agent_name/model_name
+        It calls the define (which is implemented on the child class) and define summary methods.
 
-        This method should be called each time the model is used in a different environment, since it makes sure
-        that the model is rebuilt according to the environment scope, observations and actions spaces.
+        This method is called every time the model is used in an agent on a new experiment or a new experiment iteration,
+        since it makes sure that the model is rebuilt according to the experiment/agent scope, agent observations and
+        actions spaces.
 
-        :param experiment_name: the str name of experiment to use as a scope for the graph.
-        :param observation_space_type: the type of the environment observation space: discrete or continuous
-        :param observation_space_shape: the shape of the environment observation space (it's a size if mono-dimensional)
-        :param action_space_type: the type of the environment action space: discrete or continuous
-        :param action_space_shape: the shape of the environment action space (it's a size if mono-dimensional)
-        :param logger: the logger to use to record model generation information
+        :param logger: the logger used to print the model information, warnings and errors
+        :param scope: the str _name of experiment/agent to use as a scope for the graph
+        :param observation_space_type: the type of the agent observation space: discrete or continuous
+        :param observation_space_shape: the shape of the agent observation space (it's a size if mono-dimensional)
+        :param agent_action_space_type: the type of the agent action space: discrete or continuous
+        :param agent_action_space_shape: the shape of the agent action space (it's a size if mono-dimensional)
         :return: True if the model generation is successful, False otherwise
         """
+        logger.info("Generating model " + self._name + " with scope " + scope + "...")
+        # Set model attributes
         self._observation_space_type = observation_space_type
-        self.observation_space_shape = observation_space_shape
-        self._action_space_type = action_space_type
-        self.action_space_shape = action_space_shape
-        self._experiment_name = experiment_name
-        logger.info("Generating model " + self.name + "...")
+        self._observation_space_shape = observation_space_shape
+        self._agent_action_space_type = agent_action_space_type
+        self._agent_action_space_shape = agent_action_space_shape
+        self._scope = scope
         # Check whether or not the observation space and the action space types are supported by the model
         observation_space_type_supported: bool = False
         for space_type in self._supported_observation_space_types:
@@ -85,73 +84,120 @@ class Model:
             return False
         action_space_type_supported: bool = False
         for space_type in self._supported_action_space_types:
-            if self._action_space_type == space_type:
+            if self._agent_action_space_type == space_type:
                 action_space_type_supported = True
                 break
         if not action_space_type_supported:
             logger.error("Error during generation of model: action space type not supported")
             return False
-        # Define the tensorflow model graph
         logger.info("Model generation successful")
-        self._define()
+        # Define the tensorflow model graph
+        self._define_graph()
+        # Define the tensorflow summary for tensorboard
         self._define_summary()
+        # Returns True to state success
         return True
 
-    def _define(self):
+    def initialize(self,
+                   logger: logging.Logger,
+                   session):
         """
-        Define the tensorflow graph of the model.
+        Initialize the variables of the model given the session.
 
-        It uses as scope the format: experiment_name/model_name
-        """
-        # Empty method, definition should be implemented on a child class basis
-        pass
-
-    def _define_summary(self):
-        """
-        Define the summary of the tensorflow graph to use with tensorboard.
-
-        It uses as scope the format: experiment_name/model_name
-        """
-        # Empty method, definition should be implemented on a child class basis
-        pass
-
-    def predict(self,
-                session,
-                state_current):
-        """
-        Get the best action predicted by the model according to the action space type from the model predictions
-        using the current policy, at the given current state.
-
+        :param logger: the logger used to print the model information, warnings and errors
         :param session: the session of tensorflow currently running
-        :param state_current: the current state in the environment to get the prediction for
-        :return: the best action predicted by the model
         """
-        # Empty method, definition should be implemented on a child class basis
-        return None
+        # Initialize the model running the session on the appropriate tensorflow operation
+        session.run(self._initializer)
+        logger.info("Model initialized to default state")
 
-    def get_trainable_variables(self,
-                                scope: str):
+    @property
+    def trainable_variables(self):
         """
-        Get the trainable variables in the model (useful for saving the model or comparing the weights), given the
-        current experiment scope.
+        Get the trainable variables in the model (useful for saving the model or comparing the weights) given the
+        current experiment/agent scope.
 
-        :param scope: the string scope of the tensorflow graph (usually the name of the experiment)
         :return: the trainable tensorflow variables.
         """
         # Get the training variables of the model under its scope: usually, the training variables of the tensorflow graph
-        return tensorflow.trainable_variables(scope + "/" + self.name + "/")
+        return tensorflow.trainable_variables(self._scope + "/" + self._name + "/")
 
-    def print_trainable_variables(self,
-                                  scope: str,
-                                  session):
+    def _define_graph(self):
         """
-        Print the trainable variables in the current tensorflow graph, given the current experiment scope.
+        Define the tensorflow graph of the model.
 
-        :param scope: the string scope of the tensorflow graph (usually the name of the experiment)
-        :param session: the session fo tensorflow currently running
+        It uses as _scope the format: experiment_name/agent_name/model_name
         """
-        # Print the trainable variables of the currently active model
-        trainable_variables = self.get_trainable_variables(scope)
-        for trainable_variable in trainable_variables:
-            print(trainable_variable.name)
-            print(trainable_variable.eval(session=session))
+        # Abstract method, definition should be implemented on a child class basis
+        raise NotImplementedError()
+
+    def _define_summary(self):
+        """
+        Define the tensorboard summary of the model.
+
+        It uses as scope the format: experiment_name/agent_name/model_name
+        """
+        # Abstract method, definition should be implemented on a child class basis
+        raise NotImplementedError()
+
+    def get_all_actions(self,
+                        session,
+                        observation_current):
+        """
+        Get all the actions values according to the model at the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :return: all action values predicted by the model
+        """
+        # Abstract method, definition should be implemented on a child class basis
+        raise NotImplementedError()
+
+    def get_best_action(self,
+                        session,
+                        observation_current):
+        """
+        Get the best action predicted by the model at the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :return: the action predicted by the model
+        """
+        # Abstract method, definition should be implemented on a child class basis
+        raise NotImplementedError()
+
+    def get_best_action_and_all_actions(self,
+                                        session,
+                                        observation_current):
+        """
+        Get the best action predicted by the model at the given current observation and all the action values according
+        to the model at the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :return: the best action predicted by the model and all action values predicted by the model
+        """
+        raise NotImplementedError()
+
+    def update(self,
+               session,
+               batch: []):
+        """
+        Update the model weights (thus training the model) given a batch of samples, relative weights and a set of
+        additional experiment parameters.
+
+        :param session: the session of tensorflow currently running
+        :param batch: a batch of samples each one consisting of a tuple at least comprising observation current, action and reward all wrapped in numpy arrays
+        :return: the updated summary and a set of parameters (losses, errors, etc) depending on the model
+        """
+        # Abstract method, definition should be implemented on a child class basis
+        raise NotImplementedError()
+
+    @property
+    def warmup_episodes(self) -> int:
+        """
+        Get the number of episodes required to warm-up the model.
+
+        :return: the integer number of warm-up episodes required by the model
+        """
+        raise NotImplementedError()
