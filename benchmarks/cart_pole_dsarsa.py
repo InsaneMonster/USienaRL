@@ -44,13 +44,14 @@ def _define_dsarsa_model(config: Config) -> DeepSARSA:
     random_sample_trade_off: float = 0.6
     importance_sampling_value_increment: float = 0.4
     importance_sampling_value: float = 0.001
+    error_clip: bool = False
     # Return the _model
     return DeepSARSA("model",
                      learning_rate, discount_factor,
                      buffer_capacity,
                      minimum_sample_probability, random_sample_trade_off,
                      importance_sampling_value, importance_sampling_value_increment,
-                     config)
+                     config, error_clip)
 
 
 def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolicy:
@@ -97,8 +98,7 @@ if __name__ == "__main__":
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
     # Cart Pole environment:
-    #       - validation success threshold to consider the training completed is 195.0 according to OpenAI guidelines
-    #       - test success threshold not required and set to 0 since the environment is considered solved on validation according to OpenAI guidelines
+    #       - general success threshold to consider the training and the experiment successful is 195.0 over 100 episodes according to OpenAI guidelines
     environment_name: str = 'CartPole-v0'
     success_threshold: float = 195.0
     # Generate the OpenAI environment
@@ -113,13 +113,13 @@ if __name__ == "__main__":
     epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_exploration_policy()
     boltzmann_exploration_policy: BoltzmannExplorationPolicy = _define_boltzmann_exploration_policy()
     # Define agents
-    dddqn_epsilon_greedy_agent: DeepSARSAAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
-    dddqn_boltzmann_agent: DeepSARSAAgent = _define_boltzmann_agent(inner_model, boltzmann_exploration_policy)
+    dsarsa_epsilon_greedy_agent: DeepSARSAAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
+    dsarsa_boltzmann_agent: DeepSARSAAgent = _define_boltzmann_agent(inner_model, boltzmann_exploration_policy)
     # Define experiments
     experiment_egreedy: BenchmarkExperiment = BenchmarkExperiment("eg_experiment", success_threshold, environment,
-                                                                  dddqn_epsilon_greedy_agent)
+                                                                  dsarsa_epsilon_greedy_agent)
     experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("b_experiment", success_threshold, environment,
-                                                                    dddqn_boltzmann_agent)
+                                                                    dsarsa_boltzmann_agent)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10

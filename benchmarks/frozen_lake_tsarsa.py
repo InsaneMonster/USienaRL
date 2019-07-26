@@ -10,32 +10,31 @@
 
 # Import packages
 
-import tensorflow
 import logging
 import os
 
 # Import usienarl
 
-from usienarl import Config, LayerType, run_experiment, command_line_parse
-from usienarl.td_models import DeepExpectedSARSA
+from usienarl import run_experiment, command_line_parse
+from usienarl.td_models import TabularSARSA
 from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy, BoltzmannExplorationPolicy
 
 # Import required src
 # Require error handling to support both deployment and pycharm versions
 
 try:
-    from src.deep_expected_sarsa_agent import DeepExpectedSARSAAgent
+    from src.tabular_sarsa_agent import TabularSARSAAgent
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from benchmarks.src.deep_expected_sarsa_agent import DeepExpectedSARSAAgent
+    from benchmarks.src.tabular_sarsa_agent import TabularSARSAAgent
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
 
 
-def _define_desarsa_model(config: Config) -> DeepExpectedSARSA:
+def _define_tsarsa_model() -> TabularSARSA:
     # Define attributes
     learning_rate: float = 0.001
     discount_factor: float = 0.99
@@ -44,14 +43,12 @@ def _define_desarsa_model(config: Config) -> DeepExpectedSARSA:
     random_sample_trade_off: float = 0.6
     importance_sampling_value_increment: float = 0.4
     importance_sampling_value: float = 0.001
-    error_clip: bool = False
     # Return the _model
-    return DeepExpectedSARSA("model",
-                             learning_rate, discount_factor,
-                             buffer_capacity,
-                             minimum_sample_probability, random_sample_trade_off,
-                             importance_sampling_value, importance_sampling_value_increment,
-                             config, error_clip)
+    return TabularSARSA("model",
+                        learning_rate, discount_factor,
+                        buffer_capacity,
+                        minimum_sample_probability, random_sample_trade_off,
+                        importance_sampling_value, importance_sampling_value_increment)
 
 
 def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolicy:
@@ -72,20 +69,18 @@ def _define_boltzmann_exploration_policy() -> BoltzmannExplorationPolicy:
     return BoltzmannExplorationPolicy(temperature_max, temperature_min, temperature_decay)
 
 
-def _define_epsilon_greedy_agent(model: DeepExpectedSARSA, exploration_policy:EpsilonGreedyExplorationPolicy) -> DeepExpectedSARSAAgent:
+def _define_epsilon_greedy_agent(model: TabularSARSA, exploration_policy: EpsilonGreedyExplorationPolicy) -> TabularSARSAAgent:
     # Define attributes
-    weight_copy_step_interval: int = 25
     batch_size: int = 100
     # Return the agent
-    return DeepExpectedSARSAAgent("desarsa_egreedy_agent", model, exploration_policy, weight_copy_step_interval, batch_size)
+    return TabularSARSAAgent("tsarsa_egreedy_agent", model, exploration_policy, batch_size)
 
 
-def _define_boltzmann_agent(model: DeepExpectedSARSA, exploration_policy: BoltzmannExplorationPolicy) -> DeepExpectedSARSAAgent:
+def _define_boltzmann_agent(model: TabularSARSA, exploration_policy: BoltzmannExplorationPolicy) -> TabularSARSAAgent:
     # Define attributes
-    weight_copy_step_interval: int = 25
     batch_size: int = 100
     # Return the agent
-    return DeepExpectedSARSAAgent("desarsa_boltzmann_agent", model, exploration_policy, weight_copy_step_interval, batch_size)
+    return TabularSARSAAgent("tsarsa_boltzmann_agent", model, exploration_policy, batch_size)
 
 
 if __name__ == "__main__":
@@ -97,36 +92,32 @@ if __name__ == "__main__":
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
-    # Cart Pole environment:
-    #       - general success threshold to consider the training and the experiment successful is 195.0 over 100 episodes according to OpenAI guidelines
-    environment_name: str = 'CartPole-v0'
-    success_threshold: float = 195.0
+    # Frozen Lake environment:
+    #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
+    environment_name: str = 'FrozenLake-v0'
+    success_threshold: float = 0.78
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
-    # Define Neural Network layers
-    nn_config: Config = Config()
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu])
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu])
     # Define model
-    inner_model: DeepExpectedSARSA = _define_desarsa_model(nn_config)
+    inner_model: TabularSARSA = _define_tsarsa_model()
     # Define exploration_policies
     epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_exploration_policy()
     boltzmann_exploration_policy: BoltzmannExplorationPolicy = _define_boltzmann_exploration_policy()
     # Define agents
-    desarsa_epsilon_greedy_agent: DeepExpectedSARSAAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
-    desarsa_boltzmann_agent: DeepExpectedSARSAAgent = _define_boltzmann_agent(inner_model, boltzmann_exploration_policy)
+    tsarsa_epsilon_greedy_agent: TabularSARSAAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
+    tsarsa_boltzmann_agent: TabularSARSAAgent = _define_boltzmann_agent(inner_model, boltzmann_exploration_policy)
     # Define experiments
     experiment_egreedy: BenchmarkExperiment = BenchmarkExperiment("eg_experiment", success_threshold, environment,
-                                                                  desarsa_epsilon_greedy_agent)
+                                                                  tsarsa_epsilon_greedy_agent)
     experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("b_experiment", success_threshold, environment,
-                                                                    desarsa_boltzmann_agent)
+                                                                    tsarsa_boltzmann_agent)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
-    training_episodes: int = 10
+    training_episodes: int = 100
     validation_episodes: int = 100
-    max_training_episodes: int = 1000
-    episode_length_max: int = 100000
+    max_training_episodes: int = 10000
+    episode_length_max: int = 100
     # Run epsilon greedy experiment
     run_experiment(experiment_egreedy,
                    training_episodes,
@@ -145,5 +136,3 @@ if __name__ == "__main__":
                    render_during_training, render_during_validation, render_during_test,
                    workspace_path, __file__,
                    logger, experiment_iterations_number)
-
-

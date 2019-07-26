@@ -198,14 +198,14 @@ class TabularQLearning(Model):
             self._targets = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self._loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
-            # Define the absolute error and its mean
+            # Define the absolute error
             self._absolute_error = tensorflow.abs(self._targets - self._outputs, name="absolute_error")
             # Define the loss
             self._loss = tensorflow.reduce_sum(self._loss_weights * tensorflow.squared_difference(self._targets, self._outputs), name="loss")
             # Define the optimizer
             self._optimizer = tensorflow.train.GradientDescentOptimizer(self.learning_rate).minimize(self._loss)
-            # Define the _initializer
-            self.initializer = tensorflow.global_variables_initializer()
+            # Define the initializer
+            self._initializer = tensorflow.global_variables_initializer()
 
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
@@ -257,7 +257,7 @@ class TabularQLearning(Model):
             else:
                 q_values_current[sample_index, action] = reward + self.discount_factor * numpy.max(q_values_next[sample_index])
         # Train the model and save the value of the loss and of the absolute error as well as the summary
-        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self.summary],
+        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
                                                        feed_dict={
                                                                    self._inputs: observations_current_one_hot,
                                                                    self._targets: q_values_current,

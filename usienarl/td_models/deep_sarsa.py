@@ -143,7 +143,8 @@ class Estimator:
     def __init__(self,
                  scope: str,
                  observation_space_shape, agent_action_space_shape,
-                 hidden_layers_config: Config):
+                 hidden_layers_config: Config,
+                 error_clipping: bool = True):
         self.scope: str = scope
         with tensorflow.variable_scope(self.scope):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
@@ -159,8 +160,13 @@ class Estimator:
             self.loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
             # Define the absolute error
             self.absolute_error = tensorflow.abs(self.targets - self.outputs, name="absolute_error")
-            # Define the estimator loss
-            self.loss = tensorflow.reduce_mean(self.loss_weights * tensorflow.squared_difference(self.targets, self.outputs), name="loss")
+            # Define the loss with error clipping (huber loss) if required
+            if error_clipping:
+                self.loss = tensorflow.reduce_mean(self.loss_weights * tensorflow.where(self.absolute_error < 1.0,
+                                                   0.5 * tensorflow.square(self.absolute_error),
+                                                   self.absolute_error - 0.5), name="loss")
+            else:
+                self.loss = tensorflow.reduce_mean(self.loss_weights * tensorflow.square(self.absolute_error), name="loss")
             # Define the estimator weight parameters
             self.weight_parameters = [variable for variable in tensorflow.trainable_variables() if variable.name.startswith(self.scope)]
             self.weight_parameters = sorted(self.weight_parameters, key=lambda parameter: parameter.name)
@@ -171,7 +177,9 @@ class DeepSARSA(Model):
     Deep SARSA model with SARSA update rule.
     The model is a deep neural network which hidden layers can be defined by a config parameter.
     It uses a target network and a main network to correctly evaluate the expected future reward in order
-    to stabilize learning.
+    to stabilize learning. It can also clips the error in the [-1, 1] range when computing the loss in order to further
+    stabilize learning (it may cause instability in some environments). This is done using the Huber loss and by default
+    it is enabled.
 
     In order to synchronize the target network and the main network, every some interval steps the weight have to be
     copied from the main network to the target network.
@@ -195,7 +203,8 @@ class DeepSARSA(Model):
                  buffer_capacity: int,
                  minimum_sample_probability: float, random_sample_trade_off: float,
                  importance_sampling_value: float, importance_sampling_value_increment: float,
-                 hidden_layers_config: Config):
+                 hidden_layers_config: Config,
+                 error_clipping: bool = True):
         # Define model attributes
         self.learning_rate: float = learning_rate
         self.discount_factor: float = discount_factor
@@ -206,6 +215,7 @@ class DeepSARSA(Model):
         self._importance_sampling_value: float = importance_sampling_value
         self._importance_sampling_value_increment: float = importance_sampling_value_increment
         self._hidden_layers_config: Config = hidden_layers_config
+        self._error_clipping: bool = error_clipping
         # Define model empty attributes
         self.buffer: Buffer = None
         # Define internal model empty attributes
@@ -235,10 +245,12 @@ class DeepSARSA(Model):
         # Define two estimator, one for target network and one for main network, with identical structure
         self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
                                        self._observation_space_shape, self._agent_action_space_shape,
-                                       self._hidden_layers_config)
+                                       self._hidden_layers_config,
+                                       self._error_clipping)
         self._target_network = Estimator(self._scope + "/" + self._name + "/TargetNetwork",
                                          self._observation_space_shape, self._agent_action_space_shape,
-                                         self._hidden_layers_config)
+                                         self._hidden_layers_config,
+                                         self._error_clipping)
         # Assign main and target networks to the model attributes
         self._main_network_inputs = self._main_network.inputs
         self._main_network_outputs = self._main_network.outputs

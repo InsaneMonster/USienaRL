@@ -52,7 +52,7 @@ def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolic
     # Define attributes
     exploration_rate_max: float = 1.0
     exploration_rate_min: float = 0.001
-    exploration_rate_decay: float = 0.0001
+    exploration_rate_decay: float = 0.00001
     # Return the explorer
     return EpsilonGreedyExplorationPolicy(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
@@ -73,10 +73,10 @@ if __name__ == "__main__":
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
-    # Cart Pole environment:
-    #       - general success threshold to consider the training and the experiment successful is 195.0 over 100 episodes according to OpenAI guidelines
-    environment_name: str = 'CartPole-v0'
-    success_threshold: float = 195.0
+    # Frozen Lake environment:
+    #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
+    environment_name: str = 'FrozenLake-v0'
+    success_threshold: float = 0.78
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define Neural Network layers
@@ -98,10 +98,10 @@ if __name__ == "__main__":
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
-    training_episodes: int = 1000
+    training_episodes: int = 5000
     validation_episodes: int = 100
-    max_training_episodes: int = 100000
-    episode_length_max: int = 100000
+    max_training_episodes: int = 1000000
+    episode_length_max: int = 100
     # Run experiment without exploration policy
     run_experiment(experiment,
                    training_episodes,
