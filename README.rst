@@ -95,4 +95,5 @@ Finally, the Trust Region Policy Optimization algorithm implementation is still 
 
 **Changelog**
 
-- Added Huber loss to deep q-learning (with double and dueling variant), deep sarsa and deep expected sarsa as an optional feature to enable during model definition (not all environments, e.g. Cart-Pole, converge with Huber loss). By default, Huber loss is enabled.
+- Added support for checkpoint path to allow retraining in run experiment function
+- Fixed wrong percentage computation in run experiment function
