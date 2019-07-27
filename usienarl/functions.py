@@ -59,7 +59,7 @@ def run_experiment(experiment: Experiment,
                    testing_episodes: int, test_cycles: int,
                    render_during_training: bool, render_during_validation: bool, render_during_test: bool,
                    workspace_path: str, file_name: str, logger: logging.Logger,
-                   experiment_iterations_number: int = 1):
+                   checkpoint_path: str = None, experiment_iterations_number: int = 1):
     """
     Run the given experiment with the given parameters. It automatically creates all the directories to store the
     experiment results, summaries and meta-graphs for each iteration.
@@ -77,6 +77,7 @@ def run_experiment(experiment: Experiment,
     :param workspace_path: path to workspace directory
     :param file_name: the name of the experiment script
     :param logger: the logger used to record information, warnings and errors
+    :param checkpoint_path: the optional checkpoint path to gather the model from, useful to further train an already trained model
     :param experiment_iterations_number: the number of iterations of the experiment to run, by default just one
     """
     # Generate the workspace directory if not defined
@@ -151,7 +152,8 @@ def run_experiment(experiment: Experiment,
                                                                                                                                              logger,
                                                                                                                                              render_during_training,
                                                                                                                                              render_during_validation,
-                                                                                                                                             render_during_test)
+                                                                                                                                             render_during_test,
+                                                                                                                                             checkpoint_path)
             # Save the result of the iteration in the table
             experiment_results_table[iteration] = (average_total_reward, max_total_reward, average_scaled_reward, max_scaled_reward, trained_episodes, success)
     # Print the results in both a results log file and in the console
