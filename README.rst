@@ -95,5 +95,4 @@ Finally, the Trust Region Policy Optimization algorithm implementation is still 
 
 **Changelog**
 
-- Added support for checkpoint path to allow retraining in run experiment function
-- Fixed wrong percentage computation in run experiment function
+- Fixed checkpoint loading

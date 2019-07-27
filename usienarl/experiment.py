@@ -315,6 +315,9 @@ class Experiment:
         Conducting an experiment will generate a tensorflow session for that experiment. It is required that the experiment
         is ready to be conducted by checking the result of the setup method before attempting at conducting it.
 
+        If an already trained model checkpoint is given, the last checkpoint in the given path folder is used to further
+        train the model. The scope of the experiment and of the angent has to be the same across both models.
+
         :param training_episodes_per_volley: the number of training episodes per volley before trying to validate the agent
         :param validation_episodes_per_volley: the number of validation episodes per volley after the training in such interval
         :param training_episodes_max: the maximum number of training episodes allowed at all
@@ -339,7 +342,7 @@ class Experiment:
                 checkpoint = tensorflow.train.get_checkpoint_state(checkpoint_path)
                 # If checkpoint exists restore from checkpoint
                 if checkpoint and checkpoint.model_checkpoint_path:
-                    self._agent_saver.restore(session, checkpoint_path)
+                    self._agent_saver.restore(session, tensorflow.train.latest_checkpoint(checkpoint_path))
                     logger.info("Model graph stored at " + checkpoint_path + " loaded successfully!")
                 else:
                     logger.error("Checkpoint path specified is wrong: no model can be accessed at " + checkpoint_path)
