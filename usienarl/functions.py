@@ -212,7 +212,7 @@ def run_experiment(experiment: Experiment,
     logger.info("Average of max scaled reward over all experiments: " + str("%.3f" % average_max_scaled_reward))
     average_training_episodes: float = numpy.average(trained_episodes_list)
     logger.info("Average of training episodes over all experiments: " + str("%.3f" % average_training_episodes))
-    success_percentage: float = numpy.round(numpy.count_nonzero(success_list), 2)
+    success_percentage: float = numpy.round(100.0 * numpy.count_nonzero(success_list) / len(success_list), 2)
     logger.info("Success percentage over all experiments: " + str("%.2f" % success_percentage))
     # Print standard deviation for each indicator
     # Compute a list of averages for array difference
