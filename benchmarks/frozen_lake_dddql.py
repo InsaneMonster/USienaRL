@@ -158,7 +158,7 @@ if __name__ == "__main__":
                    testing_episodes, test_cycles,
                    render_during_training, render_during_validation, render_during_test,
                    workspace_path, __file__,
-                   logger, experiment_iterations_number)
+                   logger, None, experiment_iterations_number)
     run_experiment(experiment_boltzmann_mse,
                    training_episodes,
                    max_training_episodes, episode_length_max,
@@ -166,4 +166,4 @@ if __name__ == "__main__":
                    testing_episodes, test_cycles,
                    render_during_training, render_during_validation, render_during_test,
                    workspace_path, __file__,
-                   logger, experiment_iterations_number)
+                   logger, None, experiment_iterations_number)
