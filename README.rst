@@ -95,4 +95,4 @@ Finally, the Trust Region Policy Optimization algorithm implementation is still 
 
 **Changelog**
 
-- Fixed checkpoint loading
+- Now the run experiment function returns a list of the paths of the saved metagraph of each iteration, allowing for easy curriculum learning

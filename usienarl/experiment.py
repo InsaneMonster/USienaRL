@@ -329,7 +329,7 @@ class Experiment:
         :param render_during_validation: boolean flag to render the environment during validation, default to False
         :param render_during_test: boolean flag to render the environment during test, default to False
         :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model, default to None
-        :return: the average and the max of the total average reward, the average and the max of the average average reward with respect to all test cycles, the training episodes required to validate and a success flag
+        :return: the average and the max of the total average reward, the average and the max of the average average reward with respect to all test cycles, the training episodes required to validate, a success flag and the location in which the saved metagraph is stored
         """
         logger.info("Conducting experiment " + self._current_id + "...")
         # Define the session
@@ -425,7 +425,7 @@ class Experiment:
                 logger.info("The experiment is successful")
             else:
                 logger.info("The experiment is not successful")
-            return average_test_total_reward, max_test_total_reward, average_test_average_reward, max_test_average_reward, self._trained_episodes, success
+            return average_test_total_reward, max_test_total_reward, average_test_average_reward, max_test_average_reward, self._trained_episodes, success, self._metagraph_path
 
     def watch(self,
               episode_length_max: int,

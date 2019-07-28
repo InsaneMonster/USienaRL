@@ -59,7 +59,7 @@ def run_experiment(experiment: Experiment,
                    testing_episodes: int, test_cycles: int,
                    render_during_training: bool, render_during_validation: bool, render_during_test: bool,
                    workspace_path: str, file_name: str, logger: logging.Logger,
-                   checkpoint_path: str = None, experiment_iterations_number: int = 1):
+                   checkpoint_path: str = None, experiment_iterations_number: int = 1) -> []:
     """
     Run the given experiment with the given parameters. It automatically creates all the directories to store the
     experiment results, summaries and meta-graphs for each iteration.
@@ -79,6 +79,7 @@ def run_experiment(experiment: Experiment,
     :param logger: the logger used to record information, warnings and errors
     :param checkpoint_path: the optional checkpoint path to gather the model from, useful to further train an already trained model
     :param experiment_iterations_number: the number of iterations of the experiment to run, by default just one
+    :return the list of saved metagraph paths of each iteration of the experiment
     """
     # Generate the workspace directory if not defined
     workspace_directory = os.path.dirname(workspace_path)
@@ -102,8 +103,9 @@ def run_experiment(experiment: Experiment,
         except FileExistsError:
             pass
     # Generate a directory for each iteration of the experiment if not defined
-    # Prepare a table in which to store all results
+    # Prepare a table in which to store all results and a list of metagraph paths
     experiment_results_table: dict = dict()
+    experiment_metagraph_paths: [] = []
     for iteration in range(experiment_iterations_number):
         iteration_path: str = experiment_path
         # Set the iteration number to -1 if there is only one iteration
@@ -146,16 +148,19 @@ def run_experiment(experiment: Experiment,
         logger.addHandler(file_handler)
         # Conduct the experiment
         if experiment.setup(summary_path, metagraph_path, logger, iteration):
-            average_total_reward, max_total_reward, average_scaled_reward, max_scaled_reward, trained_episodes, success = experiment.conduct(training_episodes, validation_episodes,
-                                                                                                                                             max_training_episodes, episode_length_max,
-                                                                                                                                             testing_episodes, test_cycles,
-                                                                                                                                             logger,
-                                                                                                                                             render_during_training,
-                                                                                                                                             render_during_validation,
-                                                                                                                                             render_during_test,
-                                                                                                                                             checkpoint_path)
+            average_total_reward, max_total_reward, average_scaled_reward, max_scaled_reward, trained_episodes, success, metagraph_save_path = experiment.conduct(training_episodes, validation_episodes,
+                                                                                                                                                                  max_training_episodes, episode_length_max,
+                                                                                                                                                                  testing_episodes, test_cycles,
+                                                                                                                                                                  logger,
+                                                                                                                                                                  render_during_training,
+                                                                                                                                                                  render_during_validation,
+                                                                                                                                                                  render_during_test,
+                                                                                                                                                                  checkpoint_path)
             # Save the result of the iteration in the table
             experiment_results_table[iteration] = (average_total_reward, max_total_reward, average_scaled_reward, max_scaled_reward, trained_episodes, success)
+            # Save the metagraph path in the list if the experiment iteration is successful
+            if success:
+                experiment_metagraph_paths.append(metagraph_save_path)
     # Print the results in both a results log file and in the console
     # Reset logger handlers for current experiment
     logger.handlers = []
@@ -232,3 +237,5 @@ def run_experiment(experiment: Experiment,
     logger.info("Standard deviation of max scaled reward over all experiments " + str("%.3f" % stdv_max_scaled_reward) + ", which is a " + str("%.2f" % ((100 * stdv_max_scaled_reward) / average_max_scaled_reward)) + "% of the average")
     stdv_training_episodes: float = numpy.sqrt(numpy.sum(numpy.power(trained_episodes_list - training_episodes_average_list, 2)) / len(trained_episodes_list))
     logger.info("Standard deviation of training episodes over all experiments: " + str("%.3f" % stdv_training_episodes) + ", which is a " + str("%.2f" % ((100 * stdv_training_episodes) / average_training_episodes)) + "% of the average")
+    # Return the list of saved metagraph of successful iterations of the experiment, if any, otherwise an empty list
+    return experiment_metagraph_paths
