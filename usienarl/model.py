@@ -141,20 +141,6 @@ class Model:
         # Abstract method, definition should be implemented on a child class basis
         raise NotImplementedError()
 
-    def predict(self,
-                session,
-                observation_current,
-                mask: numpy.ndarray = None):
-        """
-        Get the action predicted by the model given the current observation.
-
-        :param session: the session of tensorflow currently running
-        :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
-        :return: the action predicted by the model
-        """
-        raise NotImplementedError()
-
     def update(self,
                session,
                batch: []):

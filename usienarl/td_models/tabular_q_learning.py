@@ -191,13 +191,13 @@ class TabularQLearning(Model):
             # Define inputs of the _model as a float adaptable array with size Nx(S) where N is the number of examples and (O) is the shape of the observations space
             self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
             # Define mask placeholder
-            self._mask = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float16, name="mask")
+            self._mask = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float32, name="mask")
             # Initialize the table (a weight matrix) of OxA dimensions with random uniform numbers between 0 and 0.1
             self._table = tensorflow.get_variable(name="table", trainable=True, initializer=tensorflow.random_uniform([*self._observation_space_shape, *self._agent_action_space_shape], 0, 0.1))
             # Define the outputs at a given state as a matrix of size NxA given by multiplication of inputs and weights
             # Define the targets for learning with the same Nx(A) adaptable size
             # Note: N is the number of examples and (A) the shape of the action space
-            self._outputs = tensorflow.matmul(tensorflow.matmul(self._inputs, self._table), self._mask, name="outputs")
+            self._outputs = tensorflow.multiply(tensorflow.matmul(self._inputs, self._table), self._mask, name="outputs")
             self._targets = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self._loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
@@ -214,13 +214,6 @@ class TabularQLearning(Model):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define the _summary operation for this graph with loss and absolute error summaries
             self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
-
-    def predict(self,
-                session,
-                observation_current,
-                mask: numpy.ndarray = None):
-        # Get the best predicted action
-        return self.get_best_action(session, observation_current, mask)
 
     def get_all_actions(self,
                         session,
@@ -279,7 +272,7 @@ class TabularQLearning(Model):
                session,
                batch: []):
         # Generate a full pass-through mask for each example in the batch
-        masks: numpy.ndarray = numpy.ones((len(batch), self._agent_action_space_shape), dtype=float)
+        masks: numpy.ndarray = numpy.ones((len(batch[0]), *self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
         observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
         # Generate a one-hot encoded version of the observations
@@ -304,7 +297,8 @@ class TabularQLearning(Model):
                                                        feed_dict={
                                                                    self._inputs: observations_current_one_hot,
                                                                    self._targets: q_values_current,
-                                                                   self._loss_weights: weights
+                                                                   self._loss_weights: weights,
+                                                                   self._mask: masks
                                                                   })
         # Return the loss, the absolute error and relative summary
         return summary, loss, absolute_error

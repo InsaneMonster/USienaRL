@@ -197,7 +197,7 @@ class VanillaPolicyGradient(Model):
             # Define the targets for learning with the same NxA adaptable size
             self._targets = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="targets")
             # Define the mask placeholder
-            self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float16, name="mask")
+            self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="mask")
             # Change the _model definition according to its action space type
             if self._agent_action_space_type == SpaceType.discrete:
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
@@ -249,10 +249,18 @@ class VanillaPolicyGradient(Model):
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
                                                      tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
 
-    def predict(self,
-                session,
-                observation_current,
-                mask: numpy.ndarray = None):
+    def sample_action(self,
+                      session,
+                      observation_current,
+                      mask: numpy.ndarray = None):
+        """
+        Get the action sampled from the probability distribution of the model given the current observation and an optional mask.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
+        :return: the action predicted by the model
+        """
         # If there is no mask generate a full pass-through mask
         if mask is None:
             mask = numpy.ones(self._agent_action_space_shape, dtype=float)

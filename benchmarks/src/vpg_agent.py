@@ -85,7 +85,7 @@ class VPGAgent(Agent):
                   interface: Interface,
                   agent_observation_current):
         # If there is no exploration policy just use the model best prediction (it is still inherently exploring)
-        best_action, self._current_value_estimate = self._model.get_best_action(session, agent_observation_current)
+        best_action, self._current_value_estimate = self._model.predict(session, agent_observation_current)
         # Use the given epsilon greedy model otherwise
         # Note: epsilon greedy just requires the best action to be supplied by the model
         if self._exploration_policy is not None:
@@ -101,7 +101,7 @@ class VPGAgent(Agent):
                       interface: Interface,
                       agent_observation_current):
         # Predict the action with the model
-        action, _ = self._model.get_best_action(session, agent_observation_current)
+        action, _ = self._model.predict(session, agent_observation_current)
         # Return the predicted action
         return action
 
