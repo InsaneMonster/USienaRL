@@ -146,6 +146,8 @@ class Estimator:
         with tensorflow.variable_scope(self.scope):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self.inputs = tensorflow.placeholder(shape=[None, *observation_space_shape], dtype=tensorflow.float32, name="inputs")
+            # Define the mask
+            self.mask = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="mask")
             # Define the estimator network hidden layers from the config with two equal streams for value and advantage
             hidden_value_stream_output = hidden_layers_config.apply_hidden_layers(self.inputs)
             hidden_advantage_stream_output = hidden_layers_config.apply_hidden_layers(self.inputs)
@@ -155,7 +157,7 @@ class Estimator:
             # Define outputs as an array of neurons of size Nx(A) where N is the number of examples and A the shape of the action space
             # and whose value is given by the following equation:
             # Q(s,a) = V(s) + (A(s,a) - 1/|A| * sum A(s,a')) aka the aggregation layer
-            self.outputs = self._value + tensorflow.subtract(self._advantage, tensorflow.reduce_mean(self._advantage, 1, True), name="outputs")
+            self.outputs = tensorflow.multiply(self._value + tensorflow.subtract(self._advantage, tensorflow.reduce_mean(self._advantage, 1, True), name="outputs"), self.mask)
             # Define the targets for learning with the same Nx(A) adaptable size where N is the number of examples and A the shape of the action space
             self.targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
@@ -233,6 +235,8 @@ class DuelingDeepQLearning(Model):
         self._target_network_outputs = None
         self._main_network_inputs = None
         self._main_network_outputs = None
+        self._main_network_mask = None
+        self._target_network_mask = None
         self._targets = None
         self._loss_weights = None
         self._absolute_error = None
@@ -262,6 +266,8 @@ class DuelingDeepQLearning(Model):
         self._main_network_outputs = self._main_network.outputs
         self._target_network_outputs = self._target_network.outputs
         self._target_network_inputs = self._target_network.inputs
+        self._main_network_mask = self._main_network.mask
+        self._target_network_mask = self._target_network.mask
         self._targets = self._main_network.targets
         self._absolute_error = self._main_network.absolute_error
         self._loss = self._main_network.loss
@@ -282,22 +288,21 @@ class DuelingDeepQLearning(Model):
             # Define the _summary operation for this graph with loss and absolute error summaries
             self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
 
-    def predict(self,
-                session,
-                observation_current):
-        # Get the best predicted action
-        return self.get_best_action(session, observation_current)
-
     def get_all_actions(self,
                         session,
-                        observation_current):
+                        observation_current,
+                        mask: numpy.ndarray = None):
         """
         Get all the actions values according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
         :return: all action values predicted by the model
         """
+        # If there is no mask generate a full pass-through mask
+        if mask is None:
+            mask = numpy.ones(self._agent_action_space_shape, dtype=float)
         # Save by default the observation current input of the model to the given data
         observation_current_input = observation_current
         # Generate a one-hot encoded version of the observation if observation space is discrete
@@ -305,34 +310,38 @@ class DuelingDeepQLearning(Model):
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             observation_current_input = observation_current_one_hot
         # Return all the predicted q-values given the current observation
-        return session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_input]})
+        return session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_input], self._main_network_mask: [mask]})
 
     def get_best_action(self,
                         session,
-                        observation_current):
+                        observation_current,
+                        mask: numpy.ndarray = None):
         """
         Get the best action predicted by the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
         :return: the action predicted by the model
         """
         # Return the predicted action given the current observation
-        return numpy.argmax(self.get_all_actions(session, observation_current))
+        return numpy.argmax(self.get_all_actions(session, observation_current, mask))
 
     def get_best_action_and_all_actions(self,
                                         session,
-                                        observation_current):
+                                        observation_current,
+                                        mask: numpy.ndarray = None):
         """
         Get the best action predicted by the model at the given current observation and all the action values according
         to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
         :return: the best action predicted by the model and all action values predicted by the model
         """
         # Get all actions
-        all_actions = self.get_all_actions(session, observation_current)
+        all_actions = self.get_all_actions(session, observation_current, mask)
         # Return the best action and all the actions
         return numpy.argmax(all_actions), all_actions
 
@@ -349,6 +358,8 @@ class DuelingDeepQLearning(Model):
     def update(self,
                session,
                batch: []):
+        # Generate a full pass-through mask for each example in the batch
+        masks: numpy.ndarray = numpy.ones((len(batch[0]), *self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
         observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
         # Define the input observations to the model (to support both space types)
@@ -364,11 +375,11 @@ class DuelingDeepQLearning(Model):
         # Get the q-values from the model at both current observations and next observations
         # Next observation is estimated by the target network
         q_values_current: numpy.ndarray = session.run(self._main_network_outputs,
-                                                      feed_dict={self._main_network_inputs: observations_current_input})
+                                                      feed_dict={self._main_network_inputs: observations_current_input, self._main_network_mask: masks})
         q_values_next_main_network: numpy.ndarray = session.run(self._main_network_outputs,
-                                                                feed_dict={self._main_network_inputs: observations_next_input})
+                                                                feed_dict={self._main_network_inputs: observations_next_input, self._main_network_mask: masks})
         q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs,
-                                                                  feed_dict={self._target_network_inputs: observations_next_input})
+                                                                  feed_dict={self._target_network_inputs: observations_next_input, self._target_network_mask: masks})
         # Apply Bellman equation with the Q-Learning update rule
         for sample_index in range(len(actions)):
             # Extract current sample values
@@ -387,7 +398,8 @@ class DuelingDeepQLearning(Model):
                                                        feed_dict={
                                                             self._main_network_inputs: observations_current_input,
                                                             self._targets: q_values_current,
-                                                            self._loss_weights: weights
+                                                            self._loss_weights: weights,
+                                                            self._main_network_mask: masks
                                                        })
         # Return the loss, the absolute error and relative summary
         return summary, loss, absolute_error

@@ -186,7 +186,7 @@ class TabularQLearning(Model):
         # Set the buffer
         self.buffer = Buffer(self._buffer_capacity, self._minimum_sample_probability, self._random_sample_trade_off,
                              self._importance_sampling_value, self._importance_sampling_value_increment)
-        # Define the tensorflow _model
+        # Define the tensorflow model
         with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define inputs of the _model as a float adaptable array with size Nx(S) where N is the number of examples and (O) is the shape of the observations space
             self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
