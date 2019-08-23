@@ -167,6 +167,10 @@ class VanillaPolicyGradient(Model):
         self._targets = None
         self._advantages = None
         self._rewards = None
+        self._mask = None
+        self._logits = None
+        self._expected_value = None
+        self._std = None
         self._log_likelihood = None
         self._value = None
         self._value_stream_loss = None
@@ -184,7 +188,7 @@ class VanillaPolicyGradient(Model):
     def _define_graph(self):
         # Set the GAE buffer for the vanilla policy gradient algorithm
         self.buffer: Buffer = Buffer(self.discount_factor, self._lambda_parameter)
-        # Define the tensorflow _model
+        # Define the tensorflow model
         with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
@@ -192,25 +196,32 @@ class VanillaPolicyGradient(Model):
             hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
             # Define the targets for learning with the same NxA adaptable size
             self._targets = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="targets")
+            # Define the mask placeholder
+            self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float16, name="mask")
             # Change the _model definition according to its action space type
             if self._agent_action_space_type == SpaceType.discrete:
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
-                logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="logits")
+                self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="logits")
+                # Compute the masked logits using the given mask
+                masked_logits = tensorflow.multiply(self._logits, self._mask)
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
-                self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=logits, num_samples=1), axis=1)
+                self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=masked_logits, num_samples=1), axis=1)
                 # Define the log likelihood according to the categorical distribution
-                self._log_likelihood, _ = self.get_categorical_log_likelihood(self._targets, logits)
+                self._log_likelihood, _ = self.get_categorical_log_likelihood(self._targets, self._logits)
             else:
                 # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape
-                expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="expected_value")
+                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="expected_value")
                 # Define the log standard deviation
                 log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
                 # Define the standard deviation
-                std = tensorflow.exp(log_std, name="std")
+                self._std = tensorflow.exp(log_std, name="std")
+                # Compute the mask of both the std and the expected value using the mask
+                masked_expected_value = tensorflow.multiply(self._expected_value, self._mask)
+                masked_std = tensorflow.multiply(self._std, self._mask)
                 # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
-                self._actions = expected_value + tensorflow.random_normal(tensorflow.shape(expected_value)) * std
+                self._actions = masked_expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * masked_std
                 # Define the log likelihood according to the gaussian distribution
-                self._log_likelihood = self.get_gaussian_log_likelihood(self._targets, expected_value, log_std)
+                self._log_likelihood = self.get_gaussian_log_likelihood(self._targets, self._expected_value, log_std)
             # Define the value estimator (a deep MLP)
             value_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
             value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None)
@@ -238,30 +249,48 @@ class VanillaPolicyGradient(Model):
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
                                                      tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
 
-    def get_all_actions(self,
-                        session,
-                        observation_current):
-        # TODO: add likelihood of each action as action value estimate
-        pass
-
-    def get_best_action(self,
-                        session,
-                        observation_current):
+    def predict(self,
+                session,
+                observation_current,
+                mask: numpy.ndarray = None):
+        # If there is no mask generate a full pass-through mask
+        if mask is None:
+            mask = numpy.ones(self._agent_action_space_shape, dtype=float)
         # Return a random action sample given the current state and depending on the observation space type and also compute value estimate
         if self._observation_space_type == SpaceType.discrete:
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-            action, value = session.run([self._actions, self._value], feed_dict={self._inputs: [observation_current_one_hot]})
+            action, value = session.run([self._actions, self._value],
+                                        feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
         else:
-            action, value = session.run([self._actions, self._value], feed_dict={self._inputs: [observation_current]})
+            action, value = session.run([self._actions, self._value],
+                                        feed_dict={self._inputs: [observation_current], self._mask: [mask]})
         # Return the predicted action and the estimated value
         return action[0], value[0]
 
-    def get_best_action_and_all_actions(self,
-                                        session,
-                                        observation_current):
-        # TODO: add once get_all_actions is implemented
-        pass
+    def get_action_probabilities(self,
+                                 session,
+                                 observation_current) -> []:
+        """
+        Get all the action probabilities (logits if discrete, expected value if continuous) for the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :return: the list of action probabilities (logits or expected values depending on the agent action space type) from which to sample
+        """
+        # Get the logits or the expected value as the distribution of the action probabilities depending on the action space shape
+        if self._agent_action_space_type == SpaceType.discrete:
+            if self._observation_space_type == SpaceType.discrete:
+                observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+                logits = session.run([self._logits], feed_dict={self._inputs: [observation_current_one_hot]})
+            else:
+                logits = session.run([self._logits], feed_dict={self._inputs: [observation_current]})
+            # Return the logits (probabilities of all actions)
+            return logits
+        else:
+            expected_value, std = session.run([self._expected_value, self._std], feed_dict={self._inputs: [observation_current]})
+            # Return the expected value and std of all actions
+            return expected_value
 
     def update(self,
                session,
