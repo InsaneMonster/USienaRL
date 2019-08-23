@@ -140,42 +140,15 @@ class Model:
         # Abstract method, definition should be implemented on a child class basis
         raise NotImplementedError()
 
-    def get_all_actions(self,
-                        session,
-                        observation_current):
+    def predict(self,
+                session,
+                observation_current):
         """
-        Get all the actions values according to the model at the given current observation.
-
-        :param session: the session of tensorflow currently running
-        :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :return: all action values predicted by the model
-        """
-        # Abstract method, definition should be implemented on a child class basis
-        raise NotImplementedError()
-
-    def get_best_action(self,
-                        session,
-                        observation_current):
-        """
-        Get the best action predicted by the model at the given current observation.
+        Get the action predicted by the model given the current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
         :return: the action predicted by the model
-        """
-        # Abstract method, definition should be implemented on a child class basis
-        raise NotImplementedError()
-
-    def get_best_action_and_all_actions(self,
-                                        session,
-                                        observation_current):
-        """
-        Get the best action predicted by the model at the given current observation and all the action values according
-        to the model at the given current observation.
-
-        :param session: the session of tensorflow currently running
-        :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :return: the best action predicted by the model and all action values predicted by the model
         """
         raise NotImplementedError()
 
