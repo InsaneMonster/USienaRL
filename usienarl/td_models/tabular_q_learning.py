@@ -168,6 +168,7 @@ class TabularQLearning(Model):
         self.buffer: Buffer = None
         # Define internal model empty attributes
         self._inputs = None
+        self._mask = None
         self._outputs = None
         self._table = None
         self._targets = None
@@ -189,12 +190,14 @@ class TabularQLearning(Model):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
             # Define inputs of the _model as a float adaptable array with size Nx(S) where N is the number of examples and (O) is the shape of the observations space
             self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
+            # Define mask placeholder
+            self._mask = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float16, name="mask")
             # Initialize the table (a weight matrix) of OxA dimensions with random uniform numbers between 0 and 0.1
             self._table = tensorflow.get_variable(name="table", trainable=True, initializer=tensorflow.random_uniform([*self._observation_space_shape, *self._agent_action_space_shape], 0, 0.1))
             # Define the outputs at a given state as a matrix of size NxA given by multiplication of inputs and weights
             # Define the targets for learning with the same Nx(A) adaptable size
             # Note: N is the number of examples and (A) the shape of the action space
-            self._outputs = tensorflow.matmul(self._inputs, self._table, name="outputs")
+            self._outputs = tensorflow.matmul(tensorflow.matmul(self._inputs, self._table), self._mask, name="outputs")
             self._targets = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self._loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
@@ -214,65 +217,77 @@ class TabularQLearning(Model):
 
     def predict(self,
                 session,
-                observation_current):
+                observation_current,
+                mask: numpy.ndarray = None):
         # Get the best predicted action
-        return self.get_best_action(session, observation_current)
+        return self.get_best_action(session, observation_current, mask)
 
     def get_all_actions(self,
                         session,
-                        observation_current):
+                        observation_current,
+                        mask: numpy.ndarray = None):
         """
         Get all the actions values according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
         :return: all action values predicted by the model
         """
+        # If there is no mask generate a full pass-through mask
+        if mask is None:
+            mask = numpy.ones(self._agent_action_space_shape, dtype=float)
         # Generate a one-hot encoded version of the observation
         observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
         # Return all the predicted q-values given the current observation
-        return session.run(self._outputs, feed_dict={self._inputs: [observation_current_one_hot]})
+        return session.run(self._outputs, feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
 
     def get_best_action(self,
                         session,
-                        observation_current):
+                        observation_current,
+                        mask: numpy.ndarray = None):
         """
         Get the best action predicted by the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
         :return: the action predicted by the model
         """
         # Return the predicted action given the current observation
-        return numpy.argmax(self.get_all_actions(session, observation_current))
+        return numpy.argmax(self.get_all_actions(session, observation_current, mask))
 
     def get_best_action_and_all_actions(self,
                                         session,
-                                        observation_current):
+                                        observation_current,
+                                        mask: numpy.ndarray = None):
         """
         Get the best action predicted by the model at the given current observation and all the action values according
         to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
         :return: the best action predicted by the model and all action values predicted by the model
         """
         # Get all actions
-        all_actions = self.get_all_actions(session, observation_current)
+        all_actions = self.get_all_actions(session, observation_current, mask)
         # Return the best action and all the actions
         return numpy.argmax(all_actions), all_actions
 
     def update(self,
                session,
                batch: []):
+        # Generate a full pass-through mask for each example in the batch
+        masks: numpy.ndarray = numpy.ones((len(batch), self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
         observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
         # Generate a one-hot encoded version of the observations
         observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
         observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
         # Get the q-values from the model at both current observations and next observations
-        q_values_current: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_current_one_hot})
-        q_values_next: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_next_one_hot})
+        q_values_current: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_current_one_hot, self._mask: masks})
+        q_values_next: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_next_one_hot, self._mask: masks})
         # Apply Bellman equation with the Q-Learning update rule
         for sample_index in range(len(actions)):
             # Extract current sample values
