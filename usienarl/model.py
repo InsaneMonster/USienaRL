@@ -12,6 +12,7 @@
 
 import tensorflow
 import logging
+import numpy
 
 # Import required src
 
@@ -142,12 +143,14 @@ class Model:
 
     def predict(self,
                 session,
-                observation_current):
+                observation_current,
+                mask: numpy.ndarray = None):
         """
         Get the action predicted by the model given the current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
         :return: the action predicted by the model
         """
         raise NotImplementedError()
