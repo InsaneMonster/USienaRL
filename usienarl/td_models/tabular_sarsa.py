@@ -212,9 +212,22 @@ class TabularSARSA(Model):
             # Define the _summary operation for this graph with loss and absolute error summaries
             self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
 
+    def predict(self,
+                session,
+                observation_current):
+        # Get the best predicted action
+        return self.get_best_action(session, observation_current)
+
     def get_all_actions(self,
                         session,
                         observation_current):
+        """
+        Get all the actions values according to the model at the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :return: all action values predicted by the model
+        """
         # Generate a one-hot encoded version of the observation
         observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
         # Return all the predicted q-values given the current observation
@@ -223,12 +236,27 @@ class TabularSARSA(Model):
     def get_best_action(self,
                         session,
                         observation_current):
+        """
+        Get the best action predicted by the model at the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :return: the action predicted by the model
+        """
         # Return the predicted action given the current observation
         return numpy.argmax(self.get_all_actions(session, observation_current))
 
     def get_best_action_and_all_actions(self,
                                         session,
                                         observation_current):
+        """
+        Get the best action predicted by the model at the given current observation and all the action values according
+        to the model at the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :return: the best action predicted by the model and all action values predicted by the model
+        """
         # Get all actions
         all_actions = self.get_all_actions(session, observation_current)
         # Return the best action and all the actions
