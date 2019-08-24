@@ -422,9 +422,9 @@ class Experiment:
             # Check if the experiment is successful
             success: bool = self._is_successful(average_test_total_reward, average_test_average_reward, max_test_total_reward, max_test_average_reward, validation_total_reward, validation_average_reward, training_total_reward, training_average_reward)
             if success:
-                logger.info("The experiment is successful")
+                logger.info("The experiment terminated successfully")
             else:
-                logger.info("The experiment is not successful")
+                logger.info("The experiment terminated without meeting the requirements")
             return average_test_total_reward, max_test_total_reward, average_test_average_reward, max_test_average_reward, self._trained_episodes, success, self._metagraph_path
 
     def watch(self,
