@@ -35,13 +35,22 @@ def _positive_int(value: str) -> int:
     return int_value
 
 
-def command_line_parse():
+def command_line_parse(watch: bool = False):
     """
     Parse command line using arg-parse and get the default experiment user data.
 
+    :param watch: optional boolean flag defining if the command line parse is for a watch script or for a regular experiment script (the default one)
     :return: the parsed arguments: workspace directory, experiment iterations, CUDA devices, optional render during training flag, optional render during validation flag, optional render during testing flag
     """
+    # Parse depending on the boolean watch flag
     parser = argparse.ArgumentParser()
+    if watch:
+        parser.add_argument("checkpoint_directory", type=str)
+        parser.add_argument("iteration_number", type=int)
+        parser.add_argument("CUDA_devices", type=str)
+        parser.add_argument("-render", action="store_true")
+        args: dict = vars(parser.parse_args())
+        return args["checkpoint_directory"], args["iteration_number"], args["CUDA_devices"], args["render"]
     parser.add_argument("workspace_directory", type=str)
     parser.add_argument("experiment_iterations", type=_positive_int)
     parser.add_argument("CUDA_devices", type=str)
@@ -239,3 +248,40 @@ def run_experiment(experiment: Experiment,
     logger.info("Standard deviation of training episodes over all experiments: " + str("%.3f" % stdv_training_episodes) + ", which is a " + str("%.2f" % ((100 * stdv_training_episodes) / average_training_episodes)) + "% of the average")
     # Return the list of saved metagraph of successful iterations of the experiment, if any, otherwise an empty list
     return experiment_metagraph_paths
+
+
+def watch_experiment(experiment: Experiment,
+                     testing_episodes: int, test_cycles: int,
+                     episode_length_max: int,
+                     render: bool,
+                     logger: logging.Logger,
+                     checkpoint_path: str):
+    """
+    Run the given experiment with the given parameters. It automatically creates all the directories to store the
+    experiment results, summaries and meta-graphs for each iteration.
+
+    :param experiment: the experiment to run
+    :param testing_episodes: the number of test episodes per test cycle
+    :param test_cycles: the number of test cycles
+    :param episode_length_max: the maximum number of steps for each episode
+    :param render: flag to render or not the environment
+    :param logger: the logger used to record information, warnings and errors
+    :param checkpoint_path: the checkpoint path to gather the model from
+    """
+    # Setup of the logger for the current experiment
+    # Reset logger handlers for current experiment
+    logger.handlers = []
+    # Generate a console handler for the logger
+    console_handler: logging.StreamHandler = logging.StreamHandler(sys.stdout)
+    # Set handler properties
+    console_handler.setLevel(logging.DEBUG)
+    formatter: logging.Formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    console_handler.setFormatter(formatter)
+    # Add the handler to the logger
+    logger.addHandler(console_handler)
+    # Watch the experiment
+    if experiment.setup(None, None, logger):
+        experiment.watch(episode_length_max,
+                         testing_episodes, test_cycles,
+                         logger, checkpoint_path,
+                         render)

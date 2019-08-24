@@ -20,5 +20,5 @@ from .exploration_policy import ExplorationPolicy
 
 # Import functions
 
-from .functions import command_line_parse, run_experiment
+from .functions import command_line_parse, run_experiment, watch_experiment
 

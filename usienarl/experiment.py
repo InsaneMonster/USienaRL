@@ -76,8 +76,8 @@ class Experiment:
         """
         Setup the experiment, preparing all of its component to execution. This must be called before conduct method.
 
-        :param summary_path: the string path of the tensorboard summary directory to save during model training
-        :param metagraph_path: the string path of the metagraph agent directory to save at the end of each train volley
+        :param summary_path: the string path of the tensorboard summary directory to save during model training, set to None if the model is not being trained
+        :param metagraph_path: the string path of the metagraph agent directory to save at the end of each train volley, set to None if the model is not being trained
         :param logger: the logger used to print the experiment information, warnings and errors
         :param iteration: number to append to the experiment name in all scopes and print statements (if not less than zero)
         :return: a boolean equals to True if the setup of the experiment is successful, False otherwise
@@ -108,8 +108,9 @@ class Experiment:
         self._trained_episodes: int = 0
         # Initialize the agent internal model saver
         self._agent_saver = tensorflow.train.Saver(self._agent.trainable_variables)
-        logger.info("Agent internal model will be saved after each train volley")
-        logger.info("Agent internal model metagraph save path: " + self._metagraph_path)
+        if self._metagraph_path is not None:
+            logger.info("Agent internal model will be saved after each train volley")
+            logger.info("Agent internal model metagraph save path: " + self._metagraph_path)
         # Initialize tensorflow gpu configuration
         self._tensorflow_config = tensorflow.ConfigProto()
         self._tensorflow_config.gpu_options.allow_growth = True
@@ -458,9 +459,9 @@ class Experiment:
                 return
             else:
                 checkpoint = tensorflow.train.get_checkpoint_state(checkpoint_path)
-                # If checkpoint exists restore from checkpoint otherwise stop
+                # If checkpoint exists restore from checkpoint
                 if checkpoint and checkpoint.model_checkpoint_path:
-                    self._agent_saver.restore(session, checkpoint_path)
+                    self._agent_saver.restore(session, tensorflow.train.latest_checkpoint(checkpoint_path))
                     logger.info("Model graph stored at " + checkpoint_path + " loaded successfully!")
                 else:
                     logger.error("Checkpoint path specified is wrong: no model can be accessed at " + checkpoint_path)

@@ -76,10 +76,11 @@ class Agent:
         self._observation_space_shape = observation_space_shape
         self._agent_action_space_type: SpaceType = agent_action_space_type
         self._agent_action_space_shape = agent_action_space_shape
-        # Reset the _summary writer
-        self._summary_writer = tensorflow.summary.FileWriter(summary_path, graph=tensorflow.get_default_graph())
-        logger.info("A Tensorboard summary for the agent will be updated during training of its internal model")
-        logger.info("Tensorboard summary path: " + summary_path)
+        # Reset the summary writer if required
+        if summary_path is not None:
+            self._summary_writer = tensorflow.summary.FileWriter(summary_path, graph=tensorflow.get_default_graph())
+            logger.info("A Tensorboard summary for the agent will be updated during training of its internal model")
+            logger.info("Tensorboard summary path: " + summary_path)
         # Try to generate the agent inner model
         return self._generate(logger, observation_space_type, observation_space_shape, agent_action_space_type, agent_action_space_shape)
 
