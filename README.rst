@@ -76,7 +76,7 @@ and to the provided source code in the `repository <https://github.com/InsaneMon
 
 **Current issues**
 
-The watch functionality of the experiment is yet untested. It could be useful to implement an easy way to pass a metagraph
+From the save-restore standpoint it could be useful to implement an easy way to pass a metagraph
 without the need to redefine the entire agent (maybe serializing the agent somehow?).
 
 An experiment can right now work only in a specific environment. It could be interesting to test multiple environments
@@ -95,4 +95,10 @@ Finally, the Trust Region Policy Optimization algorithm implementation is still 
 
 **Changelog**
 
-- Now the run experiment function returns a list of the paths of the saved metagraph of each iteration, allowing for easy curriculum learning
+- Added and tested full watch functionality by a watch experiment function
+- Added the command line parse switch for scripts in which watch_experiment is used
+- Improved readability of the experiment success statement in order to better work with experiment without thresholds
+- Removed some model methods which were not really well suited for all the algorithms
+- Added specific methods to retrieve all state-actions values and the best predicted one for temporal difference algorithms
+- Added specific methods to retrieve a sample from the probability distribution of actions and the probability distribution itself for policy optimization algorithms
+- Added a mask system for both temporal difference and policy optimization algorithms, useful to enforce game rules

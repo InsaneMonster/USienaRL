@@ -196,10 +196,10 @@ class VanillaPolicyGradient(Model):
             hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
             # Define the targets for learning with the same NxA adaptable size
             self._targets = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="targets")
-            # Define the mask placeholder
-            self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="mask")
             # Change the _model definition according to its action space type
             if self._agent_action_space_type == SpaceType.discrete:
+                # Define the mask placeholder
+                self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="mask")
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
                 self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="logits")
                 # Compute the masked logits using the given mask
@@ -215,11 +215,8 @@ class VanillaPolicyGradient(Model):
                 log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
                 # Define the standard deviation
                 self._std = tensorflow.exp(log_std, name="std")
-                # Compute the mask of both the std and the expected value using the mask
-                masked_expected_value = tensorflow.multiply(self._expected_value, self._mask)
-                masked_std = tensorflow.multiply(self._std, self._mask)
                 # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
-                self._actions = masked_expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * masked_std
+                self._actions = self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std
                 # Define the log likelihood according to the gaussian distribution
                 self._log_likelihood = self.get_gaussian_log_likelihood(self._targets, self._expected_value, log_std)
             # Define the value estimator (a deep MLP)
@@ -258,21 +255,29 @@ class VanillaPolicyGradient(Model):
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (0 to remove, 1 to pass-through)
         :return: the action predicted by the model
         """
-        # If there is no mask generate a full pass-through mask
-        if mask is None:
+        # If there is no mask and the action space type is discrete generate a full pass-through mask
+        if mask is None and self._agent_action_space_type == SpaceType.discrete:
             mask = numpy.ones(self._agent_action_space_shape, dtype=float)
         # Return a random action sample given the current state and depending on the observation space type and also compute value estimate
         if self._observation_space_type == SpaceType.discrete:
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-            action, value = session.run([self._actions, self._value],
-                                        feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+            if self._agent_action_space_type == SpaceType.discrete:
+                action, value = session.run([self._actions, self._value],
+                                            feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+            else:
+                action, value = session.run([self._actions, self._value],
+                                            feed_dict={self._inputs: [observation_current_one_hot]})
         else:
-            action, value = session.run([self._actions, self._value],
-                                        feed_dict={self._inputs: [observation_current], self._mask: [mask]})
+            if self._agent_action_space_type == SpaceType.discrete:
+                action, value = session.run([self._actions, self._value],
+                                            feed_dict={self._inputs: [observation_current], self._mask: [mask]})
+            else:
+                action, value = session.run([self._actions, self._value],
+                                            feed_dict={self._inputs: [observation_current]})
         # Return the predicted action and the estimated value
         return action[0], value[0]
 
@@ -284,7 +289,7 @@ class VanillaPolicyGradient(Model):
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :return: the list of action probabilities (logits or expected values depending on the agent action space type) from which to sample
+        :return: the list of action probabilities (logits or expected values depending on the agent action space type)
         """
         # Get the logits or the expected value as the distribution of the action probabilities depending on the action space shape
         if self._agent_action_space_type == SpaceType.discrete:

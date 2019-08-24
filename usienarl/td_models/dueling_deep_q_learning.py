@@ -297,7 +297,7 @@ class DuelingDeepQLearning(Model):
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
+        :param mask: the optional mask used to remove certain actions from the prediction (math.-inf to remove, 1 to pass-through)
         :return: all action values predicted by the model
         """
         # If there is no mask generate a full pass-through mask
@@ -321,7 +321,7 @@ class DuelingDeepQLearning(Model):
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
+        :param mask: the optional mask used to remove certain actions from the prediction (math.-inf to remove, 1 to pass-through)
         :return: the action predicted by the model
         """
         # Return the predicted action given the current observation
@@ -337,7 +337,7 @@ class DuelingDeepQLearning(Model):
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (0 to remove, 1 to pass-through)
+        :param mask: the optional mask used to remove certain actions from the prediction (math.-inf to remove, 1 to pass-through)
         :return: the best action predicted by the model and all action values predicted by the model
         """
         # Get all actions
