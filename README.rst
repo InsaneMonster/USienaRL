@@ -43,6 +43,11 @@ work should be done by yourself.
 - Extensive set of benchmarks for each algorithm in the OpenAI gym environment
 - Default agents, OpenAI gym environment and benchmark experiment classes to test the benchmarks by yourself
 
+For additional example of usage of this framework, take a look a these github pages:
+
+- `TicTacToeRL <https://github.com/InsaneMonster/TicTacToeRL>`_
+- `UltimateTicTacToeRL <https://github.com/InsaneMonster/UltimateTicTacToeRL>`_
+
 **License**
 
 *BSD 3-Clause License*
@@ -95,10 +100,5 @@ Finally, the Trust Region Policy Optimization algorithm implementation is still 
 
 **Changelog**
 
-- Added and tested full watch functionality by a watch experiment function
-- Added the command line parse switch for scripts in which watch_experiment is used
-- Improved readability of the experiment success statement in order to better work with experiment without thresholds
-- Removed some model methods which were not really well suited for all the algorithms
-- Added specific methods to retrieve all state-actions values and the best predicted one for temporal difference algorithms
-- Added specific methods to retrieve a sample from the probability distribution of actions and the probability distribution itself for policy optimization algorithms
-- Added a mask system for both temporal difference and policy optimization algorithms, useful to enforce game rules
+- Improved readability of the temporal difference methods
+- Fixed some bugs in the mask implementation for temporal difference algorithms

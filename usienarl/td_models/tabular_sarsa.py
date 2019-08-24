@@ -197,7 +197,7 @@ class TabularSARSA(Model):
             # Define the outputs at a given state as a matrix of size NxA given by multiplication of inputs and weights
             # Define the targets for learning with the same Nx(A) adaptable size
             # Note: N is the number of examples and (A) the shape of the action space
-            self._outputs = tensorflow.multiply(tensorflow.matmul(self._inputs, self._table), self._mask, name="outputs")
+            self._outputs = tensorflow.math.add(tensorflow.matmul(self._inputs, self._table), self._mask, name="outputs")
             self._targets = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self._loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")

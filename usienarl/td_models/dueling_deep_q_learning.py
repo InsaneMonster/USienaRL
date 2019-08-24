@@ -157,7 +157,7 @@ class Estimator:
             # Define outputs as an array of neurons of size Nx(A) where N is the number of examples and A the shape of the action space
             # and whose value is given by the following equation:
             # Q(s,a) = V(s) + (A(s,a) - 1/|A| * sum A(s,a')) aka the aggregation layer
-            self.outputs = tensorflow.multiply(self._value + tensorflow.subtract(self._advantage, tensorflow.reduce_mean(self._advantage, 1, True), name="outputs"), self.mask)
+            self.outputs = tensorflow.math.add(self._value + tensorflow.subtract(self._advantage, tensorflow.reduce_mean(self._advantage, 1, True), name="outputs"), self.mask)
             # Define the targets for learning with the same Nx(A) adaptable size where N is the number of examples and A the shape of the action space
             self.targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)

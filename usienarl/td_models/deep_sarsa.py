@@ -156,7 +156,7 @@ class Estimator:
             # Define outputs as an array of neurons of size NxA and with linear activation functions
             # Define the targets for learning with the same NxA adaptable size
             # Note: N is the number of examples and A the size of the action space (deep-nn only supports discrete actions spaces)
-            self.outputs = tensorflow.multiply(tensorflow.layers.dense(hidden_layers_output, *agent_action_space_shape, name="outputs"), self.mask)
+            self.outputs = tensorflow.math.add(tensorflow.layers.dense(hidden_layers_output, *agent_action_space_shape, name="outputs"), self.mask)
             self.targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self.loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
