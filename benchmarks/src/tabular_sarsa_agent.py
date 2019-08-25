@@ -91,7 +91,7 @@ class TabularSARSAAgent(Agent):
         # Get all actions and the best action predicted by the model or with the already predicted action, if any
         action = self._next_train_action
         if self._next_train_action is None:
-            best_action, all_actions = self._model.get_best_action_and_all_actions(session, agent_observation_current)
+            best_action, all_actions = self._model.get_best_action_and_all_action_values(session, agent_observation_current)
             # Act according to the exploration policy
             action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
         # Return the exploration action
@@ -150,7 +150,7 @@ class TabularSARSAAgent(Agent):
             else:
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
         # Predict the next action according to the next observation and the exploration policy
-        best_action, all_actions = self._model.get_best_action_and_all_actions(session, agent_observation_next)
+        best_action, all_actions = self._model.get_best_action_and_all_action_values(session, agent_observation_next)
         # Act according to the exploration policy
         self._next_train_action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
         # Save the current step in the buffer

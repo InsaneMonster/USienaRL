@@ -90,7 +90,7 @@ class DoubleDeepQLearningAgent(Agent):
                   interface: Interface,
                   agent_observation_current):
         # Get all actions and the best action predicted by the model
-        best_action, all_actions = self._model.get_best_action_and_all_actions(session, agent_observation_current)
+        best_action, all_actions = self._model.get_best_action_and_all_action_values(session, agent_observation_current)
         # Act according to the exploration policy
         action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
         # Return the exploration action
