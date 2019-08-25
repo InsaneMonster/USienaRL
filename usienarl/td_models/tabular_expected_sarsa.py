@@ -216,21 +216,21 @@ class TabularExpectedSARSA(Model):
             # Define the _summary operation for this graph with loss and absolute error summaries
             self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
 
-    def get_all_actions(self,
-                        session,
-                        observation_current,
-                        mask: numpy.ndarray = None):
+    def get_all_action_values(self,
+                              session,
+                              observation_current,
+                              mask: numpy.ndarray = None):
         """
         Get all the actions values according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (math.-inf to remove, 1 to pass-through)
+        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
         :return: all action values predicted by the model
         """
         # If there is no mask generate a full pass-through mask
         if mask is None:
-            mask = numpy.ones(self._agent_action_space_shape, dtype=float)
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
         # Generate a one-hot encoded version of the observation
         observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
         # Return all the predicted q-values given the current observation
@@ -245,27 +245,27 @@ class TabularExpectedSARSA(Model):
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (math.-inf to remove, 1 to pass-through)
+        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
         :return: the action predicted by the model
         """
         # Return the predicted action given the current observation
-        return numpy.argmax(self.get_all_actions(session, observation_current, mask))
+        return numpy.argmax(self.get_all_action_values(session, observation_current, mask))
 
-    def get_best_action_and_all_actions(self,
-                                        session,
-                                        observation_current,
-                                        mask: numpy.ndarray = None):
+    def get_best_action_and_all_action_values(self,
+                                              session,
+                                              observation_current,
+                                              mask: numpy.ndarray = None):
         """
         Get the best action predicted by the model at the given current observation and all the action values according
         to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (math.-inf to remove, 1 to pass-through)
+        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
         :return: the best action predicted by the model and all action values predicted by the model
         """
         # Get all actions
-        all_actions = self.get_all_actions(session, observation_current, mask)
+        all_actions = self.get_all_action_values(session, observation_current, mask)
         # Return the best action and all the actions
         return numpy.argmax(all_actions), all_actions
 
@@ -273,7 +273,7 @@ class TabularExpectedSARSA(Model):
                session,
                batch: []):
         # Generate a full pass-through mask for each example in the batch
-        masks: numpy.ndarray = numpy.ones((len(batch[0]), *self._agent_action_space_shape), dtype=float)
+        masks: numpy.ndarray = numpy.zeros((len(batch[0]), *self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
         observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
         # Generate a one-hot encoded version of the observations

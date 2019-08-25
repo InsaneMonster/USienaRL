@@ -203,7 +203,7 @@ class VanillaPolicyGradient(Model):
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
                 self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="logits")
                 # Compute the masked logits using the given mask
-                masked_logits = tensorflow.multiply(self._logits, self._mask)
+                masked_logits = tensorflow.add(self._logits, self._mask)
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
                 self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=masked_logits, num_samples=1), axis=1)
                 # Define the log likelihood according to the categorical distribution
@@ -255,12 +255,12 @@ class VanillaPolicyGradient(Model):
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (0 to remove, 1 to pass-through)
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
         :return: the action predicted by the model
         """
         # If there is no mask and the action space type is discrete generate a full pass-through mask
         if mask is None and self._agent_action_space_type == SpaceType.discrete:
-            mask = numpy.ones(self._agent_action_space_shape, dtype=float)
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
         # Return a random action sample given the current state and depending on the observation space type and also compute value estimate
         if self._observation_space_type == SpaceType.discrete:
             # Generate a one-hot encoded version of the observation if observation space type is discrete
@@ -283,21 +283,36 @@ class VanillaPolicyGradient(Model):
 
     def get_action_probabilities(self,
                                  session,
-                                 observation_current) -> []:
+                                 observation_current,
+                                 mask: numpy.ndarray = None) -> []:
         """
-        Get all the action probabilities (logits if discrete, expected value if continuous) for the given current observation.
+        Get all the action probabilities (logits if discrete, expected value if continuous) for the given current observation and
+        an optional mask.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
         :return: the list of action probabilities (logits or expected values depending on the agent action space type)
         """
+        if mask is None and self._agent_action_space_type == SpaceType.discrete:
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
         # Get the logits or the expected value as the distribution of the action probabilities depending on the action space shape
         if self._agent_action_space_type == SpaceType.discrete:
             if self._observation_space_type == SpaceType.discrete:
                 observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-                logits = session.run([self._logits], feed_dict={self._inputs: [observation_current_one_hot]})
+                if self._agent_action_space_type == SpaceType.discrete:
+                    logits = session.run([self._logits],
+                                         feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+                else:
+                    logits = session.run([self._logits],
+                                         feed_dict={self._inputs: [observation_current_one_hot]})
             else:
-                logits = session.run([self._logits], feed_dict={self._inputs: [observation_current]})
+                if self._agent_action_space_type == SpaceType.discrete:
+                    logits = session.run([self._logits],
+                                         feed_dict={self._inputs: [observation_current]})
+                else:
+                    logits = session.run([self._logits],
+                                         feed_dict={self._inputs: [observation_current], self._mask: [mask]})
             # Return the logits (probabilities of all actions)
             return logits
         else:
