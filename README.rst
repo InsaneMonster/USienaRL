@@ -100,5 +100,5 @@ Finally, the Trust Region Policy Optimization algorithm implementation is still 
 
 **Changelog**
 
-- Improved readability of the temporal difference methods
-- Fixed some bugs in the mask implementation for temporal difference algorithms
+- Changed the syntax of some temporal difference methods to be more self-explanatory
+- Fixed some additional bugs in the mask implementation for temporal difference algorithms (yay to additions!)
