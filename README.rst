@@ -100,5 +100,4 @@ Finally, the Trust Region Policy Optimization algorithm implementation is still 
 
 **Changelog**
 
-- Changed the syntax of some temporal difference methods to be more self-explanatory
-- Fixed some additional bugs in the mask implementation for temporal difference algorithms (yay to additions!)
+- Fixed operations carried out with tensorflow.math.add to be tensorflow.add in order to keep compatibility with older versions of tensorflow (e.g. 1.9.0)
