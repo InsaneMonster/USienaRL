@@ -16,6 +16,7 @@ import sys
 import logging
 import numpy
 import argparse
+import pandas
 
 # Import required src
 
@@ -68,7 +69,8 @@ def run_experiment(experiment: Experiment,
                    testing_episodes: int, test_cycles: int,
                    render_during_training: bool, render_during_validation: bool, render_during_test: bool,
                    workspace_path: str, file_name: str, logger: logging.Logger,
-                   checkpoint_path: str = None, experiment_iterations_number: int = 1) -> []:
+                   checkpoint_path: str = None, experiment_iterations_number: int = 1,
+                   intro: str = None) -> []:
     """
     Run the given experiment with the given parameters. It automatically creates all the directories to store the
     experiment results, summaries and meta-graphs for each iteration.
@@ -88,6 +90,7 @@ def run_experiment(experiment: Experiment,
     :param logger: the logger used to record information, warnings and errors
     :param checkpoint_path: the optional checkpoint path to gather the model from, useful to further train an already trained model
     :param experiment_iterations_number: the number of iterations of the experiment to run, by default just one
+    :param intro: the optional string intro of the experiment, describing what the experiment is about
     :return the list of saved metagraph paths of each iteration of the experiment
     """
     # Generate the workspace directory if not defined
@@ -155,6 +158,9 @@ def run_experiment(experiment: Experiment,
         # Add the handlers to the logger
         logger.addHandler(console_handler)
         logger.addHandler(file_handler)
+        # Write the intro string in both the info file and on console if any
+        if intro is not None:
+            logger.info(intro)
         # Conduct the experiment
         if experiment.setup(summary_path, metagraph_path, logger, iteration):
             average_total_reward, max_total_reward, average_scaled_reward, max_scaled_reward, trained_episodes, success, metagraph_save_path = experiment.conduct(training_episodes, validation_episodes,
@@ -166,7 +172,12 @@ def run_experiment(experiment: Experiment,
                                                                                                                                                                   render_during_test,
                                                                                                                                                                   checkpoint_path)
             # Save the result of the iteration in the table
-            experiment_results_table[iteration] = (average_total_reward, max_total_reward, average_scaled_reward, max_scaled_reward, trained_episodes, success)
+            experiment_results_table[iteration] = ("YES" if success else "NO",
+                                                   numpy.round(average_total_reward, 3),
+                                                   numpy.round(max_total_reward, 3),
+                                                   numpy.round(average_scaled_reward, 3),
+                                                   numpy.round(max_scaled_reward, 3),
+                                                   trained_episodes)
             # Save the metagraph path in the list if the experiment iteration is successful
             if success:
                 experiment_metagraph_paths.append(metagraph_save_path)
@@ -183,11 +194,26 @@ def run_experiment(experiment: Experiment,
     results_file_handler.setFormatter(results_file_formatter)
     # Add the file handler to the logger and print table of results
     logger.addHandler(results_file_handler)
-    logger.info(experiment.name + " results:\n")
-    logger.info("experiment iteration \t\t average total reward \t\t\t average scaled reward \t\t\t max total reward \t\t\t max scaled reward \t\t\t trained_episodes \t\t\t success")
-    for experiment_iteration, result in experiment_results_table.items():
-        logger.info(str(experiment_iteration) + "\t\t\t\t" + str("%.3f" % result[0]) + "\t\t\t\t" + str("%.3f" % result[1]) + "\t\t\t\t" + str("%.3f" % result[2]) + "\t\t\t\t" + str("%.3f" % result[3]) + "\t\t\t" + str(result[4]) + "\t\t\t" + "YES" if result[5] else "NO")
-    logger.info("\n")
+    # Write the intro if any
+    if intro is not None:
+        logger.info(experiment.name + ":")
+        logger.info(intro)
+        logger.info("\nResults:\n")
+    else:
+        logger.info(experiment.name + " results:\n")
+    # Write results
+    with pandas.option_context('display.max_rows', 500, 'display.max_columns', 500, 'display.width', 500):
+        data_frame = pandas.DataFrame.from_dict(experiment_results_table, orient="index")
+        data_frame.index.name = 'Experiment iteration'
+        data_frame.columns = ['Success', 'Average total reward', 'Max total reward', 'Average scaled reward', 'Max scaled reward', 'Trained episodes']
+        # Print data frame removing index if there is only one iteration
+        if experiment_iterations_number <= 1:
+            logger.info(data_frame.to_string(index=False))
+        else:
+            logger.info(data_frame.to_string())
+    logger.info("\n\n")
+    # Also write results to csv file
+    data_frame.to_csv(experiment_path + "/results_table.csv")
     # Add also the console handler and print verbose results
     logger.addHandler(results_console_handler)
     # Group all the final scores, best scores and training episode counts
@@ -198,12 +224,12 @@ def run_experiment(experiment: Experiment,
     trained_episodes_list: [] = []
     success_list: [] = []
     for experiment_iteration, result in experiment_results_table.items():
-        average_total_reward_list.append(result[0])
-        max_total_reward_list.append(result[1])
-        average_scaled_reward_list.append(result[2])
-        max_scaled_reward_list.append(result[3])
-        trained_episodes_list.append(result[4])
-        success_list.append(result[5])
+        success_list.append(True if result[0] == "YES" else False)
+        average_total_reward_list.append(result[1])
+        max_total_reward_list.append(result[2])
+        average_scaled_reward_list.append(result[3])
+        max_scaled_reward_list.append(result[4])
+        trained_episodes_list.append(result[5])
     max_average_total_reward_index: int = numpy.argmax(average_total_reward_list)
     max_max_total_reward_index: int = numpy.argmax(max_total_reward_list)
     max_average_scaled_reward_index: int = numpy.argmax(average_scaled_reward_list)
