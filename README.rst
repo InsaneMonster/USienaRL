@@ -19,6 +19,8 @@ work should be done by yourself.
 *Included in package:*
 
 - Model, Agent, Environment, Experiment, Exploration Policy abstract classes with their interrelationships hidden inside the implementation
+- Customizable experiments in which, besides the default metrics, additional metrics can be used to validate or pass the experiment:
+    - Metrics of experiments are always related to rewards obtained (per-step or per-episode) and training episodes (usually the minimum the better)
 - Utility functions to run the same experiment in multiple equal iterations with automated folder setup and organization, registering the following metrics:
     - Average total reward (reward in one episode) over training, validation and test
     - Average scaled reward (reward per step) over training, validation and test
@@ -26,6 +28,7 @@ work should be done by yourself.
     - Mean and standard deviation of maximum total and scaled reward over test in all experiment iterations (if more than one)
     - Mean and standard deviation of minimum training episodes over test in all experiment iterations (if more than one)
     - Experiment iteration achieving best results in each one of the metrics described above
+    - Easy to use .csv file with all the results for each experiment iteration
 - Many state-of-the-art algorithms already implemented in pre-defined models, including:
     - Tabular Temporal Difference Q-Learning, SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
     - Deep Temporal Difference Q-Learning (DQN), SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
@@ -37,6 +40,9 @@ work should be done by yourself.
     - Boltzmann sampling with tunable temperature decay rate, start value and end value
 - Config class to define the hidden layers of all Tensorflow graphs (including the CNN)
 - Default Pass-Through interface class to allow communications between agents and environments
+- Additive action mask for all the algorithms supporting it (only discrete action sets):
+    - The mask supports two values: -infinity (mask) and 0.0 (pass-through)
+    - If not supplied, the mask is by default full pass-through
 
 *Not included in package:*
 
@@ -90,15 +96,12 @@ a generalization perspective (train one one, validate on another, etc).
 
 A way to check if environments are compatible one another would be required too if what said above is implemented.
 
-Minor issue but yet worth addressing, the results.log file output of the run_experiment method has a bad format in the table
-of results. A way to improve the spacing between elements would be great!
-
-Also, the amount of algorithms is still limited, and some implementations could fail in some specific settings. Further addition
-of models and refining of algorithms (for example, return normalization, etc) is very much welcome.
-
-Finally, the Trust Region Policy Optimization algorithm implementation is still under alpha development.
+Also the amount of algorithms is still limited and the Trust Region Policy Optimization algorithm implementation is still under alpha development.
 
 **Changelog**
 
-- Changed the syntax of some temporal difference methods to be more self-explanatory
-- Fixed some additional bugs in the mask implementation for temporal difference algorithms (yay to additions!)
+- Updated format of results table in the results.log file: now using pandas!
+- Added a results_table.csv file containing all the results of the experiment iterations
+- Improved experiment validation and passing methods, now taking additional arguments with name easier to understand: this allows much greater customization of each experiment!
+- Improved some auxiliary info text shown when conducting experiments
+- Added an intro field to the run experiment function to write down additional info regarding the experiment (useful to keep track of hyperparameters iterations, for example)
