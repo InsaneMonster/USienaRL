@@ -29,6 +29,7 @@ work should be done by yourself.
     - Mean and standard deviation of minimum training episodes over test in all experiment iterations (if more than one)
     - Experiment iteration achieving best results in each one of the metrics described above
     - Easy to use .csv file with all the results for each experiment iteration
+    - Plots of total and scaled rewards over both all training and validation episodes, saved as .png files
 - Many state-of-the-art algorithms already implemented in pre-defined models, including:
     - Tabular Temporal Difference Q-Learning, SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
     - Deep Temporal Difference Q-Learning (DQN), SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
@@ -80,6 +81,15 @@ If you want to improve/modify/extends the framework, or even just try my own ben
 the `git repository <https://github.com/InsaneMonster/USienaRL>`_.
 You are welcome to open issues or participate in the project. Note that the benchmarks are built to run using tensorflow-gpu.
 
+**Requirements**
+
+Installed with the package also the following packages will be installed in your environment:
+
+- NumPy
+- SciPy
+- Pandas
+- Matplotlib
+
 **How to use**
 
 For a simple use case, refer to benchmark provided in the `repository <https://github.com/InsaneMonster/USienaRL>`_. For advanced use, refer to the built-in documentation
@@ -100,8 +110,5 @@ Also the amount of algorithms is still limited and the Trust Region Policy Optim
 
 **Changelog**
 
-- Updated format of results table in the results.log file: now using pandas!
-- Added a results_table.csv file containing all the results of the experiment iterations
-- Improved experiment validation and passing methods, now taking additional arguments with name easier to understand: this allows much greater customization of each experiment!
-- Improved some auxiliary info text shown when conducting experiments
-- Added an intro field to the run experiment function to write down additional info regarding the experiment (useful to keep track of hyperparameters iterations, for example)
+- Added plots of total and scaled rewards over all training and validation episodes, saved as .png files: now requires matplotlib!
+- Some minor improvements to metrics

@@ -130,7 +130,13 @@ def run_experiment(experiment: Experiment,
                     os.makedirs(iteration_path)
                 except FileExistsError:
                     pass
-        # Generate a metagraph and a summary directory for each iteration of experiment if not defined
+        # Generate a metagraph, summary and plots directory for each iteration of experiment if not defined
+        plots_path: str = iteration_path + "/plots"
+        if not os.path.isdir(plots_path):
+            try:
+                os.makedirs(plots_path)
+            except FileExistsError:
+                pass
         metagraph_path: str = iteration_path + "/metagraph"
         if not os.path.isdir(metagraph_path):
             try:
