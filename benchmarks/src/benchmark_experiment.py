@@ -46,6 +46,12 @@ class BenchmarkExperiment(Experiment):
             return True
         return False
 
+    def _display_test_cycle_metrics(self,
+                                    last_test_cycle_average_total_reward: float,
+                                    last_test_cycle_average_scaled_reward: float,
+                                    last_test_cycle_rewards: []):
+        pass
+
     def _is_successful(self,
                        logger: logging.Logger,
                        average_test_total_reward: float, average_test_scaled_reward: float,
