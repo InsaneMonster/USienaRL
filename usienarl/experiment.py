@@ -641,6 +641,7 @@ class Experiment:
         raise NotImplementedError()
 
     def _display_test_cycle_metrics(self,
+                                    logger: logging.Logger,
                                     last_test_cycle_average_total_reward: float,
                                     last_test_cycle_average_scaled_reward: float,
                                     last_test_cycle_rewards: []):
@@ -648,6 +649,7 @@ class Experiment:
         Display additional optional metrics from the last test cycle.
         Note: average and total and scaled reward over all the cycle test episodes are already displayed.
 
+        :param logger: the logger used to print the experiment information, warnings and errors
         :param last_test_cycle_average_total_reward: the average total reward in the last test cycle
         :param last_test_cycle_average_scaled_reward: the average scaled reward in the last test cycle
         :param last_test_cycle_rewards: a list of all the rewards obtained in each episode over all the episodes in the last test cycles
