@@ -83,7 +83,7 @@ You are welcome to open issues or participate in the project. Note that the benc
 
 **Requirements**
 
-Installed with the package also the following packages will be installed in your environment:
+Besides Tensorflow, with this package also the following packages will be installed in your environment:
 
 - NumPy
 - SciPy
@@ -110,5 +110,8 @@ Also the amount of algorithms is still limited and the Trust Region Policy Optim
 
 **Changelog**
 
-- Added plots of total and scaled rewards over all training and validation episodes, saved as .png files: now requires matplotlib!
-- Some minor improvements to metrics
+- Added plots of average total and scaled reward over both training and validation volleys (in addition to episodes, to have more readable plots)
+- Added method to display additional optional metrics also in test cycles
+- Overall improved some text and info given during the experiment run
+- Fixed use of matplotlib, now by default using the agg-backend allowing for unrestricted use in servers (where display environment variable is not defined)
+- Improved display of metrics with the addition of rounding (to the third decimal)
