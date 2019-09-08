@@ -47,6 +47,7 @@ class BenchmarkExperiment(Experiment):
         return False
 
     def _display_test_cycle_metrics(self,
+                                    logger: logging.Logger,
                                     last_test_cycle_average_total_reward: float,
                                     last_test_cycle_average_scaled_reward: float,
                                     last_test_cycle_rewards: []):
