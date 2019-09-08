@@ -326,8 +326,15 @@ class Experiment:
         :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model, default to None
         :return: the average and the max of the total average reward, the average and the max of the average average reward with respect to all test cycles, the training episodes required to validate, a success flag and the location in which the saved metagraph is stored
         """
+        # Make the matplotlib use agg-backend to make it compatible with a server
+        plot.switch_backend('agg')
+        # Start experiment
         logger.info("Conducting experiment " + self._current_id + "...")
         # Define the list in which to store the evolution of total and scaled average reward to plot by default
+        all_training_episodes_total_rewards: [] = []
+        all_training_episodes_scaled_rewards: [] = []
+        all_validation_episodes_total_rewards: [] = []
+        all_validation_episodes_scaled_rewards: [] = []
         all_training_volleys_total_rewards: [] = []
         all_training_volleys_scaled_rewards: [] = []
         all_validation_volleys_total_rewards: [] = []
@@ -378,11 +385,13 @@ class Experiment:
                     training_volley_total_rewards[index] = numpy.sum(numpy.array(episode_rewards))
                     training_volley_scaled_rewards[index] = numpy.average(numpy.array(episode_rewards))
                     # Update the global lists of all the average total and scale rewards for each training episode
-                    all_training_volleys_total_rewards.append(numpy.sum(numpy.array(episode_rewards)))
-                    all_training_volleys_scaled_rewards.append(numpy.average(numpy.array(episode_rewards)))
-                # Compute average total reward and average scaled reward over training volley
-                last_training_volley_average_total_reward: float = numpy.average(training_volley_total_rewards)
-                last_training_volley_average_scaled_reward: float = numpy.average(training_volley_scaled_rewards)
+                    all_training_episodes_total_rewards.append(numpy.sum(numpy.array(episode_rewards)))
+                    all_training_episodes_scaled_rewards.append(numpy.average(numpy.array(episode_rewards)))
+                # Compute average total reward and average scaled reward over training volley and append it to the volley list
+                last_training_volley_average_total_reward: float = numpy.round(numpy.average(training_volley_total_rewards), 3)
+                last_training_volley_average_scaled_reward: float = numpy.round(numpy.average(training_volley_scaled_rewards), 3)
+                all_training_volleys_total_rewards.append(last_training_volley_average_total_reward)
+                all_training_volleys_scaled_rewards.append(last_training_volley_average_scaled_reward)
                 # Print training results
                 logger.info("Training of " + str(training_episodes_per_volley) + " finished with following result:")
                 logger.info("Average total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_total_reward))
@@ -405,11 +414,13 @@ class Experiment:
                     validation_volley_total_rewards[index] = numpy.sum(numpy.array(episode_rewards))
                     validation_volley_scaled_rewards[index] = numpy.average(numpy.array(episode_rewards))
                     # Update the global lists of all the average total and scale rewards for each validation episode
-                    all_validation_volleys_total_rewards.append(numpy.sum(numpy.array(episode_rewards)))
-                    all_validation_volleys_scaled_rewards.append(numpy.average(numpy.array(episode_rewards)))
-                # Compute average total reward and average scaled reward over validation volley
-                last_validation_volley_average_total_reward: float = numpy.average(validation_volley_total_rewards)
-                last_validation_volley_average_scaled_reward: float = numpy.average(validation_volley_scaled_rewards)
+                    all_validation_episodes_total_rewards.append(numpy.sum(numpy.array(episode_rewards)))
+                    all_validation_episodes_scaled_rewards.append(numpy.average(numpy.array(episode_rewards)))
+                # Compute average total reward and average scaled reward over validation volley and append it to volley list
+                last_validation_volley_average_total_reward: float = numpy.round(numpy.average(validation_volley_total_rewards), 3)
+                last_validation_volley_average_scaled_reward: float = numpy.round(numpy.average(validation_volley_scaled_rewards), 3)
+                all_validation_volleys_total_rewards.append(last_validation_volley_average_total_reward)
+                all_validation_volleys_scaled_rewards.append(last_validation_volley_average_scaled_reward)
                 # Print validation results
                 logger.info("Training of " + str(validation_episodes_per_volley) + " finished with following result:")
                 logger.info("Average total reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_average_total_reward))
@@ -421,6 +432,7 @@ class Experiment:
                                       last_validation_volley_rewards, last_training_volley_rewards):
                     logger.info("Validation of the agent is successful")
                     break
+            logger.info("End of training")
             # Test the model and get all cycles total, scaled rewards and all rewards
             test_average_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
             test_average_scaled_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
@@ -442,8 +454,12 @@ class Experiment:
                     test_cycle_total_rewards[index] = numpy.sum(numpy.array(episode_rewards))
                     test_cycle_scaled_rewards[index] = numpy.average(numpy.array(episode_rewards))
                 # Compute total and scaled reward over the test cycle
-                test_cycle_average_total_reward: float = numpy.average(test_cycle_total_rewards)
-                test_cycle_average_scaled_reward: float = numpy.average(test_cycle_scaled_rewards)
+                test_cycle_average_total_reward: float = numpy.round(numpy.average(test_cycle_total_rewards), 3)
+                test_cycle_average_scaled_reward: float = numpy.round(numpy.average(test_cycle_scaled_rewards), 3)
+                # Display test additional optional statistics
+                self._display_test_cycle_metrics(test_cycle_average_total_reward,
+                                                 test_cycle_average_scaled_reward,
+                                                 test_cycles_rewards)
                 # Save the rewards
                 test_average_total_rewards[test] = test_cycle_average_total_reward
                 test_average_scaled_rewards[test] = test_cycle_average_scaled_reward
@@ -451,6 +467,7 @@ class Experiment:
                 logger.info("Testing of " + str(test_episodes_per_cycle) + " finished with following result:")
                 logger.info("Average total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_total_reward))
                 logger.info("Average scaled reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_scaled_reward))
+            logger.info("End of test")
             # Get the average and the best total and scaled rewards over all cycles
             average_test_average_total_reward: float = numpy.round(numpy.average(test_average_total_rewards), 3)
             max_test_average_total_reward: float = numpy.round(numpy.max(test_average_total_rewards), 3)
@@ -463,25 +480,45 @@ class Experiment:
             logger.info("Max test scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_average_scaled_reward))
             # Save plots
             logger.info("Saving plots...")
-            plot.plot(list(range(len(all_training_volleys_total_rewards))), all_training_volleys_total_rewards)
+            plot.plot(list(range(len(all_training_episodes_total_rewards))), all_training_episodes_total_rewards)
             plot.xlabel('Training episode')
             plot.ylabel('Total reward')
-            plot.savefig(self._plots_path + "/training_total_rewards.png", dpi=300, transparent=True)
+            plot.savefig(self._plots_path + "/training_episodes_total_rewards.png", dpi=300, transparent=True)
+            plot.clf()
+            plot.plot(list(range(len(all_training_episodes_scaled_rewards))), all_training_episodes_scaled_rewards)
+            plot.xlabel('Training episode')
+            plot.ylabel('Scaled reward')
+            plot.savefig(self._plots_path + "/training_episodes_scaled_rewards.png", dpi=300, transparent=True)
+            plot.clf()
+            plot.plot(list(range(len(all_validation_episodes_total_rewards))), all_validation_episodes_total_rewards)
+            plot.xlabel('Validation episode')
+            plot.ylabel('Total reward')
+            plot.savefig(self._plots_path + "/validation_episodes_total_rewards.png", dpi=300, transparent=True)
+            plot.clf()
+            plot.plot(list(range(len(all_validation_episodes_scaled_rewards))), all_validation_episodes_scaled_rewards)
+            plot.xlabel('Validation episode')
+            plot.ylabel('Scaled reward')
+            plot.savefig(self._plots_path + "/validation_episodes_scaled_rewards.png", dpi=300, transparent=True)
+            plot.clf()
+            plot.plot(list(range(len(all_training_volleys_total_rewards))), all_training_volleys_total_rewards)
+            plot.xlabel('Training volley')
+            plot.ylabel('Average total reward')
+            plot.savefig(self._plots_path + "/training_volleys_total_rewards.png", dpi=300, transparent=True)
             plot.clf()
             plot.plot(list(range(len(all_training_volleys_scaled_rewards))), all_training_volleys_scaled_rewards)
-            plot.xlabel('Training episode')
-            plot.ylabel('Scaled reward')
-            plot.savefig(self._plots_path + "/training_scaled_rewards.png", dpi=300, transparent=True)
+            plot.xlabel('Training volley')
+            plot.ylabel('Average scaled reward')
+            plot.savefig(self._plots_path + "/training_volleys_scaled_rewards.png", dpi=300, transparent=True)
             plot.clf()
             plot.plot(list(range(len(all_validation_volleys_total_rewards))), all_validation_volleys_total_rewards)
-            plot.xlabel('Validation episode')
-            plot.ylabel('Total reward')
-            plot.savefig(self._plots_path + "/validation_total_rewards.png", dpi=300, transparent=True)
+            plot.xlabel('Validation volley')
+            plot.ylabel('Average total reward')
+            plot.savefig(self._plots_path + "/validation_volleys_total_rewards.png", dpi=300, transparent=True)
             plot.clf()
             plot.plot(list(range(len(all_validation_volleys_scaled_rewards))), all_validation_volleys_scaled_rewards)
-            plot.xlabel('Validation episode')
-            plot.ylabel('Scaled reward')
-            plot.savefig(self._plots_path + "/validation_scaled_rewards.png", dpi=300, transparent=True)
+            plot.xlabel('Validation volley')
+            plot.ylabel('Average scaled reward')
+            plot.savefig(self._plots_path + "/validation_volleys_scaled_rewards.png", dpi=300, transparent=True)
             plot.clf()
             logger.info("Plots saved successfully")
             # Check if the experiment is successful
@@ -561,6 +598,10 @@ class Experiment:
                     # Compute total and scaled reward over the test cycle
                     test_cycle_average_total_reward: float = numpy.average(test_cycle_average_total_rewards)
                     test_cycle_average_scaled_reward: float = numpy.average(test_cycle_average_scaled_rewards)
+                    # Display test additional optional statistics
+                    self._display_test_cycle_metrics(test_cycle_average_total_reward,
+                                                     test_cycle_average_scaled_reward,
+                                                     test_cycles_rewards)
                     # Save the rewards
                     test_average_total_rewards[test] = test_cycle_average_total_reward
                     test_average_scaled_rewards[test] = test_cycle_average_scaled_reward
@@ -597,6 +638,20 @@ class Experiment:
         :return: a boolean flag True if condition are satisfied, False otherwise
         """
         # Abstract method, definition should be implemented on a child class basis
+        raise NotImplementedError()
+
+    def _display_test_cycle_metrics(self,
+                                    last_test_cycle_average_total_reward: float,
+                                    last_test_cycle_average_scaled_reward: float,
+                                    last_test_cycle_rewards: []):
+        """
+        Display additional optional metrics from the last test cycle.
+        Note: average and total and scaled reward over all the cycle test episodes are already displayed.
+
+        :param last_test_cycle_average_total_reward: the average total reward in the last test cycle
+        :param last_test_cycle_average_scaled_reward: the average scaled reward in the last test cycle
+        :param last_test_cycle_rewards: a list of all the rewards obtained in each episode over all the episodes in the last test cycles
+        """
         raise NotImplementedError()
 
     def _is_successful(self,
