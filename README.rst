@@ -110,4 +110,4 @@ Also the amount of algorithms is still limited and the Trust Region Policy Optim
 
 **Changelog**
 
-- Fixed last introduced method not having the logger as parameter
+- Fixed last introduced method not being called with the logger parameter

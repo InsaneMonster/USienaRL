@@ -457,7 +457,8 @@ class Experiment:
                 test_cycle_average_total_reward: float = numpy.round(numpy.average(test_cycle_total_rewards), 3)
                 test_cycle_average_scaled_reward: float = numpy.round(numpy.average(test_cycle_scaled_rewards), 3)
                 # Display test additional optional statistics
-                self._display_test_cycle_metrics(test_cycle_average_total_reward,
+                self._display_test_cycle_metrics(logger,
+                                                 test_cycle_average_total_reward,
                                                  test_cycle_average_scaled_reward,
                                                  test_cycles_rewards)
                 # Save the rewards
@@ -599,7 +600,8 @@ class Experiment:
                     test_cycle_average_total_reward: float = numpy.average(test_cycle_average_total_rewards)
                     test_cycle_average_scaled_reward: float = numpy.average(test_cycle_average_scaled_rewards)
                     # Display test additional optional statistics
-                    self._display_test_cycle_metrics(test_cycle_average_total_reward,
+                    self._display_test_cycle_metrics(logger,
+                                                     test_cycle_average_total_reward,
                                                      test_cycle_average_scaled_reward,
                                                      test_cycles_rewards)
                     # Save the rewards
