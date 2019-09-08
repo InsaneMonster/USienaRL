@@ -110,8 +110,4 @@ Also the amount of algorithms is still limited and the Trust Region Policy Optim
 
 **Changelog**
 
-- Added plots of average total and scaled reward over both training and validation volleys (in addition to episodes, to have more readable plots)
-- Added method to display additional optional metrics also in test cycles
-- Overall improved some text and info given during the experiment run
-- Fixed use of matplotlib, now by default using the agg-backend allowing for unrestricted use in servers (where display environment variable is not defined)
-- Improved display of metrics with the addition of rounding (to the third decimal)
+- Fixed last introduced method not having the logger as parameter
