@@ -460,7 +460,7 @@ class Experiment:
                 self._display_test_cycle_metrics(logger,
                                                  test_cycle_average_total_reward,
                                                  test_cycle_average_scaled_reward,
-                                                 test_cycles_rewards)
+                                                 test_cycle_rewards)
                 # Save the rewards
                 test_average_total_rewards[test] = test_cycle_average_total_reward
                 test_average_scaled_rewards[test] = test_cycle_average_scaled_reward
