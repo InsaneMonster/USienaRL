@@ -106,8 +106,7 @@ a generalization perspective (train one one, validate on another, etc).
 
 A way to check if environments are compatible one another would be required too if what said above is implemented.
 
-Also the amount of algorithms is still limited and the Trust Region Policy Optimization algorithm implementation is still under alpha development.
-
 **Changelog**
 
-- Fixed last introduced method not being called with the logger parameter
+- Removed Trust Region Policy Optimization algorithm (under development) from main library until it is completed.
+- Fixed wrong parameter in display cycle metrics method in experiment class
