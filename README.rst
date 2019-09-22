@@ -108,5 +108,8 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
-- Removed Trust Region Policy Optimization algorithm (under development) from main library until it is completed.
-- Fixed wrong parameter in display cycle metrics method in experiment class
+- Added an handy initialize abstract method to experiment class, allowing to reset experiment class attributes at each iteration
+- Updated functions involving running the experiment accordingly
+- Added plot sample density in experiments, as an optional parameter which allows to decide the episode interval in which to draw samples for the plot
+- Increased the chucksize of matplotlib agg-backend to avoid error when high density is chosen with large episode numbers (still, don't go too far)
+- Note: backward compatibility is not granted if some abstract class are expanded, since the additional parameter is also present in the abstract methods and the signature then requires an update
