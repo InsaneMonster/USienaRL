@@ -36,11 +36,15 @@ class BenchmarkExperiment(Experiment):
         # Generate the base experiment
         super(BenchmarkExperiment, self).__init__(name, environment, agent, interface)
 
+    def initialize(self):
+        pass
+
     def _is_validated(self,
                       logger: logging.Logger,
                       last_average_validation_total_reward: float, last_average_validation_scaled_reward: float,
                       last_average_training_total_reward: float, last_average_training_scaled_reward: float,
-                      last_validation_volley_rewards: [], last_training_volley_rewards: []) -> bool:
+                      last_validation_volley_rewards: [], last_training_volley_rewards: [],
+                      plot_sample_density: int = 1) -> bool:
         # Check if average validation reward (score) is over validation threshold
         if last_average_validation_total_reward >= self._validation_threshold:
             return True
@@ -50,7 +54,8 @@ class BenchmarkExperiment(Experiment):
                                     logger: logging.Logger,
                                     last_test_cycle_average_total_reward: float,
                                     last_test_cycle_average_scaled_reward: float,
-                                    last_test_cycle_rewards: []):
+                                    last_test_cycle_rewards: [],
+                                    plot_sample_density: int = 1):
         pass
 
     def _is_successful(self,
@@ -60,7 +65,8 @@ class BenchmarkExperiment(Experiment):
                        last_average_validation_total_reward: float, last_average_validation_scaled_reward: float,
                        last_average_training_total_reward: float, last_average_training_scaled_reward: float,
                        test_cycles_rewards: [],
-                       last_validation_volley_rewards: [], last_training_volley_rewards: []) -> bool:
+                       last_validation_volley_rewards: [], last_training_volley_rewards: [],
+                       plot_sample_density: int = 1) -> bool:
         # Check if last validation reward (score) was above threshold
         if last_average_validation_total_reward >= self._validation_threshold:
             return True

@@ -297,7 +297,7 @@ class Experiment:
                 test_episodes_per_cycle: int, test_cycles: int,
                 logger: logging.Logger,
                 render_during_training: bool = False, render_during_validation: bool = False, render_during_test: bool = False,
-                checkpoint_path: str = None):
+                checkpoint_path: str = None, plot_sample_density: int = 1):
         """
         Conduct the experiment of the given number of training (up to the given maximum) and validation episodes
         per volley, with the associated given number of test episodes per cycle and the given number of test cycles after
@@ -324,10 +324,12 @@ class Experiment:
         :param render_during_validation: boolean flag to render the environment during validation, default to False
         :param render_during_test: boolean flag to render the environment during test, default to False
         :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model, default to None
+        :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
         :return: the average and the max of the total average reward, the average and the max of the average average reward with respect to all test cycles, the training episodes required to validate, a success flag and the location in which the saved metagraph is stored
         """
-        # Make the matplotlib use agg-backend to make it compatible with a server
+        # Make the matplotlib use agg-backend to make it compatible with a server and increase the chunksize to avoid unwated errors
         plot.switch_backend('agg')
+        plot.rcParams['agg.path.chunksize'] = 1000
         # Start experiment
         logger.info("Conducting experiment " + self._current_id + "...")
         # Define the list in which to store the evolution of total and scaled average reward to plot by default
@@ -429,7 +431,8 @@ class Experiment:
                 if self._is_validated(logger,
                                       last_validation_volley_average_total_reward, last_validation_volley_average_scaled_reward,
                                       last_training_volley_average_total_reward, last_training_volley_average_scaled_reward,
-                                      last_validation_volley_rewards, last_training_volley_rewards):
+                                      last_validation_volley_rewards, last_training_volley_rewards,
+                                      plot_sample_density):
                     logger.info("Validation of the agent is successful")
                     break
             logger.info("End of training")
@@ -460,7 +463,8 @@ class Experiment:
                 self._display_test_cycle_metrics(logger,
                                                  test_cycle_average_total_reward,
                                                  test_cycle_average_scaled_reward,
-                                                 test_cycle_rewards)
+                                                 test_cycle_rewards,
+                                                 plot_sample_density)
                 # Save the rewards
                 test_average_total_rewards[test] = test_cycle_average_total_reward
                 test_average_scaled_rewards[test] = test_cycle_average_scaled_reward
@@ -481,42 +485,42 @@ class Experiment:
             logger.info("Max test scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_average_scaled_reward))
             # Save plots
             logger.info("Saving plots...")
-            plot.plot(list(range(len(all_training_episodes_total_rewards))), all_training_episodes_total_rewards)
+            plot.plot(list(range(len(all_training_episodes_total_rewards)))[::plot_sample_density], all_training_episodes_total_rewards[::plot_sample_density])
             plot.xlabel('Training episode')
             plot.ylabel('Total reward')
             plot.savefig(self._plots_path + "/training_episodes_total_rewards.png", dpi=300, transparent=True)
             plot.clf()
-            plot.plot(list(range(len(all_training_episodes_scaled_rewards))), all_training_episodes_scaled_rewards)
+            plot.plot(list(range(len(all_training_episodes_scaled_rewards)))[::plot_sample_density], all_training_episodes_scaled_rewards[::plot_sample_density])
             plot.xlabel('Training episode')
             plot.ylabel('Scaled reward')
             plot.savefig(self._plots_path + "/training_episodes_scaled_rewards.png", dpi=300, transparent=True)
             plot.clf()
-            plot.plot(list(range(len(all_validation_episodes_total_rewards))), all_validation_episodes_total_rewards)
+            plot.plot(list(range(len(all_validation_episodes_total_rewards)))[::plot_sample_density], all_validation_episodes_total_rewards[::plot_sample_density])
             plot.xlabel('Validation episode')
             plot.ylabel('Total reward')
             plot.savefig(self._plots_path + "/validation_episodes_total_rewards.png", dpi=300, transparent=True)
             plot.clf()
-            plot.plot(list(range(len(all_validation_episodes_scaled_rewards))), all_validation_episodes_scaled_rewards)
+            plot.plot(list(range(len(all_validation_episodes_scaled_rewards)))[::plot_sample_density], all_validation_episodes_scaled_rewards[::plot_sample_density])
             plot.xlabel('Validation episode')
             plot.ylabel('Scaled reward')
             plot.savefig(self._plots_path + "/validation_episodes_scaled_rewards.png", dpi=300, transparent=True)
             plot.clf()
-            plot.plot(list(range(len(all_training_volleys_total_rewards))), all_training_volleys_total_rewards)
+            plot.plot(list(range(len(all_training_volleys_total_rewards)))[::plot_sample_density], all_training_volleys_total_rewards[::plot_sample_density])
             plot.xlabel('Training volley')
             plot.ylabel('Average total reward')
             plot.savefig(self._plots_path + "/training_volleys_total_rewards.png", dpi=300, transparent=True)
             plot.clf()
-            plot.plot(list(range(len(all_training_volleys_scaled_rewards))), all_training_volleys_scaled_rewards)
+            plot.plot(list(range(len(all_training_volleys_scaled_rewards)))[::plot_sample_density], all_training_volleys_scaled_rewards[::plot_sample_density])
             plot.xlabel('Training volley')
             plot.ylabel('Average scaled reward')
             plot.savefig(self._plots_path + "/training_volleys_scaled_rewards.png", dpi=300, transparent=True)
             plot.clf()
-            plot.plot(list(range(len(all_validation_volleys_total_rewards))), all_validation_volleys_total_rewards)
+            plot.plot(list(range(len(all_validation_volleys_total_rewards)))[::plot_sample_density], all_validation_volleys_total_rewards[::plot_sample_density])
             plot.xlabel('Validation volley')
             plot.ylabel('Average total reward')
             plot.savefig(self._plots_path + "/validation_volleys_total_rewards.png", dpi=300, transparent=True)
             plot.clf()
-            plot.plot(list(range(len(all_validation_volleys_scaled_rewards))), all_validation_volleys_scaled_rewards)
+            plot.plot(list(range(len(all_validation_volleys_scaled_rewards)))[::plot_sample_density], all_validation_volleys_scaled_rewards[::plot_sample_density])
             plot.xlabel('Validation volley')
             plot.ylabel('Average scaled reward')
             plot.savefig(self._plots_path + "/validation_volleys_scaled_rewards.png", dpi=300, transparent=True)
@@ -531,7 +535,8 @@ class Experiment:
                                                 last_training_volley_average_total_reward,
                                                 last_training_volley_average_scaled_reward,
                                                 test_cycles_rewards,
-                                                last_validation_volley_rewards, last_training_volley_rewards)
+                                                last_validation_volley_rewards, last_training_volley_rewards,
+                                                plot_sample_density)
             if success:
                 logger.info("The experiment terminated successfully")
             else:
@@ -543,7 +548,8 @@ class Experiment:
               test_episodes_per_cycle: int, test_cycles: int,
               logger: logging.Logger,
               checkpoint_path: str,
-              render: bool = True):
+              render: bool = True,
+              plot_sample_density: int = 1):
         """
         Watch an experiment with an already trained agent given by the checkpoint path. The experiment needs to be
         setup and also trained somehow to access a proper checkpoint.
@@ -555,6 +561,7 @@ class Experiment:
         :param test_cycles: the number of test cycles to execute
         :param logger: the logger used to print the experiment information, warnings and errors
         :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model
+        :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
         :param render: boolean flag to render the environment, default to True
         """
         logger.info("Watching experiment " + self._current_id + "...")
@@ -603,7 +610,8 @@ class Experiment:
                     self._display_test_cycle_metrics(logger,
                                                      test_cycle_average_total_reward,
                                                      test_cycle_average_scaled_reward,
-                                                     test_cycles_rewards)
+                                                     test_cycles_rewards,
+                                                     plot_sample_density)
                     # Save the rewards
                     test_average_total_rewards[test] = test_cycle_average_total_reward
                     test_average_scaled_rewards[test] = test_cycle_average_scaled_reward
@@ -622,11 +630,19 @@ class Experiment:
                 logger.info("Max test total reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_total_reward))
                 logger.info("Max test scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_scaled_reward))
 
+    def initialize(self):
+        """
+        Initialize the experiment, resetting all class-specific variables and preparing for the next iteration of the same
+        experiment setup.
+        """
+        raise NotImplementedError()
+
     def _is_validated(self,
                       logger: logging.Logger,
                       last_average_validation_total_reward: float, last_average_validation_scaled_reward: float,
                       last_average_training_total_reward: float, last_average_training_scaled_reward: float,
-                      last_validation_volley_rewards: [], last_training_volley_rewards: []) -> bool:
+                      last_validation_volley_rewards: [], last_training_volley_rewards: [],
+                      plot_sample_density: int = 1) -> bool:
         """
         Check if the experiment is to be considered validated using the given parameters.
 
@@ -637,6 +653,7 @@ class Experiment:
         :param last_average_training_scaled_reward: the average scaled reward during last volley training phase
         :param last_validation_volley_rewards: the list of rewards (grouped by episode) for each step during last volley validation phase
         :param last_training_volley_rewards: the list of rewards (grouped by episode) for each step during last volley training phase
+        :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
         :return: a boolean flag True if condition are satisfied, False otherwise
         """
         # Abstract method, definition should be implemented on a child class basis
@@ -646,7 +663,8 @@ class Experiment:
                                     logger: logging.Logger,
                                     last_test_cycle_average_total_reward: float,
                                     last_test_cycle_average_scaled_reward: float,
-                                    last_test_cycle_rewards: []):
+                                    last_test_cycle_rewards: [],
+                                    plot_sample_density: int = 1):
         """
         Display additional optional metrics from the last test cycle.
         Note: average and total and scaled reward over all the cycle test episodes are already displayed.
@@ -655,6 +673,7 @@ class Experiment:
         :param last_test_cycle_average_total_reward: the average total reward in the last test cycle
         :param last_test_cycle_average_scaled_reward: the average scaled reward in the last test cycle
         :param last_test_cycle_rewards: a list of all the rewards obtained in each episode over all the episodes in the last test cycles
+        :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
         """
         raise NotImplementedError()
 
@@ -665,7 +684,8 @@ class Experiment:
                        last_average_validation_total_reward: float, last_average_validation_scaled_reward: float,
                        last_average_training_total_reward: float, last_average_training_scaled_reward: float,
                        test_cycles_rewards: [],
-                       last_validation_volley_rewards: [], last_training_volley_rewards: []) -> bool:
+                       last_validation_volley_rewards: [], last_training_volley_rewards: [],
+                       plot_sample_density: int = 1) -> bool:
         """
         Check if the experiment is to be considered successful using the given parameters.
 
@@ -681,6 +701,7 @@ class Experiment:
         :param test_cycles_rewards: the list of rewards (grouped by episode) for each step during all the test cycles
         :param last_validation_volley_rewards: the list of rewards (grouped by episode) for each step during last volley validation phase
         :param last_training_volley_rewards: the list of rewards (grouped by episode) for each step during last volley training phase
+        :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
         :return: a boolean flag True if condition are satisfied, False otherwise
         """
         # Abstract method, definition should be implemented on a child class basis
