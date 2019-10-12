@@ -42,7 +42,7 @@ def _define_vpg_model(config: Config) -> VanillaPolicyGradient:
     discount_factor: float = 0.99
     value_steps_per_update: int = 80
     lambda_parameter: float = 0.95
-    # Return the _model
+    # Return the model
     return VanillaPolicyGradient("model", discount_factor,
                                  learning_rate_policy, learning_rate_advantage,
                                  value_steps_per_update, config, lambda_parameter)
