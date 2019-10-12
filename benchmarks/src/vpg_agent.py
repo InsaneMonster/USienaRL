@@ -69,8 +69,11 @@ class VPGAgent(Agent):
         self._current_value_estimate = None
         self._current_policy_loss = None
         self._current_value_loss = None
-        # Initialize the _model
+        # Initialize the model
         self._model.initialize(logger, session)
+        # Initialize the exploration policy, if any
+        if self._exploration_policy is not None:
+            self._exploration_policy.initialize(logger, session)
 
     def act_warmup(self,
                    logger: logging.Logger,
