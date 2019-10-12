@@ -11,3 +11,4 @@
 # Import scripts
 
 from .vanilla_policy_gradient import VanillaPolicyGradient
+from .proximal_policy_optimization import ProximalPolicyOptimization
