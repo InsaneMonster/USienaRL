@@ -17,35 +17,42 @@ import os
 # Import usienarl
 
 from usienarl import Config, LayerType, run_experiment, command_line_parse
-from usienarl.po_models import VanillaPolicyGradient
+from usienarl.po_models import ProximalPolicyOptimization
 from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy
 
 # Import required src
 # Require error handling to support both deployment and pycharm versions
 
 try:
-    from src.vpg_agent import VPGAgent
+    from src.ppo_agent import PPOAgent
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from benchmarks.src.vpg_agent import VPGAgent
+    from benchmarks.src.ppo_agent import PPOAgent
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
 
 
-def _define_vpg_model(config: Config) -> VanillaPolicyGradient:
+def _define_ppo_model(config: Config) -> ProximalPolicyOptimization:
     # Define attributes
     learning_rate_policy: float = 0.0003
     learning_rate_advantage: float = 0.001
     discount_factor: float = 0.99
     value_steps_per_update: int = 80
-    lambda_parameter: float = 0.95
+    policy_steps_per_update: int = 80
+    lambda_parameter: float = 0.97
+    clip_ratio: float = 0.2
+    target_kl_divergence: float = 0.01
     # Return the model
-    return VanillaPolicyGradient("model", discount_factor,
-                                 learning_rate_policy, learning_rate_advantage,
-                                 value_steps_per_update, config, lambda_parameter)
+    return ProximalPolicyOptimization("model", discount_factor,
+                                      learning_rate_policy, learning_rate_advantage,
+                                      value_steps_per_update, policy_steps_per_update,
+                                      config,
+                                      lambda_parameter,
+                                      clip_ratio,
+                                      target_kl_divergence)
 
 
 def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolicy:
@@ -57,11 +64,11 @@ def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolic
     return EpsilonGreedyExplorationPolicy(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
 
-def _define_epsilon_greedy_agent(model: VanillaPolicyGradient, exploration_policy: EpsilonGreedyExplorationPolicy = None) -> VPGAgent:
+def _define_epsilon_greedy_agent(model: ProximalPolicyOptimization, exploration_policy: EpsilonGreedyExplorationPolicy = None) -> PPOAgent:
     # Define attributes
     updates_per_training_volley: int = 10
     # Return the agent
-    return VPGAgent("vpg_egreedy_agent" if exploration_policy is not None else "vpg_agent", model, updates_per_training_volley, exploration_policy)
+    return PPOAgent("ppo_egreedy_agent" if exploration_policy is not None else "ppo_agent", model, updates_per_training_volley, exploration_policy)
 
 
 if __name__ == "__main__":
@@ -84,12 +91,12 @@ if __name__ == "__main__":
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
     # Define model
-    inner_model: VanillaPolicyGradient = _define_vpg_model(nn_config)
+    inner_model: ProximalPolicyOptimization = _define_ppo_model(nn_config)
     # Define exploration_policies
     epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_exploration_policy()
     # Define agents
-    vpg_agent: VPGAgent = _define_epsilon_greedy_agent(inner_model)
-    vpg_epsilon_greedy_agent: VPGAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
+    vpg_agent: PPOAgent = _define_epsilon_greedy_agent(inner_model)
+    vpg_epsilon_greedy_agent: PPOAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
     # Define experiments
     experiment: BenchmarkExperiment = BenchmarkExperiment("experiment", success_threshold, environment,
                                                           vpg_agent)

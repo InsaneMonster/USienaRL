@@ -36,6 +36,7 @@ work should be done by yourself.
     - Double Deep Temporal Difference Q-Learning (DDQN) with Prioritized Experience Replay memory buffer
     - Dueling Temporal Difference Q-Learning (DDDQN) with Prioritized Experience Replay memory buffer
     - Vanilla Policy Gradient (VPG) with General Advantage Estimate buffer using rewards-to-go
+    - Proximal Policy Optimization (PPO) with General Advantage Estimate buffer using rewards-to-go and early stopping
 - Many state-of-the-art exploration policies, including:
     - Epsilon Greedy with tunable decay rate, start value and end value
     - Boltzmann sampling with tunable temperature decay rate, start value and end value
@@ -108,4 +109,4 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
-- Fixed error causing the sample density to be applied also to volleys plot: note that in regular use cases, volleys should comprehend more than one episode
+- Added Proximal Policy Optimization algorithm to Policy Optimization models
