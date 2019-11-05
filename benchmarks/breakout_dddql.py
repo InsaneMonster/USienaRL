@@ -40,7 +40,7 @@ def _define_dddqn_model(config: Config, error_clip: bool) -> DuelingDeepQLearnin
     # Define attributes
     learning_rate: float = 0.001
     discount_factor: float = 0.99
-    buffer_capacity: int = 50000
+    buffer_capacity: int = 100000
     minimum_sample_probability: float = 0.01
     random_sample_trade_off: float = 0.6
     importance_sampling_value_increment: float = 0.4
