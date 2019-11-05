@@ -392,11 +392,14 @@ class Experiment:
                 # Compute average total reward and average scaled reward over training volley and append it to the volley list
                 last_training_volley_average_total_reward: float = numpy.round(numpy.average(training_volley_total_rewards), 3)
                 last_training_volley_average_scaled_reward: float = numpy.round(numpy.average(training_volley_scaled_rewards), 3)
+                # TODO: std for every step or for every episode? Maybe both!
+                last_training_volley_std_reward: float = numpy.std(training_volley_total_rewards)
                 all_training_volleys_total_rewards.append(last_training_volley_average_total_reward)
                 all_training_volleys_scaled_rewards.append(last_training_volley_average_scaled_reward)
                 # Print training results
                 logger.info("Training of " + str(training_episodes_per_volley) + " finished with following result:")
                 logger.info("Average total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_total_reward))
+                logger.info("Standard deviation of reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_total_reward))
                 logger.info("Average scaled reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_scaled_reward))
                 logger.info("Total environmental steps in training mode up to now: " + str(self._trained_steps))
                 # Save the agent internal model at the current step
