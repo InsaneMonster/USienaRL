@@ -40,7 +40,7 @@ def _define_dddqn_model(config: Config, error_clip: bool) -> DuelingDeepQLearnin
     # Define attributes
     learning_rate: float = 0.001
     discount_factor: float = 0.99
-    buffer_capacity: int = 1000
+    buffer_capacity: int = 10000
     minimum_sample_probability: float = 0.01
     random_sample_trade_off: float = 0.6
     importance_sampling_value_increment: float = 0.4
@@ -97,9 +97,9 @@ if __name__ == "__main__":
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
-    # Breakout Atari environment: no success threshold
+    # Breakout Atari environment: a score of 35.0 (don't know if too high actually...)
     environment_name: str = 'PongDeterministic-v4'
-    success_threshold: float = math.inf
+    success_threshold: float = 35.0
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define Neural Network layers
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     training_episodes: int = 100
     validation_episodes: int = 100
     max_training_episodes: int = 100000
-    episode_length_max: int = 100
+    episode_length_max: int = 10000000
     # Run epsilon greedy experiments
     run_experiment(experiment_egreedy_huber,
                    training_episodes,
