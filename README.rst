@@ -24,6 +24,7 @@ work should be done by yourself.
 - Utility functions to run the same experiment in multiple equal iterations with automated folder setup and organization, registering the following metrics:
     - Average total reward (reward in one episode) over training, validation and test
     - Average scaled reward (reward per step) over training, validation and test
+    - Standard deviation of said total and scaled rewards over training, validation and test
     - Mean and standard deviation of average total and scaled reward over test in all experiment iterations (if more than one)
     - Mean and standard deviation of maximum total and scaled reward over test in all experiment iterations (if more than one)
     - Mean and standard deviation of minimum training episodes over test in all experiment iterations (if more than one)
@@ -40,7 +41,7 @@ work should be done by yourself.
 - Many state-of-the-art exploration policies, including:
     - Epsilon Greedy with tunable decay rate, start value and end value
     - Boltzmann sampling with tunable temperature decay rate, start value and end value
-- Config class to define the hidden layers of all Tensorflow graphs (including the CNN)
+- Config class to define the hidden layers of all Tensorflow graphs (including the CNN), also customizable by extension
 - Default Pass-Through interface class to allow communications between agents and environments
 - Additive action mask for all the algorithms supporting it (only discrete action sets):
     - The mask supports two values: -infinity (mask) and 0.0 (pass-through)
@@ -109,4 +110,7 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
-- Added Proximal Policy Optimization algorithm to Policy Optimization models
+**WARNING**: the current version is not fully test and thus unstable, if you need a stable version please stick with the 0.5.0!
+
+- Added standard deviation of total and scaled reward over training and validation volleys and over test cycles
+- Added customization of config (to define custom layers)

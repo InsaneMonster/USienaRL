@@ -339,8 +339,12 @@ class Experiment:
         all_validation_episodes_scaled_rewards: [] = []
         all_training_volleys_total_rewards: [] = []
         all_training_volleys_scaled_rewards: [] = []
+        all_training_volleys_std_total_rewards: [] = []
+        all_training_volleys_std_scaled_reward: [] = []
         all_validation_volleys_total_rewards: [] = []
         all_validation_volleys_scaled_rewards: [] = []
+        all_validation_volleys_std_total_rewards: [] = []
+        all_validation_volleys_std_scaled_reward: [] = []
         # Define the session
         with tensorflow.Session(config=self._tensorflow_config) as session:
             # Initialize the environment and the agent
@@ -365,8 +369,12 @@ class Experiment:
             # Save last volley average training and validation total and scaled rewards
             last_training_volley_average_total_reward: float = 0.0
             last_training_volley_average_scaled_reward: float = 0.0
+            last_training_volley_std_total_reward: float = 0.0
+            last_training_volley_std_scaled_reward: float = 0.0
             last_validation_volley_average_total_reward: float = 0.0
             last_validation_volley_average_scaled_reward: float = 0.0
+            last_validation_volley_std_total_reward: float = 0.0
+            last_validation_volley_std_scaled_reward: float = 0.0
             # Save last volley training and validation rewards list
             last_training_volley_rewards: [] = []
             last_validation_volley_rewards: [] = []
@@ -389,15 +397,21 @@ class Experiment:
                     # Update the global lists of all the average total and scale rewards for each training episode
                     all_training_episodes_total_rewards.append(numpy.sum(numpy.array(episode_rewards)))
                     all_training_episodes_scaled_rewards.append(numpy.average(numpy.array(episode_rewards)))
-                # Compute average total reward and average scaled reward over training volley and append it to the volley list
+                # Compute average/std total reward and average/std scaled reward over training volley and append it to the volley list
                 last_training_volley_average_total_reward: float = numpy.round(numpy.average(training_volley_total_rewards), 3)
                 last_training_volley_average_scaled_reward: float = numpy.round(numpy.average(training_volley_scaled_rewards), 3)
+                last_training_volley_std_total_reward: float = numpy.round(numpy.std(training_volley_total_rewards), 3)
+                last_training_volley_std_scaled_reward: float = numpy.round(numpy.std(training_volley_scaled_rewards), 3)
                 all_training_volleys_total_rewards.append(last_training_volley_average_total_reward)
                 all_training_volleys_scaled_rewards.append(last_training_volley_average_scaled_reward)
+                all_training_volleys_std_total_rewards.append(last_training_volley_std_total_reward)
+                all_training_volleys_std_scaled_reward.append(last_training_volley_std_scaled_reward)
                 # Print training results
                 logger.info("Training of " + str(training_episodes_per_volley) + " finished with following result:")
                 logger.info("Average total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_total_reward))
+                logger.info("Standard deviation of total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_std_total_reward))
                 logger.info("Average scaled reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_scaled_reward))
+                logger.info("Standard deviation of scaled reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_std_scaled_reward))
                 logger.info("Total environmental steps in training mode up to now: " + str(self._trained_steps))
                 # Save the agent internal model at the current step
                 logger.info("Saving the agent...")
@@ -418,15 +432,21 @@ class Experiment:
                     # Update the global lists of all the average total and scale rewards for each validation episode
                     all_validation_episodes_total_rewards.append(numpy.sum(numpy.array(episode_rewards)))
                     all_validation_episodes_scaled_rewards.append(numpy.average(numpy.array(episode_rewards)))
-                # Compute average total reward and average scaled reward over validation volley and append it to volley list
+                # Compute average/std total reward and average/std scaled reward over validation volley and append it to volley list
                 last_validation_volley_average_total_reward: float = numpy.round(numpy.average(validation_volley_total_rewards), 3)
                 last_validation_volley_average_scaled_reward: float = numpy.round(numpy.average(validation_volley_scaled_rewards), 3)
+                last_validation_volley_std_total_reward: float = numpy.round(numpy.std(validation_volley_total_rewards), 3)
+                last_validation_volley_std_scaled_reward: float = numpy.round(numpy.std(validation_volley_scaled_rewards), 3)
                 all_validation_volleys_total_rewards.append(last_validation_volley_average_total_reward)
                 all_validation_volleys_scaled_rewards.append(last_validation_volley_average_scaled_reward)
+                all_validation_volleys_std_total_rewards.append(last_validation_volley_std_total_reward)
+                all_validation_volleys_std_scaled_reward.append(last_validation_volley_std_scaled_reward)
                 # Print validation results
                 logger.info("Training of " + str(validation_episodes_per_volley) + " finished with following result:")
                 logger.info("Average total reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_average_total_reward))
+                logger.info("Standard deviation of total reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_std_total_reward))
                 logger.info("Average scaled reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_average_scaled_reward))
+                logger.info("Standard deviation of scaled reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_std_scaled_reward))
                 # Check for validation
                 if self._is_validated(logger,
                                       last_validation_volley_average_total_reward, last_validation_volley_average_scaled_reward,
@@ -439,6 +459,8 @@ class Experiment:
             # Test the model and get all cycles total, scaled rewards and all rewards
             test_average_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
             test_average_scaled_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
+            test_std_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
+            test_std_scaled_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
             test_cycles_rewards: [] = []
             for test in range(test_cycles):
                 # Run inference for test episodes per cycles and get the average score
@@ -459,6 +481,8 @@ class Experiment:
                 # Compute total and scaled reward over the test cycle
                 test_cycle_average_total_reward: float = numpy.round(numpy.average(test_cycle_total_rewards), 3)
                 test_cycle_average_scaled_reward: float = numpy.round(numpy.average(test_cycle_scaled_rewards), 3)
+                test_cycle_std_total_reward: float = numpy.round(numpy.std(test_cycle_total_rewards), 3)
+                test_cycle_std_scaled_reward: float = numpy.round(numpy.std(test_cycle_scaled_rewards), 3)
                 # Display test additional optional statistics
                 self._display_test_cycle_metrics(logger,
                                                  test_cycle_average_total_reward,
@@ -468,6 +492,8 @@ class Experiment:
                 # Save the rewards
                 test_average_total_rewards[test] = test_cycle_average_total_reward
                 test_average_scaled_rewards[test] = test_cycle_average_scaled_reward
+                test_std_total_rewards[test] = test_cycle_std_total_reward
+                test_std_scaled_rewards[test] = test_cycle_std_scaled_reward
                 # Print test results
                 logger.info("Testing of " + str(test_episodes_per_cycle) + " finished with following result:")
                 logger.info("Average total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_total_reward))
@@ -586,6 +612,8 @@ class Experiment:
                 # Test the model and get all cycles total, scaled rewards and all rewards
                 test_average_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
                 test_average_scaled_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
+                test_std_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
+                test_std_scaled_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)
                 test_cycles_rewards: [] = []
                 for test in range(test_cycles):
                     # Run inference for test episodes per cycles and get the average score
@@ -598,14 +626,16 @@ class Experiment:
                     # Append the test cycle rewards to the full list
                     test_cycles_rewards.append(test_cycle_rewards)
                     # Since rewards list are of different sizes, get their sum and average
-                    test_cycle_average_total_rewards: numpy.ndarray = numpy.zeros(len(test_cycle_rewards), dtype=float)
-                    test_cycle_average_scaled_rewards: numpy.ndarray = numpy.zeros(len(test_cycle_rewards), dtype=float)
+                    test_cycle_total_rewards: numpy.ndarray = numpy.zeros(len(test_cycle_rewards), dtype=float)
+                    test_cycle_scaled_rewards: numpy.ndarray = numpy.zeros(len(test_cycle_rewards), dtype=float)
                     for index, episode_rewards in enumerate(test_cycle_rewards):
-                        test_cycle_average_total_rewards[index] = numpy.sum(numpy.array(episode_rewards))
-                        test_cycle_average_scaled_rewards[index] = numpy.average(numpy.array(episode_rewards))
+                        test_cycle_total_rewards[index] = numpy.sum(numpy.array(episode_rewards))
+                        test_cycle_scaled_rewards[index] = numpy.average(numpy.array(episode_rewards))
                     # Compute total and scaled reward over the test cycle
-                    test_cycle_average_total_reward: float = numpy.average(test_cycle_average_total_rewards)
-                    test_cycle_average_scaled_reward: float = numpy.average(test_cycle_average_scaled_rewards)
+                    test_cycle_average_total_reward: float = numpy.average(test_cycle_total_rewards)
+                    test_cycle_average_scaled_reward: float = numpy.average(test_cycle_scaled_rewards)
+                    test_cycle_std_total_reward: float = numpy.round(numpy.std(test_cycle_total_rewards), 3)
+                    test_cycle_std_scaled_reward: float = numpy.round(numpy.std(test_cycle_scaled_rewards), 3)
                     # Display test additional optional statistics
                     self._display_test_cycle_metrics(logger,
                                                      test_cycle_average_total_reward,
@@ -615,6 +645,8 @@ class Experiment:
                     # Save the rewards
                     test_average_total_rewards[test] = test_cycle_average_total_reward
                     test_average_scaled_rewards[test] = test_cycle_average_scaled_reward
+                    test_std_total_rewards[test] = test_cycle_std_total_reward
+                    test_std_scaled_rewards[test] = test_cycle_std_scaled_reward
                     # Print test results
                     logger.info("Testing of " + str(test_episodes_per_cycle) + " finished with following result:")
                     logger.info("Average total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_total_reward))
