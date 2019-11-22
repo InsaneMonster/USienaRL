@@ -110,7 +110,5 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
-**WARNING**: the current version is not fully test and thus unstable, if you need a stable version please stick with the 0.5.0!
-
 - Added standard deviation of total and scaled reward over training and validation volleys and over test cycles
 - Added customization of config (to define custom layers)

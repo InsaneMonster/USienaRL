@@ -70,8 +70,15 @@ class Config:
         # Add this hidden layer definition list to the hidden layers definition list
         self._hidden_layers_config.append(hidden_layer_config)
 
-    def add_custom_layer(self,
-                         layer_name: str, layer_parameters: []):
+    def add_custom_hidden_layer(self,
+                                layer_name: str, layer_parameters: []):
+        """
+        Add a custom hidden layer to the configuration using one indexed by the given layer name string. It works just
+        like the default add_hidden_layer method.
+
+        :param layer_name: the name string of the custom layer
+        :param layer_parameters: the ordered list of parameters of the layer
+        """
         # Add the layer type to this hidden layer definition list
         hidden_layer_config: [] = [layer_name]
         # Add each parameter to this hidden layer definition list
@@ -99,7 +106,7 @@ class Config:
             hidden_layer_input = input_layer
             if isinstance(layer_type, str):
                 # Custom hidden layer of name layer type
-                hidden_layer = self._define_custom_hidden_layer(layer_type, layer_parameters)
+                hidden_layer = self._define_custom_hidden_layer(layer_type, hidden_layer_input, layer_parameters)
             else:
                 if index > 0:
                     hidden_layer_input = hidden_layers[index - 1]
@@ -146,6 +153,15 @@ class Config:
         # Return the last layer (to compute the output)
         return hidden_layers[-1]
 
-    def _define_custom_hidden_layer(self, layer_type: str, layer_parameters: []):
+    def _define_custom_hidden_layer(self, layer_name: str, layer_input, layer_parameters: []):
+        """
+        Define a custom hidden layer indexed by the given layer name string. This layer takes as input the given
+        layer_input, usually a tensor, and as parameters the given ordered list of parameters.
+
+        :param layer_name: the string name of the layer
+        :param layer_input: the input of the hidden layer (usually when applied the output of the layer before)
+        :param layer_parameters: the ordered list of parameters of the layer (the same of add_custom_hidden_layer)
+        :return: the output of the custom hidden layer (usually when applied what is fed to the following layer)
+        """
         raise NotImplementedError()
 

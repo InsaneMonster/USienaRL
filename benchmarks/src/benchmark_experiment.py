@@ -43,6 +43,8 @@ class BenchmarkExperiment(Experiment):
                       logger: logging.Logger,
                       last_average_validation_total_reward: float, last_average_validation_scaled_reward: float,
                       last_average_training_total_reward: float, last_average_training_scaled_reward: float,
+                      last_std_validation_total_reward: float, last_std_validation_scaled_reward: float,
+                      last_std_training_total_reward: float, last_std_training_scaled_reward: float,
                       last_validation_volley_rewards: [], last_training_volley_rewards: [],
                       plot_sample_density: int = 1) -> bool:
         # Check if average validation reward (score) is over validation threshold
@@ -54,6 +56,8 @@ class BenchmarkExperiment(Experiment):
                                     logger: logging.Logger,
                                     last_test_cycle_average_total_reward: float,
                                     last_test_cycle_average_scaled_reward: float,
+                                    last_test_cycle_std_total_reward: float,
+                                    last_test_cycle_std_scaled_reward: float,
                                     last_test_cycle_rewards: [],
                                     plot_sample_density: int = 1):
         pass
@@ -62,8 +66,12 @@ class BenchmarkExperiment(Experiment):
                        logger: logging.Logger,
                        average_test_total_reward: float, average_test_scaled_reward: float,
                        max_test_total_reward: float, max_test_scaled_reward: float,
+                       average_test_std_total_reward: float, average_test_std_scaled_reward: float,
+                       min_test_std_total_reward: float, min_test_std_scaled_reward: float,
                        last_average_validation_total_reward: float, last_average_validation_scaled_reward: float,
                        last_average_training_total_reward: float, last_average_training_scaled_reward: float,
+                       last_std_validation_total_reward: float, last_std_validation_scaled_reward: float,
+                       last_std_training_total_reward: float, last_std_training_scaled_reward: float,
                        test_cycles_rewards: [],
                        last_validation_volley_rewards: [], last_training_volley_rewards: [],
                        plot_sample_density: int = 1) -> bool:
