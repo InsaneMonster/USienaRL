@@ -340,11 +340,11 @@ class Experiment:
         all_training_volleys_total_rewards: [] = []
         all_training_volleys_scaled_rewards: [] = []
         all_training_volleys_std_total_rewards: [] = []
-        all_training_volleys_std_scaled_reward: [] = []
+        all_training_volleys_std_scaled_rewards: [] = []
         all_validation_volleys_total_rewards: [] = []
         all_validation_volleys_scaled_rewards: [] = []
         all_validation_volleys_std_total_rewards: [] = []
-        all_validation_volleys_std_scaled_reward: [] = []
+        all_validation_volleys_std_scaled_rewards: [] = []
         # Define the session
         with tensorflow.Session(config=self._tensorflow_config) as session:
             # Initialize the environment and the agent
@@ -405,7 +405,7 @@ class Experiment:
                 all_training_volleys_total_rewards.append(last_training_volley_average_total_reward)
                 all_training_volleys_scaled_rewards.append(last_training_volley_average_scaled_reward)
                 all_training_volleys_std_total_rewards.append(last_training_volley_std_total_reward)
-                all_training_volleys_std_scaled_reward.append(last_training_volley_std_scaled_reward)
+                all_training_volleys_std_scaled_rewards.append(last_training_volley_std_scaled_reward)
                 # Print training results
                 logger.info("Training of " + str(training_episodes_per_volley) + " finished with following result:")
                 logger.info("Average total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_total_reward))
@@ -440,7 +440,7 @@ class Experiment:
                 all_validation_volleys_total_rewards.append(last_validation_volley_average_total_reward)
                 all_validation_volleys_scaled_rewards.append(last_validation_volley_average_scaled_reward)
                 all_validation_volleys_std_total_rewards.append(last_validation_volley_std_total_reward)
-                all_validation_volleys_std_scaled_reward.append(last_validation_volley_std_scaled_reward)
+                all_validation_volleys_std_scaled_rewards.append(last_validation_volley_std_scaled_reward)
                 # Print validation results
                 logger.info("Training of " + str(validation_episodes_per_volley) + " finished with following result:")
                 logger.info("Average total reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_average_total_reward))
@@ -451,6 +451,8 @@ class Experiment:
                 if self._is_validated(logger,
                                       last_validation_volley_average_total_reward, last_validation_volley_average_scaled_reward,
                                       last_training_volley_average_total_reward, last_training_volley_average_scaled_reward,
+                                      last_validation_volley_std_total_reward, last_validation_volley_std_scaled_reward,
+                                      last_training_volley_std_total_reward, last_training_volley_std_scaled_reward,
                                       last_validation_volley_rewards, last_training_volley_rewards,
                                       plot_sample_density):
                     logger.info("Validation of the agent is successful")
@@ -487,6 +489,8 @@ class Experiment:
                 self._display_test_cycle_metrics(logger,
                                                  test_cycle_average_total_reward,
                                                  test_cycle_average_scaled_reward,
+                                                 test_cycle_std_total_reward,
+                                                 test_cycle_std_scaled_reward,
                                                  test_cycle_rewards,
                                                  plot_sample_density)
                 # Save the rewards
@@ -497,18 +501,29 @@ class Experiment:
                 # Print test results
                 logger.info("Testing of " + str(test_episodes_per_cycle) + " finished with following result:")
                 logger.info("Average total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_total_reward))
+                logger.info("Standard deviation of total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_std_total_reward))
                 logger.info("Average scaled reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_scaled_reward))
+                logger.info("Standard deviation of scaled reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_std_scaled_reward))
             logger.info("End of test")
             # Get the average and the best total and scaled rewards over all cycles
             average_test_average_total_reward: float = numpy.round(numpy.average(test_average_total_rewards), 3)
             max_test_average_total_reward: float = numpy.round(numpy.max(test_average_total_rewards), 3)
             average_test_average_scaled_reward: float = numpy.round(numpy.average(test_average_scaled_rewards), 3)
             max_test_average_scaled_reward: float = numpy.round(numpy.max(test_average_scaled_rewards), 3)
+            # Get the average and the minimum standard deviation of total and scaled rewards over all cycles
+            average_test_std_total_reward: float = numpy.round(numpy.average(test_std_total_rewards), 3)
+            min_test_std_total_reward: float = numpy.round(numpy.min(test_std_total_rewards), 3)
+            average_test_std_scaled_reward: float = numpy.round(numpy.average(test_std_scaled_rewards), 3)
+            min_test_std_scaled_reward: float = numpy.round(numpy.min(test_std_scaled_rewards), 3)
             # Print final results and outcome of the experiment
             logger.info("Average test total reward is " + str(average_test_average_total_reward) + " with " + str(self._trained_episodes) + " training episodes")
             logger.info("Average test scaled reward is " + str(average_test_average_scaled_reward) + " with " + str(self._trained_episodes) + " training episodes")
             logger.info("Max test total reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_average_total_reward))
             logger.info("Max test scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_average_scaled_reward))
+            logger.info("Average test standard deviation of total reward is " + str(average_test_std_total_reward) + " with " + str(self._trained_episodes) + " training episodes")
+            logger.info("Average test standard deviation of scaled reward is " + str(average_test_std_scaled_reward) + " with " + str(self._trained_episodes) + " training episodes")
+            logger.info("Min test standard deviation of total reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(min_test_std_total_reward))
+            logger.info("Min test standard deviation of scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(min_test_std_scaled_reward))
             # Save plots
             logger.info("Saving plots...")
             plot.plot(list(range(len(all_training_episodes_total_rewards)))[::plot_sample_density], all_training_episodes_total_rewards[::plot_sample_density])
@@ -541,6 +556,16 @@ class Experiment:
             plot.ylabel('Average scaled reward')
             plot.savefig(self._plots_path + "/training_volleys_scaled_rewards.png", dpi=300, transparent=True)
             plot.clf()
+            plot.plot(list(range(len(all_training_volleys_std_total_rewards))), all_training_volleys_std_total_rewards)
+            plot.xlabel('Training volley')
+            plot.ylabel('Standard deviation of total reward')
+            plot.savefig(self._plots_path + "/training_volleys_std_total_rewards.png", dpi=300, transparent=True)
+            plot.clf()
+            plot.plot(list(range(len(all_training_volleys_std_scaled_rewards))), all_training_volleys_std_scaled_rewards)
+            plot.xlabel('Training volley')
+            plot.ylabel('Standard deviation of scaled reward')
+            plot.savefig(self._plots_path + "/training_volleys_std_scaled_rewards.png", dpi=300, transparent=True)
+            plot.clf()
             plot.plot(list(range(len(all_validation_volleys_total_rewards))), all_validation_volleys_total_rewards)
             plot.xlabel('Validation volley')
             plot.ylabel('Average total reward')
@@ -551,15 +576,31 @@ class Experiment:
             plot.ylabel('Average scaled reward')
             plot.savefig(self._plots_path + "/validation_volleys_scaled_rewards.png", dpi=300, transparent=True)
             plot.clf()
+            plot.plot(list(range(len(all_validation_volleys_std_total_rewards))), all_validation_volleys_std_total_rewards)
+            plot.xlabel('Validation volley')
+            plot.ylabel('Standard deviation of total reward')
+            plot.savefig(self._plots_path + "/validation_volleys_std_total_rewards.png", dpi=300, transparent=True)
+            plot.clf()
+            plot.plot(list(range(len(all_validation_volleys_std_scaled_rewards))), all_validation_volleys_std_scaled_rewards)
+            plot.xlabel('Validation volley')
+            plot.ylabel('Standard deviation of scaled reward')
+            plot.savefig(self._plots_path + "/validation_volleys_std_scaled_rewards.png", dpi=300, transparent=True)
+            plot.clf()
             logger.info("Plots saved successfully")
             # Check if the experiment is successful
             success: bool = self._is_successful(logger,
                                                 average_test_average_total_reward, average_test_average_scaled_reward,
                                                 max_test_average_total_reward, max_test_average_scaled_reward,
+                                                average_test_std_total_reward, average_test_std_scaled_reward,
+                                                min_test_std_total_reward, min_test_std_scaled_reward,
                                                 last_validation_volley_average_total_reward,
                                                 last_validation_volley_average_scaled_reward,
                                                 last_training_volley_average_total_reward,
                                                 last_training_volley_average_scaled_reward,
+                                                last_validation_volley_std_total_reward,
+                                                last_validation_volley_std_scaled_reward,
+                                                last_training_volley_std_total_reward,
+                                                last_training_volley_std_scaled_reward,
                                                 test_cycles_rewards,
                                                 last_validation_volley_rewards, last_training_volley_rewards,
                                                 plot_sample_density)
@@ -650,17 +691,27 @@ class Experiment:
                     # Print test results
                     logger.info("Testing of " + str(test_episodes_per_cycle) + " finished with following result:")
                     logger.info("Average total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_total_reward))
+                    logger.info("Standard deviation of total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_std_total_reward))
                     logger.info("Average scaled reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_scaled_reward))
-                # Get the average and the best total and scaled rewards over all cycles
-                average_test_total_reward: float = numpy.round(numpy.average(test_average_total_rewards), 3)
-                max_test_total_reward: float = numpy.round(numpy.max(test_average_total_rewards), 3)
-                average_test_scaled_reward: float = numpy.round(numpy.average(test_average_scaled_rewards), 3)
-                max_test_scaled_reward: float = numpy.round(numpy.max(test_average_scaled_rewards), 3)
-                # Print final results and outcome of the experiment
-                logger.info("Average test total reward is " + str(average_test_total_reward))
-                logger.info("Average test scaled reward is " + str(average_test_scaled_reward))
-                logger.info("Max test total reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_total_reward))
-                logger.info("Max test scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_scaled_reward))
+                    logger.info("Standard deviation of scaled reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_std_scaled_reward))
+                    # Get the average and the best total and scaled rewards over all cycles
+                    average_test_average_total_reward: float = numpy.round(numpy.average(test_average_total_rewards), 3)
+                    max_test_average_total_reward: float = numpy.round(numpy.max(test_average_total_rewards), 3)
+                    average_test_average_scaled_reward: float = numpy.round(numpy.average(test_average_scaled_rewards), 3)
+                    max_test_average_scaled_reward: float = numpy.round(numpy.max(test_average_scaled_rewards), 3)
+                    # Get the average and the minimum standard deviation of total and scaled rewards over all cycles
+                    average_test_std_total_reward: float = numpy.round(numpy.average(test_std_total_rewards), 3)
+                    min_test_std_total_reward: float = numpy.round(numpy.min(test_std_total_rewards), 3)
+                    average_test_std_scaled_reward: float = numpy.round(numpy.average(test_std_scaled_rewards), 3)
+                    min_test_std_scaled_reward: float = numpy.round(numpy.min(test_std_scaled_rewards), 3)
+                    logger.info("Average test total reward is " + str(average_test_average_total_reward) + " with " + str(self._trained_episodes) + " training episodes")
+                    logger.info("Average test scaled reward is " + str(average_test_average_scaled_reward) + " with " + str(self._trained_episodes) + " training episodes")
+                    logger.info("Max test total reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_average_total_reward))
+                    logger.info("Max test scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(max_test_average_scaled_reward))
+                    logger.info("Average test standard deviation of total reward is " + str(average_test_std_total_reward) + " with " + str(self._trained_episodes) + " training episodes")
+                    logger.info("Average test standard deviation of scaled reward is " + str(average_test_std_scaled_reward) + " with " + str(self._trained_episodes) + " training episodes")
+                    logger.info("Min test standard deviation of total reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(min_test_std_total_reward))
+                    logger.info("Min test standard deviation of scaled reward over " + str(test_episodes_per_cycle) + " and " + str(test_cycles) + " cycles is: " + str(min_test_std_scaled_reward))
 
     def initialize(self):
         """
@@ -673,6 +724,8 @@ class Experiment:
                       logger: logging.Logger,
                       last_average_validation_total_reward: float, last_average_validation_scaled_reward: float,
                       last_average_training_total_reward: float, last_average_training_scaled_reward: float,
+                      last_std_validation_total_reward: float, last_std_validation_scaled_reward: float,
+                      last_std_training_total_reward: float, last_std_training_scaled_reward: float,
                       last_validation_volley_rewards: [], last_training_volley_rewards: [],
                       plot_sample_density: int = 1) -> bool:
         """
@@ -683,6 +736,10 @@ class Experiment:
         :param last_average_validation_scaled_reward: the average scaled reward during last volley validation phase
         :param last_average_training_total_reward: the average total reward during last volley training phase
         :param last_average_training_scaled_reward: the average scaled reward during last volley training phase
+        :param last_std_validation_total_reward: the standard deviation of total reward during last volley validation phase
+        :param last_std_validation_scaled_reward: the standard deviation of scaled reward during last volley validation phase
+        :param last_std_training_total_reward: the standard deviation of total reward during last volley training phase
+        :param last_std_training_scaled_reward: the standard deviation of scaled reward during last volley training phase
         :param last_validation_volley_rewards: the list of rewards (grouped by episode) for each step during last volley validation phase
         :param last_training_volley_rewards: the list of rewards (grouped by episode) for each step during last volley training phase
         :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
@@ -695,6 +752,8 @@ class Experiment:
                                     logger: logging.Logger,
                                     last_test_cycle_average_total_reward: float,
                                     last_test_cycle_average_scaled_reward: float,
+                                    last_test_cycle_std_total_reward: float,
+                                    last_test_cycle_std_scaled_reward: float,
                                     last_test_cycle_rewards: [],
                                     plot_sample_density: int = 1):
         """
@@ -704,6 +763,8 @@ class Experiment:
         :param logger: the logger used to print the experiment information, warnings and errors
         :param last_test_cycle_average_total_reward: the average total reward in the last test cycle
         :param last_test_cycle_average_scaled_reward: the average scaled reward in the last test cycle
+        :param last_test_cycle_std_total_reward: the standard deviation of total reward in the last test cycle
+        :param last_test_cycle_std_scaled_reward: the standard deviation of scaled reward in the last test cycle
         :param last_test_cycle_rewards: a list of all the rewards obtained in each episode over all the episodes in the last test cycles
         :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
         """
@@ -713,8 +774,12 @@ class Experiment:
                        logger: logging.Logger,
                        average_test_total_reward: float, average_test_scaled_reward: float,
                        max_test_total_reward: float, max_test_scaled_reward: float,
+                       average_test_std_total_reward: float, average_test_std_scaled_reward: float,
+                       min_test_std_total_reward: float, min_test_std_scaled_reward: float,
                        last_average_validation_total_reward: float, last_average_validation_scaled_reward: float,
                        last_average_training_total_reward: float, last_average_training_scaled_reward: float,
+                       last_std_validation_total_reward: float, last_std_validation_scaled_reward: float,
+                       last_std_training_total_reward: float, last_std_training_scaled_reward: float,
                        test_cycles_rewards: [],
                        last_validation_volley_rewards: [], last_training_volley_rewards: [],
                        plot_sample_density: int = 1) -> bool:
@@ -726,10 +791,18 @@ class Experiment:
         :param average_test_scaled_reward: the average scaled reward during all the test cycles
         :param max_test_total_reward: the maximum total reward during all the test cycles
         :param max_test_scaled_reward: the maximum scaled reward during all the test cycles
+        :param average_test_std_total_reward: the average standard deviation of total reward during all the test cycles
+        :param average_test_std_scaled_reward: the average standard deviation of scaled reward during all the test cycles
+        :param min_test_std_total_reward: the minimum standard deviation of total reward during all the test cycles
+        :param min_test_std_scaled_reward: the minimum standard deviation of scaled reward during all the test cycles
         :param last_average_validation_total_reward: the average total reward during last volley validation phase
         :param last_average_validation_scaled_reward: the average scaled reward during last volley validation phase
         :param last_average_training_total_reward: the average total reward during last volley training phase
         :param last_average_training_scaled_reward: the average scaled reward during last volley training phase
+        :param last_std_validation_total_reward: the standard deviation of total reward during last volley validation phase
+        :param last_std_validation_scaled_reward: the standard deviation of scaled reward during last volley validation phase
+        :param last_std_training_total_reward: the standard deviation of total reward during last volley training phase
+        :param last_std_training_scaled_reward: the standard deviation of scaled reward during last volley training phase
         :param test_cycles_rewards: the list of rewards (grouped by episode) for each step during all the test cycles
         :param last_validation_volley_rewards: the list of rewards (grouped by episode) for each step during last volley validation phase
         :param last_training_volley_rewards: the list of rewards (grouped by episode) for each step during last volley training phase
