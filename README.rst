@@ -110,5 +110,6 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
-- Added standard deviation of total and scaled reward over training and validation volleys and over test cycles
-- Added customization of config (to define custom layers)
+- Improved Proximal Policy Optimization summary
+- Fixed Proximal Policy Optimization fatal error when advantages are almost all equals
+- Fixed Vanilla Policy Gradient fatal error when advantages are almost all equals
