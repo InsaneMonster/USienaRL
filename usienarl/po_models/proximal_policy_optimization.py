@@ -69,10 +69,11 @@ class Buffer:
         # Get a numpy array on the advantage list
         advantages_array: numpy.ndarray = numpy.array(self._advantages)
         # Execute the advantage normalization trick
+        # Note: make sure mean and std are not zero!
         global_sum: float = numpy.sum(advantages_array)
-        advantage_mean: float = global_sum / advantages_array.size
-        global_sum_squared: float = numpy.sum((advantages_array - advantage_mean) ** 2)
-        advantage_std: float = numpy.sqrt(global_sum_squared / advantages_array.size)
+        advantage_mean: float = global_sum / advantages_array.size + 1e-8
+        global_sum_squared: float = numpy.sum((advantages_array - advantage_mean) ** 2) + 1e-8
+        advantage_std: float = numpy.sqrt(global_sum_squared / advantages_array.size) + 1e-8
         # Adjust advantages according to the trick
         advantages_array = ((advantages_array - advantage_mean) / advantage_std)
         # Save the necessary values as numpy arrays before reset
@@ -126,12 +127,11 @@ class Buffer:
 
 class ProximalPolicyOptimization(Model):
     """
-    TODO: summary!
-    Vanilla Policy Gradient with GAE (Generalized Advantage Estimation).
+    Proximal Policy Optimization with GAE (Generalized Advantage Estimation).
     The algorithm is on-policy and executes updates every a certain number of episodes.
     The model is constituted by two sub-models, or streams. The first stream computes and optimizes the policy loss,
-    and to drive the loss the advantages for each state in the batch is required to be estimated. This stream is called
-    policy stream.
+    and to drive the loss the advantages for each state in the batch is required to be estimated. The loss used an
+    approximation of the KL divergence. This stream is called policy stream.
     The second stream computes the value on the current states and optimizes such estimation. To drive the loss of such
     sub-model, the value estimated by the stream itself for each state in the batch is required to be estimated. This
     stream is called value stream.
@@ -140,7 +140,8 @@ class ProximalPolicyOptimization(Model):
 
     The buffer stores all the trajectories up to the update point. Since each episode can contains different
     numbers of steps, the buffer is dynamically resizable.
-    The algorithm is very likely to converge to local minima.
+    The algorithm is very likely to converge to local minima but guarantees to not decrease its policy quality according
+    to a minimum KL distance allowed between old and new policy.
 
     Supported observation spaces:
         - discrete

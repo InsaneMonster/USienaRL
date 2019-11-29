@@ -65,10 +65,11 @@ class Buffer:
         # Get a numpy array on the advantage list
         advantages_array: numpy.ndarray = numpy.array(self._advantages)
         # Execute the advantage normalization trick
+        # Note: make sure mean and std are not zero!
         global_sum: float = numpy.sum(advantages_array)
-        advantage_mean: float = global_sum / advantages_array.size
-        global_sum_squared: float = numpy.sum((advantages_array - advantage_mean) ** 2)
-        advantage_std: float = numpy.sqrt(global_sum_squared / advantages_array.size)
+        advantage_mean: float = global_sum / advantages_array.size + 1e-8
+        global_sum_squared: float = numpy.sum((advantages_array - advantage_mean) ** 2) + 1e-8
+        advantage_std: float = numpy.sqrt(global_sum_squared / advantages_array.size) + 1e-8
         # Adjust advantages according to the trick
         advantages_array = ((advantages_array - advantage_mean) / advantage_std)
         # Save the necessary values as numpy arrays before reset
