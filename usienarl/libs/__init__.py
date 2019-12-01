@@ -11,3 +11,4 @@
 # Import scripts
 
 from .sumtree import SumTree
+from .common import softmax
