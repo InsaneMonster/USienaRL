@@ -260,30 +260,138 @@ class VanillaPolicyGradient(Model):
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
         :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: the action predicted by the model
+        :return: the action predicted by the model, with the value estimated at the current state and the relative log-likelihood of the sampled action
         """
         # If there is no mask and the action space type is discrete generate a full pass-through mask
         if mask is None and self._agent_action_space_type == SpaceType.discrete:
             mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Return a random action sample given the current state and depending on the observation space type and also compute value estimate
+        # Return a random action sample given the current state and depending on the observation space type and also compute value estimate and log-likelihood
         if self._observation_space_type == SpaceType.discrete:
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             if self._agent_action_space_type == SpaceType.discrete:
-                action, value = session.run([self._actions, self._value],
-                                            feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
+                                                            feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
             else:
-                action, value = session.run([self._actions, self._value],
-                                            feed_dict={self._inputs: [observation_current_one_hot]})
+                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
+                                                            feed_dict={self._inputs: [observation_current_one_hot]})
         else:
             if self._agent_action_space_type == SpaceType.discrete:
-                action, value = session.run([self._actions, self._value],
-                                            feed_dict={self._inputs: [observation_current], self._mask: [mask]})
+                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
+                                                            feed_dict={self._inputs: [observation_current], self._mask: [mask]})
             else:
-                action, value = session.run([self._actions, self._value],
-                                            feed_dict={self._inputs: [observation_current]})
-        # Return the predicted action and the estimated value
-        return action[0], value[0]
+                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
+                                                            feed_dict={self._inputs: [observation_current]})
+        # Return the predicted action, the estimated value and the log-likelihood
+        return action[0], value[0], log_likelihood[0]
+
+    def get_value_and_log_likelihood(self,
+                                     action,
+                                     session,
+                                     observation_current,
+                                     mask: numpy.ndarray = None):
+        """
+        Get the estimated value of the given current observation and the log-likelihood of the given action.
+
+        :param session: the session of tensorflow currently running
+        :param action: the action of which to compute the log-likelihood
+        :param observation_current: the current observation of the agent in the environment to estimate the value
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :return: the value estimated at the current state and the log-likelihood of the given action
+        """
+        # If there is no mask and the action space type is discrete generate a full pass-through mask
+        if mask is None and self._agent_action_space_type == SpaceType.discrete:
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
+        # Return the estimated value of the given current state and the log-likelihood of the given action
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            if self._agent_action_space_type == SpaceType.discrete:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    feed_dict={self._inputs: [observation_current_one_hot],
+                                                               self._mask: [mask],
+                                                               self._targets: [action]})
+            else:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    feed_dict={self._inputs: [observation_current_one_hot],
+                                                               self._targets: [action]})
+        else:
+            if self._agent_action_space_type == SpaceType.discrete:
+                 value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                     feed_dict={self._inputs: [observation_current],
+                                                                self._mask: [mask],
+                                                                self._targets: [action]})
+            else:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    eed_dict={self._inputs: [observation_current],
+                                                              self._targets: [action]})
+        # Return the estimated value and the log-likelihood
+        return value[0], log_likelihood[0]
+
+    def get_value(self,
+                  session,
+                  observation_current):
+        """
+        Get the estimated value of the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to estimate the value
+        :return: the value estimated at the current state
+        """
+        # Return the value predicted by the network at the current state
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            value = session.run(self._value,
+                                eed_dict={self._inputs: [observation_current_one_hot]})
+        else:
+            value = session.run(self._value,
+                                feed_dict={self._inputs: [observation_current]})
+        # Return the estimated value
+        return value[0]
+
+    def get_log_likelihood(self,
+                           session,
+                           action,
+                           observation_current,
+                           mask: numpy.ndarray = None):
+        """
+        Get the the log-likelihood of the given action.
+
+        :param session: the session of tensorflow currently running
+        :param action: the action of which to compute the log-likelihood
+        :param observation_current: the current observation of the agent in the environment
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :return: the log-likelihood of the given action
+        """
+        # If there is no mask and the action space type is discrete generate a full pass-through mask
+        if mask is None and self._agent_action_space_type == SpaceType.discrete:
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
+        # Return log likelihood over the given action with the given current observation and the given mask
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            if self._agent_action_space_type == SpaceType.discrete:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current_one_hot],
+                                                        self._mask: [mask],
+                                                        self._targets: [action]})
+            else:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current_one_hot],
+                                                        self._targets: [action]})
+        else:
+            if self._agent_action_space_type == SpaceType.discrete:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current],
+                                                        self._mask: [mask],
+                                                        self._targets: [action]})
+            else:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current],
+                                                        self._targets: [action]})
+        # Return the log-likelihood
+        return log_likelihood[0]
 
     def get_action_probabilities(self,
                                  session,
