@@ -15,51 +15,50 @@ import numpy
 
 # Import usienarl
 
-from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
-from usienarl.td_models import DoubleDeepQLearning
+from usienarl import Agent, Interface, SpaceType
+from usienarl.td_models import TabularQLearning
+from usienarl.utils import softmax
 
 
-class DoubleDeepQLearningAgent(Agent):
+class TabularQLearningAgentBoltzmann(Agent):
     """
-    Double Deep Q-Learning agent.
-
-    It is supplied with a Double Deep Q-Learning model (DDQN) and an exploration policy.
-
-    The weight copy step interval defines after how many steps per interval the target network weights should be
-    updated with the main network weights.
+    Tabular Q-Learning agent with Boltzmann sampling exploration policy.
+    It is supplied with a Tabular Q-Learning model and an exploration policy.
 
     The batch size define how many steps from the prioritized experience replay built-in buffer should be fed into
     the model when updating. The agent uses a 1-step temporal difference algorithm, i.e. it is updated at every step.
+
+    During training, agent samples according to the value of the temperature. Such temperatures decays at every
+    completed episode of its decay value, while remaining bounded by its defined max and min values.
     """
 
     def __init__(self,
                  name: str,
-                 model: DoubleDeepQLearning,
-                 exploration_policy: ExplorationPolicy,
-                 weight_copy_step_interval: int,
-                 batch_size: int = 1):
-        # Define tabular agent attributes
-        self._model: DoubleDeepQLearning = model
-        self._exploration_policy: ExplorationPolicy = exploration_policy
+                 model: TabularQLearning,
+                 batch_size: int = 1,
+                 temperature_max: float = 1.0, temperature_min: float = 0.001,
+                 temperature_decay: float = 0.001):
+        # Define agent attributes
+        self._model: TabularQLearning = model
+        self._temperature_max: float = temperature_max
+        self._temperature_min: float = temperature_min
+        self._temperature_decay: float = temperature_decay
         # Define internal agent attributes
-        self._weight_copy_step_interval: int = weight_copy_step_interval
         self._batch_size: int = batch_size
         self._current_absolute_errors = None
         self._current_loss = None
+        self._temperature: float = None
         # Generate base agent
-        super(DoubleDeepQLearningAgent, self).__init__(name)
+        super(TabularQLearningAgentBoltzmann, self).__init__(name)
 
     def _generate(self,
                   logger: logging.Logger,
                   observation_space_type: SpaceType, observation_space_shape,
                   agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
-        # Generate the exploration policy and check if it's successful, stop if not successful
-        if self._exploration_policy.generate(logger, agent_action_space_type, agent_action_space_shape):
-            # Generate the _model and return a flag stating if generation was successful
-            return self._model.generate(logger, self._scope + "/" + self._name,
-                                        observation_space_type, observation_space_shape,
-                                        agent_action_space_type, agent_action_space_shape)
-        return False
+        # Generate the model and return a flag stating if generation was successful
+        return self._model.generate(logger, self._scope + "/" + self._name,
+                                    observation_space_type, observation_space_shape,
+                                    agent_action_space_type, agent_action_space_shape)
 
     def initialize(self,
                    logger: logging.Logger,
@@ -69,10 +68,8 @@ class DoubleDeepQLearningAgent(Agent):
         self._current_loss = None
         # Initialize the model
         self._model.initialize(logger, session)
-        # Initialize the exploration policy
-        self._exploration_policy.initialize(logger, session)
-        # Run the weight copy operation to uniform main and target networks
-        self._model.copy_weight(session)
+        # Reset temperature to its starting value (the max)
+        self._temperature = self._temperature_max
 
     def act_warmup(self,
                    logger: logging.Logger,
@@ -89,12 +86,12 @@ class DoubleDeepQLearningAgent(Agent):
                   session,
                   interface: Interface,
                   agent_observation_current):
-        # Get all actions and the best action predicted by the model
-        best_action, all_actions = self._model.get_best_action_and_all_action_values(session, agent_observation_current)
-        # Act according to the exploration policy
-        action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
-        # Return the exploration action
-        return action
+        # Act according to boltzmann approach: get the softmax over all the actions predicted by the model
+        output = softmax(self._model.get_all_action_values(session, agent_observation_current) / self._temperature)
+        # Get a random action value (random output) using the softmax as probability distribution
+        action_value = numpy.random.choice(output[0], p=output[0])
+        # Return the chosen action as the index of such chosen action value
+        return numpy.argmax(output[0] == action_value)
 
     def act_inference(self,
                       logger: logging.Logger,
@@ -115,7 +112,7 @@ class DoubleDeepQLearningAgent(Agent):
                              agent_observation_next,
                              warmup_step_current: int,
                              warmup_episode_current: int,
-                             warmup_episode_volley: int):
+                             warmup_steps_volley: int):
         # Adjust the next observation if None (final step)
         last_step: bool = False
         if agent_observation_next is None:
@@ -146,9 +143,6 @@ class DoubleDeepQLearningAgent(Agent):
                 agent_observation_next = 0
             else:
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
-        # After each weight step interval update the target network weights with the main network weights
-        if train_step_absolute % self._weight_copy_step_interval == 0:
-            self._model.copy_weight(session)
         # Save the current step in the buffer
         self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, last_step)
         # Update the model and save current loss and absolute errors
@@ -178,7 +172,7 @@ class DoubleDeepQLearningAgent(Agent):
                                 last_step_reward: float,
                                 episode_total_reward: float,
                                 warmup_episode_current: int,
-                                warmup_episode_volley: int):
+                                warmup_steps_volley: int):
         pass
 
     def complete_episode_train(self,
@@ -190,8 +184,8 @@ class DoubleDeepQLearningAgent(Agent):
                                train_step_absolute: int,
                                train_episode_current: int, train_episode_absolute: int,
                                train_episode_volley: int, train_episode_total: int):
-        # Update the exploration policy
-        self._exploration_policy.update(logger, session)
+        # Decrease temperature rate by its decay value
+        self._temperature = max(self._temperature_min, self._temperature - self._temperature_decay)
 
     def complete_episode_inference(self,
                                    logger: logging.Logger,
@@ -209,6 +203,6 @@ class DoubleDeepQLearningAgent(Agent):
         return self._model.trainable_variables
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         # Return the amount of warmup episodes required by the model
-        return self._model.warmup_episodes
+        return self._model.warmup_steps

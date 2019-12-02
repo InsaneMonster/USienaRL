@@ -125,23 +125,32 @@ class Experiment:
 
     def _warmup(self,
                 logger: logging.Logger,
-                episodes: int, episode_length: int,
+                steps: int, episode_length: int,
                 session,
                 render: bool = False):
         """
-        Execute a volley of warm-up of the agent on the environment.
+        Execute a volley of warm-up of the agent on the environment. This volley is measured in steps and it is usually
+        run for how many steps are required by the model.
 
         :param logger: the logger used to print the experiment information, warnings and errors
-        :param episodes: the number of episodes in which to run the agent in warm-up mode
+        :param steps: the number of steps for which to run the agent in warm-up mode
+        :param episode_length: the max length in steps of each episode
         :param session: the session of tensorflow currently running
         :param render: boolean parameter deciding whether or not to render during warm-up
         """
-        for episode in range(episodes):
+        episode: int = 0
+        warmup_step: int = 0
+        while True:
+            if warmup_step > steps:
+                break
             # Start the episode
+            episode = episode + 1
             episode_rewards: [] = []
             state_current = self._environment.reset(logger, session)
             # Execute actions until the episode is completed or the maximum length is exceeded
             for step in range(episode_length):
+                # Increase counter
+                warmup_step = warmup_step + 1
                 # Get the action decided by the agent with train policy
                 observation_current = self._interface.environment_state_to_observation(logger, session, state_current)
                 agent_action = self._agent.act_warmup(logger, session, self._interface, observation_current)
@@ -155,7 +164,7 @@ class Experiment:
                     observation_next = None
                 self._agent.complete_step_warmup(logger, session, self._interface,
                                                  observation_current, agent_action, reward, observation_next,
-                                                 step, episode, episodes)
+                                                 step, episode, steps)
                 # Render if required
                 if render:
                     self._environment.render(logger, session)
@@ -166,12 +175,10 @@ class Experiment:
                 # Check if the episode is completed
                 if episode_done:
                     break
-            # Compute total and average reward over the steps in the episode
-            # episode_total_reward: float = numpy.sum(numpy.array(episode_rewards))
             # Complete the episode and send back information to the agent
             self._agent.complete_episode_warmup(logger, session, self._interface,
                                                 episode_rewards[-1], numpy.sum(numpy.array(episode_rewards)),
-                                                episode, episodes)
+                                                episode, steps)
 
     def _train(self,
                logger: logging.Logger,
@@ -183,6 +190,8 @@ class Experiment:
 
         :param logger: the logger used to print the experiment information, warnings and errors
         :param episodes: the number of episodes in which to run the agent in train mode
+        :param episode_length: the max length in steps of each episode
+        :param episodes_max: the max number of allowed training episodes
         :param session: the session of tensorflow currently running
         :param render: boolean parameter deciding whether or not to render during training
         :return: the list of rewards obtained in the volley, grouped by episode
@@ -246,6 +255,7 @@ class Experiment:
 
         :param logger: the logger used to print the experiment information, warnings and errors
         :param episodes: the number of episodes in which to run the agent in inference mode
+        :param episode_length: the max length in steps of each episode
         :param session: the session of tensorflow currently running
         :param render: boolean parameter deciding whether or not to render during inference
         :return: the list of rewards obtained in the volley, grouped by episode
@@ -360,10 +370,10 @@ class Experiment:
                 else:
                     logger.error("Checkpoint path specified is wrong: no model can be accessed at " + checkpoint_path)
             # Execute pre-training if the agent requires pre-training
-            if self._agent.warmup_episodes > 0:
-                logger.info("Warming-up for " + str(self._agent.warmup_episodes) + " episodes...")
+            if self._agent.warmup_steps > 0:
+                logger.info("Warming-up for " + str(self._agent.warmup_steps) + " episodes...")
                 self._warmup(logger,
-                             self._agent.warmup_episodes,
+                             self._agent.warmup_steps,
                              episode_length_max,
                              session)
             # Save last volley average training and validation total and scaled rewards

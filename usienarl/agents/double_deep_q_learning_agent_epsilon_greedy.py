@@ -12,49 +12,62 @@
 
 import logging
 import numpy
+import random
 
 # Import usienarl
 
-from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
-from usienarl.td_models import TabularQLearning
+from usienarl import Agent, Interface, SpaceType
+from usienarl.td_models import DoubleDeepQLearning
 
 
-class TabularQLearningAgent(Agent):
+class DoubleDeepQLearningAgentEpsilonGreedy(Agent):
     """
-    Tabular Q-Learning agent.
+    Double Deep Q-Learning agent with epsilon greedy exploration policy.
+    It is supplied with a Double Deep Q-Learning model (DDQN).
 
-    It is supplied with a Tabular Q-Learning model and an exploration policy.
+    The weight copy step interval defines after how many steps per interval the target network weights should be
+    updated with the main network weights.
 
     The batch size define how many steps from the prioritized experience replay built-in buffer should be fed into
     the model when updating. The agent uses a 1-step temporal difference algorithm, i.e. it is updated at every step.
+
+    During training, agent will chose a random action with probability epsilon. Such probability is called exploration
+    rate and decays at every completed episode of its decay value, while remaining bounded by its defined max and min
+    values.
+
+    Note: default model is suited for simple environment without complex dynamics (for example, without an action mask).
+    It is advised to implement a custom model for research task using default ones as templates.
     """
 
     def __init__(self,
                  name: str,
-                 model: TabularQLearning,
-                 exploration_policy: ExplorationPolicy,
-                 batch_size: int = 1):
-        # Define tabular agent attributes
-        self._model: TabularQLearning = model
-        self._exploration_policy: ExplorationPolicy = exploration_policy
+                 model: DoubleDeepQLearning,
+                 weight_copy_step_interval: int,
+                 batch_size: int = 1,
+                 exploration_rate_max: float = 1.0, exploration_rate_min: float = 0.001,
+                 exploration_rate_decay: float = 0.001):
+        # Define agent attributes
+        self._model: DoubleDeepQLearning = model
+        self._exploration_rate_max: float = exploration_rate_max
+        self._exploration_rate_min: float = exploration_rate_min
+        self._exploration_rate_decay: float = exploration_rate_decay
         # Define internal agent attributes
+        self._weight_copy_step_interval: int = weight_copy_step_interval
         self._batch_size: int = batch_size
         self._current_absolute_errors = None
         self._current_loss = None
+        self._exploration_rate: float = None
         # Generate base agent
-        super(TabularQLearningAgent, self).__init__(name)
+        super(DoubleDeepQLearningAgentEpsilonGreedy, self).__init__(name)
 
     def _generate(self,
                   logger: logging.Logger,
                   observation_space_type: SpaceType, observation_space_shape,
                   agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
-        # Generate the exploration policy and check if it's successful, stop if not successful
-        if self._exploration_policy.generate(logger, agent_action_space_type, agent_action_space_shape):
-            # Generate the _model and return a flag stating if generation was successful
-            return self._model.generate(logger, self._scope + "/" + self._name,
-                                        observation_space_type, observation_space_shape,
-                                        agent_action_space_type, agent_action_space_shape)
-        return False
+        # Generate the model and return a flag stating if generation was successful
+        return self._model.generate(logger, self._scope + "/" + self._name,
+                                    observation_space_type, observation_space_shape,
+                                    agent_action_space_type, agent_action_space_shape)
 
     def initialize(self,
                    logger: logging.Logger,
@@ -64,8 +77,10 @@ class TabularQLearningAgent(Agent):
         self._current_loss = None
         # Initialize the model
         self._model.initialize(logger, session)
-        # Initialize the exploration policy
-        self._exploration_policy.initialize(logger, session)
+        # Reset exploration rate to its starting value (the max)
+        self._exploration_rate = self._exploration_rate_max
+        # Run the weight copy operation to uniform main and target networks
+        self._model.copy_weight(session)
 
     def act_warmup(self,
                    logger: logging.Logger,
@@ -82,10 +97,11 @@ class TabularQLearningAgent(Agent):
                   session,
                   interface: Interface,
                   agent_observation_current):
-        # Get all actions and the best action predicted by the model
-        best_action, all_actions = self._model.get_best_action_and_all_action_values(session, agent_observation_current)
-        # Act according to the exploration policy
-        action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
+        # Choose an action according to the epsilon greedy approach: best action predicted by the model or random action
+        if self._exploration_rate > 0 and random.uniform(0, 1.0) < self._exploration_rate:
+            action = interface.get_random_agent_action(logger, session)
+        else:
+            action = self._model.get_best_action(session, agent_observation_current)
         # Return the exploration action
         return action
 
@@ -108,7 +124,7 @@ class TabularQLearningAgent(Agent):
                              agent_observation_next,
                              warmup_step_current: int,
                              warmup_episode_current: int,
-                             warmup_episode_volley: int):
+                             warmup_steps_volley: int):
         # Adjust the next observation if None (final step)
         last_step: bool = False
         if agent_observation_next is None:
@@ -139,6 +155,9 @@ class TabularQLearningAgent(Agent):
                 agent_observation_next = 0
             else:
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
+        # After each weight step interval update the target network weights with the main network weights
+        if train_step_absolute % self._weight_copy_step_interval == 0:
+            self._model.copy_weight(session)
         # Save the current step in the buffer
         self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, last_step)
         # Update the model and save current loss and absolute errors
@@ -168,7 +187,7 @@ class TabularQLearningAgent(Agent):
                                 last_step_reward: float,
                                 episode_total_reward: float,
                                 warmup_episode_current: int,
-                                warmup_episode_volley: int):
+                                warmup_steps_volley: int):
         pass
 
     def complete_episode_train(self,
@@ -180,8 +199,8 @@ class TabularQLearningAgent(Agent):
                                train_step_absolute: int,
                                train_episode_current: int, train_episode_absolute: int,
                                train_episode_volley: int, train_episode_total: int):
-        # Update the exploration policy
-        self._exploration_policy.update(logger, session)
+        # Decrease the exploration rate by its decay value
+        self._exploration_rate = max(self._exploration_rate_min, self._exploration_rate - self._exploration_rate_decay)
 
     def complete_episode_inference(self,
                                    logger: logging.Logger,
@@ -199,6 +218,6 @@ class TabularQLearningAgent(Agent):
         return self._model.trainable_variables
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         # Return the amount of warmup episodes required by the model
-        return self._model.warmup_episodes
+        return self._model.warmup_steps

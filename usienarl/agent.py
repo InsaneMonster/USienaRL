@@ -174,7 +174,7 @@ class Agent:
                              agent_observation_next,
                              warmup_step_current: int,
                              warmup_episode_current: int,
-                             warmup_episode_volley: int):
+                             warmup_steps_volley: int):
         """
         Complete a warmup step with the given values.
 
@@ -187,7 +187,7 @@ class Agent:
         :param agent_observation_next: the next observation of the agent
         :param warmup_step_current: the current warmup step in the current episode
         :param warmup_episode_current: the current warmup episode
-        :param warmup_episode_volley: the number of warmup episodes in the volley
+        :param warmup_steps_volley: the number of warmup steps in the volley
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -258,7 +258,7 @@ class Agent:
                                 last_step_reward: float,
                                 episode_total_reward: float,
                                 warmup_episode_current: int,
-                                warmup_episode_volley: int):
+                                warmup_steps_volley: int):
         """
         Finish a _warmup episode with the given values.
 
@@ -268,7 +268,7 @@ class Agent:
         :param last_step_reward: the reward obtained in the last step in the passed episode
         :param episode_total_reward: the reward obtained in the passed episode
         :param warmup_episode_current: the current warmup episode
-        :param warmup_episode_volley: the number of warmup episodes in the volley
+        :param warmup_steps_volley: the number of warmup steps in the volley
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -333,11 +333,11 @@ class Agent:
         raise NotImplementedError()
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         """
-        Return the integer number of warm-up episodes required by the agent.
+        Return the integer number of warm-up steps required by the agent.
 
-        :return: the integer number of warm-up episodes required by the agent internal model
+        :return: the integer number of warm-up steps required by the agent internal model
         """
         # Abstract property, it should be implemented on a child class basis
         raise NotImplementedError()

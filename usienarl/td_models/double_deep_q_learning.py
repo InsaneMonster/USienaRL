@@ -7,7 +7,7 @@ import enum
 # Import required src
 
 from usienarl import Model, SpaceType, Config
-from usienarl.libs import SumTree
+from usienarl.utils import SumTree
 
 
 class Buffer:
@@ -396,7 +396,7 @@ class DoubleDeepQLearning(Model):
         return summary, loss, absolute_error
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         return self._buffer_capacity
 
     @property

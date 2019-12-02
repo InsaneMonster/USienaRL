@@ -15,51 +15,60 @@ import numpy
 
 # Import usienarl
 
-from usienarl import Agent, ExplorationPolicy, Interface, SpaceType
-from usienarl.td_models import DeepExpectedSARSA
+from usienarl import Agent, Interface, SpaceType
+from usienarl.td_models import DuelingDeepQLearning
+from usienarl.utils import softmax
 
 
-class DeepExpectedSARSAAgent(Agent):
+class DuelingDeepQLearningAgentDirichlet(Agent):
     """
-    Deep Expected SARSA agent.
-
-    It is supplied with a Deep Expected SARSA model and an exploration policy.
+    Dueling Double Deep Q-Learning agent with Dirichlet sampling exploration policy.
+    It is supplied with a Dueling Double Deep Q-Learning model (DDDQN).
 
     The weight copy step interval defines after how many steps per interval the target network weights should be
     updated with the main network weights.
 
     The batch size define how many steps from the prioritized experience replay built-in buffer should be fed into
     the model when updating. The agent uses a 1-step temporal difference algorithm, i.e. it is updated at every step.
+
+    During training, agent samples from the probability distribution of its computed values and the dirichlet probability
+    distribution with given alpha, according to a trade-off parameter which is updated at the end of each episode.
+
+    Note: default model is suited for simple environment without complex dynamics (for example, without an action mask).
+    It is advised to implement a custom model for research task using default ones as templates.
     """
 
     def __init__(self,
                  name: str,
-                 model: DeepExpectedSARSA,
-                 exploration_policy: ExplorationPolicy,
+                 model: DuelingDeepQLearning,
                  weight_copy_step_interval: int,
-                 batch_size: int = 1):
-        # Define tabular agent attributes
-        self._model: DeepExpectedSARSA = model
-        self._exploration_policy: ExplorationPolicy = exploration_policy
+                 batch_size: int = 1,
+                 alpha: float = 1.0,
+                 dirichlet_trade_off_min: float = 0.5, dirichlet_trade_off_max: float = 1.0,
+                 dirichlet_trade_off_update: float = 0.001):
+        # Define agent attributes
+        self._model: DuelingDeepQLearning = model
+        self._alpha: float = alpha
+        self._dirichlet_trade_off_min: float = dirichlet_trade_off_min
+        self._dirichlet_trade_off_max: float = dirichlet_trade_off_max
+        self._dirichlet_trade_off_update: float = dirichlet_trade_off_update
         # Define internal agent attributes
         self._weight_copy_step_interval: int = weight_copy_step_interval
         self._batch_size: int = batch_size
         self._current_absolute_errors = None
         self._current_loss = None
+        self._dirichlet_trade_off: float = None
         # Generate base agent
-        super(DeepExpectedSARSAAgent, self).__init__(name)
+        super(DuelingDeepQLearningAgentDirichlet, self).__init__(name)
 
     def _generate(self,
                   logger: logging.Logger,
                   observation_space_type: SpaceType, observation_space_shape,
                   agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
-        # Generate the exploration policy and check if it's successful, stop if not successful
-        if self._exploration_policy.generate(logger, agent_action_space_type, agent_action_space_shape):
-            # Generate the _model and return a flag stating if generation was successful
-            return self._model.generate(logger, self._scope + "/" + self._name,
-                                        observation_space_type, observation_space_shape,
-                                        agent_action_space_type, agent_action_space_shape)
-        return False
+        # Generate the model and return a flag stating if generation was successful
+        return self._model.generate(logger, self._scope + "/" + self._name,
+                                    observation_space_type, observation_space_shape,
+                                    agent_action_space_type, agent_action_space_shape)
 
     def initialize(self,
                    logger: logging.Logger,
@@ -69,8 +78,8 @@ class DeepExpectedSARSAAgent(Agent):
         self._current_loss = None
         # Initialize the model
         self._model.initialize(logger, session)
-        # Initialize the exploration policy
-        self._exploration_policy.initialize(logger, session)
+        # Reset trade-off to its starting value (the min)
+        self._dirichlet_trade_off = self._dirichlet_trade_off_min
         # Run the weight copy operation to uniform main and target networks
         self._model.copy_weight(session)
 
@@ -89,12 +98,17 @@ class DeepExpectedSARSAAgent(Agent):
                   session,
                   interface: Interface,
                   agent_observation_current):
-        # Get all actions and the best action predicted by the model
-        best_action, all_actions = self._model.get_best_action_and_all_action_values(session, agent_observation_current)
-        # Act according to the exploration policy
-        action = self._exploration_policy.act(logger, session, interface, all_actions, best_action)
-        # Return the exploration action
-        return action
+        # Act according to dirichlet approach: first get the softmax over all the actions predicted by the model
+        prior_probabilities = softmax(self._model.get_all_action_values(session, agent_observation_current))
+        # Then generate a dirichlet distribution (d) with parameter alpha
+        dirichlet_probabilities = numpy.random.dirichlet(self._alpha, prior_probabilities.size)
+        # Get a random action value (random output) using x * p + (1 - x) * d as probability distribution where x is the trade-off
+        output = self._dirichlet_trade_off * prior_probabilities + (1 - self._dirichlet_trade_off) * dirichlet_probabilities
+        # Make sure output sums up to 1.0
+        output = output / output.sum()
+        action_value = numpy.random.choice(output, p=output)
+        # Return the chosen action as the index of such chosen action value
+        return numpy.argmax(output == action_value)
 
     def act_inference(self,
                       logger: logging.Logger,
@@ -115,7 +129,7 @@ class DeepExpectedSARSAAgent(Agent):
                              agent_observation_next,
                              warmup_step_current: int,
                              warmup_episode_current: int,
-                             warmup_episode_volley: int):
+                             warmup_steps_volley: int):
         # Adjust the next observation if None (final step)
         last_step: bool = False
         if agent_observation_next is None:
@@ -178,7 +192,7 @@ class DeepExpectedSARSAAgent(Agent):
                                 last_step_reward: float,
                                 episode_total_reward: float,
                                 warmup_episode_current: int,
-                                warmup_episode_volley: int):
+                                warmup_steps_volley: int):
         pass
 
     def complete_episode_train(self,
@@ -190,8 +204,8 @@ class DeepExpectedSARSAAgent(Agent):
                                train_step_absolute: int,
                                train_episode_current: int, train_episode_absolute: int,
                                train_episode_volley: int, train_episode_total: int):
-        # Update the exploration policy
-        self._exploration_policy.update(logger, session)
+        # Increase trade-off by its update value
+        self._dirichlet_trade_off = min(self._dirichlet_trade_off_max, self._dirichlet_trade_off + self._dirichlet_trade_off_update)
 
     def complete_episode_inference(self,
                                    logger: logging.Logger,
@@ -209,6 +223,6 @@ class DeepExpectedSARSAAgent(Agent):
         return self._model.trainable_variables
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         # Return the amount of warmup episodes required by the model
-        return self._model.warmup_episodes
+        return self._model.warmup_steps
