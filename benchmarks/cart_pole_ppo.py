@@ -18,17 +18,15 @@ import os
 
 from usienarl import Config, LayerType, run_experiment, command_line_parse
 from usienarl.po_models import ProximalPolicyOptimization
-from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy
+from usienarl.agents.ppo_agent import PPOAgent
 
 # Import required src
 # Require error handling to support both deployment and pycharm versions
 
 try:
-    from src.ppo_agent import PPOAgent
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from benchmarks.src.ppo_agent import PPOAgent
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
@@ -55,20 +53,15 @@ def _define_ppo_model(config: Config) -> ProximalPolicyOptimization:
                                       target_kl_divergence)
 
 
-def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolicy:
-    # Define attributes
-    exploration_rate_max: float = 1.0
-    exploration_rate_min: float = 0.001
-    exploration_rate_decay: float = 0.0001
-    # Return the explorer
-    return EpsilonGreedyExplorationPolicy(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
-
-
-def _define_epsilon_greedy_agent(model: ProximalPolicyOptimization, exploration_policy: EpsilonGreedyExplorationPolicy = None) -> PPOAgent:
+def _define_agent(model: ProximalPolicyOptimization) -> PPOAgent:
     # Define attributes
     updates_per_training_volley: int = 10
+    alpha: float = 1.0
+    dirichlet_trade_off_min: float = 0.5
+    dirichlet_trade_off_max: float = 1.0
+    dirichlet_trade_off_update: float = 0.001
     # Return the agent
-    return PPOAgent("ppo_egreedy_agent" if exploration_policy is not None else "ppo_agent", model, updates_per_training_volley, exploration_policy)
+    return PPOAgent("ppo_agent", model, updates_per_training_volley, alpha, dirichlet_trade_off_min, dirichlet_trade_off_max, dirichlet_trade_off_update)
 
 
 if __name__ == "__main__":
@@ -92,16 +85,10 @@ if __name__ == "__main__":
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
     # Define model
     inner_model: ProximalPolicyOptimization = _define_ppo_model(nn_config)
-    # Define exploration_policies
-    epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_exploration_policy()
-    # Define agents
-    vpg_agent: PPOAgent = _define_epsilon_greedy_agent(inner_model)
-    vpg_epsilon_greedy_agent: PPOAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
+    # Define agent
+    ppo_agent: PPOAgent = _define_agent(inner_model)
     # Define experiments
-    experiment: BenchmarkExperiment = BenchmarkExperiment("experiment", success_threshold, environment,
-                                                          vpg_agent)
-    experiment_egreedy: BenchmarkExperiment = BenchmarkExperiment("eg_experiment", success_threshold, environment,
-                                                                  vpg_epsilon_greedy_agent)
+    experiment: BenchmarkExperiment = BenchmarkExperiment("experiment", success_threshold, environment, ppo_agent)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
@@ -109,7 +96,7 @@ if __name__ == "__main__":
     validation_episodes: int = 100
     max_training_episodes: int = 100000
     episode_length_max: int = 100000
-    # Run experiment without exploration policy
+    # Run experiment
     run_experiment(experiment,
                    training_episodes,
                    max_training_episodes, episode_length_max,
@@ -118,14 +105,3 @@ if __name__ == "__main__":
                    render_during_training, render_during_validation, render_during_test,
                    workspace_path, __file__,
                    logger, None, experiment_iterations_number)
-    # Run experiment with exploration policy
-    run_experiment(experiment_egreedy,
-                   training_episodes,
-                   max_training_episodes, episode_length_max,
-                   validation_episodes,
-                   testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
-
-

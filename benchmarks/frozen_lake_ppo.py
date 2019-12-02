@@ -28,7 +28,7 @@ try:
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from benchmarks.src.ppo_agent import PPOAgent
+    from usienarl.agents.ppo_agent import PPOAgent
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 

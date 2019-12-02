@@ -27,7 +27,7 @@ try:
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from benchmarks.src.tabular_sarsa_agent import TabularSARSAAgent
+    from usienarl.agents.tabular_sarsa_agent_epsilon_greedy import TabularSARSAAgent
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 

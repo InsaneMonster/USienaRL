@@ -29,7 +29,7 @@ try:
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from benchmarks.src.dueling_deep_q_learning_agent import DuelingDeepQLearningAgent
+    from usienarl.agents.dueling_deep_q_learning_agent_epsilon_greedy import DuelingDeepQLearningAgent
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 

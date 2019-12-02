@@ -28,7 +28,7 @@ try:
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from benchmarks.src.double_deep_q_learning_agent import DoubleDeepQLearningAgent
+    from usienarl.agents.double_deep_q_learning_agent_epsilon_greedy import DoubleDeepQLearningAgent
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
