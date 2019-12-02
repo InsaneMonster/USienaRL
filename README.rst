@@ -18,7 +18,7 @@ work should be done by yourself.
 
 *Included in package:*
 
-- Model, Agent, Environment, Experiment, Exploration Policy abstract classes with their interrelationships hidden inside the implementation
+- Model, Agent, Environment, Experiment abstract classes with their interrelationships hidden inside the implementation
 - Customizable experiments in which, besides the default metrics, additional metrics can be used to validate or pass the experiment:
     - Metrics of experiments are always related to rewards obtained (per-step or per-episode) and training episodes (usually the minimum the better)
 - Utility functions to run the same experiment in multiple equal iterations with automated folder setup and organization, registering the following metrics:
@@ -36,21 +36,28 @@ work should be done by yourself.
     - Deep Temporal Difference Q-Learning (DQN), SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
     - Double Deep Temporal Difference Q-Learning (DDQN) with Prioritized Experience Replay memory buffer
     - Dueling Temporal Difference Q-Learning (DDDQN) with Prioritized Experience Replay memory buffer
-    - Vanilla Policy Gradient (VPG) with General Advantage Estimate buffer using rewards-to-go
-    - Proximal Policy Optimization (PPO) with General Advantage Estimate buffer using rewards-to-go and early stopping
-- Many state-of-the-art exploration policies, including:
-    - Epsilon Greedy with tunable decay rate, start value and end value
-    - Boltzmann sampling with tunable temperature decay rate, start value and end value
-- Config class to define the hidden layers of all Tensorflow graphs (including the CNN), also customizable by extension
+    - Vanilla Policy Gradient (VPG) with General Advantage Estimate (GAE) buffer using rewards-to-go
+    - Proximal Policy Optimization (PPO) with General Advantage Estimate (GAE) buffer using rewards-to-go and early stopping
+- Many state-of-the-art exploration policies embedded into the default agents, including:
+    - Epsilon Greedy with tunable decay rate, start value and end value for temporal difference agents
+    - Boltzmann sampling with tunable temperature decay rate, start value and end value for temporal difference agents
+    - Dirichlet distribution with tunable alpha and x parameters for policy optimization agents acting on discrete states
+- Config class to define the hidden layers of all Tensorflow graphs (including the CNN):
+    - Customization of layer types also possible through extension of the class
 - Default Pass-Through interface class to allow communications between agents and environments
 - Additive action mask for all the algorithms supporting it (only discrete action sets):
     - The mask supports two values: -infinity (mask) and 0.0 (pass-through)
     - If not supplied, the mask is by default full pass-through
+- Default agents for all the included algorithms, including:
+    - Q-Learning both tabular and approximated by DNNs with Epsilon Greedy and Boltzmann exploration policies
+    - SARSA both tabular and approximated by DNNs with Epsilon Greedy and Boltzmann exploration policies
+    - Expected SARSA both tabular and approximated by DNNs with Epsilon Greedy and Boltzmann exploration policies
+    - Vanilla Policy Gradient and Proximal Policy Optimization with optional Dirichlet exploration policy for discrete action spaces
 
 *Not included in package:*
 
 - Extensive set of benchmarks for each algorithm in the OpenAI gym environment
-- Default agents, OpenAI gym environment and benchmark experiment classes to test the benchmarks by yourself
+- OpenAI gym environment and benchmark experiment classes to test the benchmarks by yourself
 
 For additional example of usage of this framework, take a look a these github pages:
 
@@ -110,6 +117,7 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
-- Improved Proximal Policy Optimization summary
-- Fixed Proximal Policy Optimization fatal error when advantages are almost all equals
-- Fixed Vanilla Policy Gradient fatal error when advantages are almost all equals
+- Added default agents to the package: Tabular QL, Tabular SARSA, Tabular ESARSA, DQN, DDQN, DDDQN, DSARSA, DESARSA, VPG, PPO
+- Removed exploration policies, now embedded into agents. This allows for further customization when making your own agents
+- Added Dirichlet exploration policy for discrete action space policy gradient agents
+- Some minor fix and improvements
