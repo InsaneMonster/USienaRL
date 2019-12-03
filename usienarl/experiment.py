@@ -141,16 +141,19 @@ class Experiment:
         episode: int = 0
         warmup_step: int = 0
         while True:
-            if warmup_step > steps:
-                break
             # Start the episode
             episode = episode + 1
             episode_rewards: [] = []
             state_current = self._environment.reset(logger, session)
             # Execute actions until the episode is completed or the maximum length is exceeded
             for step in range(episode_length):
-                # Increase counter
+                # Increase counter and check if we can stop warming up
                 warmup_step = warmup_step + 1
+                if warmup_step > steps:
+                    return
+                # Print current warming-up progress every once in a while (if length is not too short)
+                if steps > 100 and warmup_step % (steps // 10) == 0 and warmup_step > 0:
+                    logger.info("Warmed-up for " + str(warmup_step) + "/" + str(steps) + " steps...")
                 # Get the action decided by the agent with train policy
                 observation_current = self._interface.environment_state_to_observation(logger, session, state_current)
                 agent_action = self._agent.act_warmup(logger, session, self._interface, observation_current)
@@ -199,6 +202,9 @@ class Experiment:
         # Define a list of rewards found in the volley
         volley_rewards: [] = []
         for episode in range(episodes):
+            # Print current training progress every once in a while (if length is not too short)
+            if episodes > 100 and episode % (episodes // 10) == 0 and episode > 0:
+                logger.info("Trained for " + str(episode) + "/" + str(episodes) + " episodes...")
             # Start the episode
             episode_rewards: [] = []
             state_current = self._environment.reset(logger, session)
@@ -263,6 +269,9 @@ class Experiment:
         # Define a list of rewards found in the volley
         volley_rewards: [] = []
         for episode in range(episodes):
+            # Print current validation progress every once in a while (if length is not too short)
+            if episodes > 100 and episode % (episodes // 10) == 0 and episode > 0:
+                logger.info("Validated for " + str(episode) + "/" + str(episodes) + " episodes...")
             # Start the episode
             episode_rewards: [] = []
             state_current = self._environment.reset(logger, session)
@@ -371,7 +380,7 @@ class Experiment:
                     logger.error("Checkpoint path specified is wrong: no model can be accessed at " + checkpoint_path)
             # Execute pre-training if the agent requires pre-training
             if self._agent.warmup_steps > 0:
-                logger.info("Warming-up for " + str(self._agent.warmup_steps) + " episodes...")
+                logger.info("Warming-up for " + str(self._agent.warmup_steps) + " steps...")
                 self._warmup(logger,
                              self._agent.warmup_steps,
                              episode_length_max,
@@ -417,7 +426,7 @@ class Experiment:
                 all_training_volleys_std_total_rewards.append(last_training_volley_std_total_reward)
                 all_training_volleys_std_scaled_rewards.append(last_training_volley_std_scaled_reward)
                 # Print training results
-                logger.info("Training of " + str(training_episodes_per_volley) + " finished with following result:")
+                logger.info("Training of " + str(training_episodes_per_volley) + " episodes finished with following result:")
                 logger.info("Average total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_total_reward))
                 logger.info("Standard deviation of total reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_std_total_reward))
                 logger.info("Average scaled reward over " + str(training_episodes_per_volley) + " training episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_training_volley_average_scaled_reward))
@@ -452,7 +461,7 @@ class Experiment:
                 all_validation_volleys_std_total_rewards.append(last_validation_volley_std_total_reward)
                 all_validation_volleys_std_scaled_rewards.append(last_validation_volley_std_scaled_reward)
                 # Print validation results
-                logger.info("Training of " + str(validation_episodes_per_volley) + " finished with following result:")
+                logger.info("Validation of " + str(validation_episodes_per_volley) + " episodes finished with following result:")
                 logger.info("Average total reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_average_total_reward))
                 logger.info("Standard deviation of total reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_std_total_reward))
                 logger.info("Average scaled reward over " + str(validation_episodes_per_volley) + " validation episodes after " + str(self._trained_episodes) + " total training episodes: " + str(last_validation_volley_average_scaled_reward))
@@ -509,7 +518,7 @@ class Experiment:
                 test_std_total_rewards[test] = test_cycle_std_total_reward
                 test_std_scaled_rewards[test] = test_cycle_std_scaled_reward
                 # Print test results
-                logger.info("Testing of " + str(test_episodes_per_cycle) + " finished with following result:")
+                logger.info("Testing of " + str(test_episodes_per_cycle) + " episodes finished with following result:")
                 logger.info("Average total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_total_reward))
                 logger.info("Standard deviation of total reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_std_total_reward))
                 logger.info("Average scaled reward over " + str(test_episodes_per_cycle) + " test episodes: " + str(test_cycle_average_scaled_reward))
