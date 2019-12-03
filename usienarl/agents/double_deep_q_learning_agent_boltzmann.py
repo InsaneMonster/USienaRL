@@ -98,6 +98,8 @@ class DoubleDeepQLearningAgentBoltzmann(Agent):
                   agent_observation_current):
         # Act according to boltzmann approach: get the softmax over all the actions predicted by the model
         output = softmax(self._model.get_all_action_values(session, agent_observation_current) / self._temperature)
+        # Make sure output sums up to 1.0
+        output = output / output.sum()
         # Get a random action value (random output) using the softmax as probability distribution
         action_value = numpy.random.choice(output[0], p=output[0])
         # Return the chosen action as the index of such chosen action value
@@ -155,6 +157,7 @@ class DoubleDeepQLearningAgentBoltzmann(Agent):
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
         # After each weight step interval update the target network weights with the main network weights
         if train_step_absolute % self._weight_copy_step_interval == 0:
+            logger.info("Copying weights from main network to target network...")
             self._model.copy_weight(session)
         # Save the current step in the buffer
         self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, last_step)

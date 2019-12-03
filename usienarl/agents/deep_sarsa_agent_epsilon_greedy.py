@@ -168,6 +168,7 @@ class DeepSARSAAgentEpsilonGreedy(Agent):
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
         # After each weight step interval update the target network weights with the main network weights
         if train_step_absolute % self._weight_copy_step_interval == 0:
+            logger.info("Copying weights from main network to target network...")
             self._model.copy_weight(session)
         # Choose an action according to the epsilon greedy approach: best action predicted by the model or random action
         if self._exploration_rate > 0 and random.uniform(0, 1.0) < self._exploration_rate:

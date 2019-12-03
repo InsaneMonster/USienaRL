@@ -43,9 +43,9 @@ class DeepExpectedSARSAAgentEpsilonGreedy(Agent):
                  name: str,
                  model: DeepExpectedSARSA,
                  weight_copy_step_interval: int,
-                 exploration_rate_max: float, exploration_rate_min: float,
-                 exploration_rate_decay: float,
-                 batch_size: int = 1):
+                 batch_size: int = 1,
+                 exploration_rate_max: float = 1.0, exploration_rate_min: float = 0.001,
+                 exploration_rate_decay: float = 0.001):
         # Define agent attributes
         self._model: DeepExpectedSARSA = model
         self._exploration_rate_max: float = exploration_rate_max
@@ -157,6 +157,7 @@ class DeepExpectedSARSAAgentEpsilonGreedy(Agent):
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
         # After each weight step interval update the target network weights with the main network weights
         if train_step_absolute % self._weight_copy_step_interval == 0:
+            logger.info("Copying weights from main network to target network...")
             self._model.copy_weight(session)
         # Save the current step in the buffer
         self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, last_step)

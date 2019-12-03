@@ -88,6 +88,8 @@ class TabularExpectedSARSAAgentBoltzmann(Agent):
                   agent_observation_current):
         # Act according to boltzmann approach: get the softmax over all the actions predicted by the model
         output = softmax(self._model.get_all_action_values(session, agent_observation_current) / self._temperature)
+        # Make sure output sums up to 1.0
+        output = output / output.sum()
         # Get a random action value (random output) using the softmax as probability distribution
         action_value = numpy.random.choice(output[0], p=output[0])
         # Return the chosen action as the index of such chosen action value

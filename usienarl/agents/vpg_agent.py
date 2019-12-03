@@ -92,7 +92,7 @@ class VPGAgent(Agent):
         if self._dirichlet_trade_off >= 1.0:
             # Act according to the model best prediction (a sample from the probability distribution)
             # Note: it is still inherently exploring
-            action, self._current_value_estimate = self._model.sample_action(session, agent_observation_current)
+            action, self._current_value_estimate, _ = self._model.sample_action(session, agent_observation_current)
         else:
             # Act according to dirichlet approach: first get probability distribution over all the actions predicted by the model
             prior_probabilities = self._model.get_action_probabilities(session, agent_observation_current)
@@ -116,7 +116,7 @@ class VPGAgent(Agent):
                       interface: Interface,
                       agent_observation_current):
         # Predict the action with the model by sampling from its probability distribution
-        action, _ = self._model.sample_action(session, agent_observation_current)
+        action, _, _= self._model.sample_action(session, agent_observation_current)
         # Return the predicted action
         return action
 
