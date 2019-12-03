@@ -206,7 +206,7 @@ class VanillaPolicyGradient(Model):
                 # Define the mask placeholder
                 self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="mask")
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
-                self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="logits")
+                self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="logits")
                 # Compute the masked logits using the given mask
                 self._masked_logits = tensorflow.add(self._logits, self._mask)
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
@@ -216,11 +216,11 @@ class VanillaPolicyGradient(Model):
                 self._log_likelihood_actions, _ = self.get_categorical_log_likelihood(tensorflow.one_hot(self._actions, depth=self._agent_action_space_shape[0]), self._logits)
             else:
                 # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape
-                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="expected_value")
+                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="expected_value")
                 # Define the log standard deviation
                 self._log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
                 # Define the standard deviation
-                self._std = tensorflow.exp(log_std, name="std")
+                self._std = tensorflow.exp(self._log_std, name="std")
                 # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
                 self._actions = self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std
                 # Define the log likelihood on targets and actions according to the gaussian distribution
@@ -228,7 +228,7 @@ class VanillaPolicyGradient(Model):
                 self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, self._log_std)
             # Define the value estimator (a deep MLP)
             value_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
-            value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None)
+            value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
             # Define value by squeezing the output of the advantage stream MLP
             self._value = tensorflow.squeeze(value_stream_output, axis=1, name="value")
             # Define the rewards as an adaptable vector of floats (they are actually rewards-to-go computed with GAE)

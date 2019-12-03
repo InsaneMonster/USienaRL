@@ -213,8 +213,8 @@ class TabularExpectedSARSA(Model):
 
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define the _summary operation for this graph with loss and absolute error summaries
-            self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
+            self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss),
+                                                      tensorflow.summary.scalar("absolute_error", self._absolute_error)])
 
     def get_all_action_values(self,
                               session,
