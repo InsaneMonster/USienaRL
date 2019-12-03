@@ -161,8 +161,8 @@ class DoubleDeepQLearningAgentDirichlet(Agent):
             else:
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
         # After each weight step interval update the target network weights with the main network weights
-        if train_step_absolute % self._weight_copy_step_interval == 0:
-            logger.info("Copying weights from main network to target network...")
+        if (train_step_absolute % self._weight_copy_step_interval) == 0 and train_episode_absolute > 0:
+            logger.info("Copying weights from main network to target network at step " + str(train_step_absolute))
             self._model.copy_weight(session)
         # Save the current step in the buffer
         self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, last_step)

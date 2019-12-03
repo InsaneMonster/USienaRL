@@ -169,8 +169,8 @@ class DeepSARSAAgentBoltzmann(Agent):
             else:
                 agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
         # After each weight step interval update the target network weights with the main network weights
-        if train_step_absolute % self._weight_copy_step_interval == 0:
-            logger.info("Copying weights from main network to target network...")
+        if (train_step_absolute % self._weight_copy_step_interval) == 0 and train_episode_absolute > 0:
+            logger.info("Copying weights from main network to target network at step " + str(train_step_absolute))
             self._model.copy_weight(session)
         # Act according to boltzmann approach: get the softmax over all the actions predicted by the model
         output = softmax(self._model.get_all_action_values(session, agent_observation_current) / self._temperature)
