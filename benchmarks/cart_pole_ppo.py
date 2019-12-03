@@ -53,23 +53,25 @@ def _define_ppo_model(config: Config) -> ProximalPolicyOptimization:
                                       target_kl_divergence)
 
 
-def _define_agent(model: ProximalPolicyOptimization) -> PPOAgent:
+def _define_agent(model: ProximalPolicyOptimization, explore: bool = True) -> PPOAgent:
     # Define attributes
     updates_per_training_volley: int = 10
     alpha: float = 1.0
-    dirichlet_trade_off_min: float = 0.5
     dirichlet_trade_off_max: float = 1.0
     dirichlet_trade_off_update: float = 0.001
+    # Remove exploration by setting min dirichlet trade-off to its max
+    if explore:
+        dirichlet_trade_off_min: float = 0.5
+    else:
+        dirichlet_trade_off_min: float = dirichlet_trade_off_max
     # Return the agent
-    return PPOAgent("ppo_agent", model, updates_per_training_volley, alpha, dirichlet_trade_off_min, dirichlet_trade_off_max, dirichlet_trade_off_update)
+    return PPOAgent("ppo_agent", model, updates_per_training_volley,
+                    alpha, dirichlet_trade_off_min, dirichlet_trade_off_max, dirichlet_trade_off_update)
 
 
-if __name__ == "__main__":
-    # Parse the command line arguments
-    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
-    # Define the CUDA devices in which to run the experiment
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+def run(workspace: str,
+        experiment_iterations: int,
+        render_training: bool, render_validation: bool, render_test: bool):
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
@@ -81,14 +83,18 @@ if __name__ == "__main__":
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define Neural Network layers
     nn_config: Config = Config()
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.tanh])
+    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
+    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
     # Define model
     inner_model: ProximalPolicyOptimization = _define_ppo_model(nn_config)
-    # Define agent
-    ppo_agent: PPOAgent = _define_agent(inner_model)
+    # Define agents
+    ppo_agent_default: PPOAgent = _define_agent(inner_model, False)
+    ppo_agent_explore: PPOAgent = _define_agent(inner_model, True)
     # Define experiments
-    experiment: BenchmarkExperiment = BenchmarkExperiment("experiment", success_threshold, environment, ppo_agent)
+    experiment_default: BenchmarkExperiment = BenchmarkExperiment("experiment_default", success_threshold, environment,
+                                                                  ppo_agent_default)
+    experiment_explore: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold, environment,
+                                                                  ppo_agent_explore)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
@@ -96,12 +102,30 @@ if __name__ == "__main__":
     validation_episodes: int = 100
     max_training_episodes: int = 100000
     episode_length_max: int = 100000
-    # Run experiment
-    run_experiment(experiment,
+    # Run experiments
+    run_experiment(experiment_default,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
                    testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations)
+    run_experiment(experiment_explore,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations)
+
+
+if __name__ == "__main__":
+    # Parse the command line arguments
+    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
+    # Define the CUDA devices in which to run the experiment
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+    # Run this experiment
+    run(workspace_path, experiment_iterations_number, render_during_training, render_during_validation, render_during_test)
