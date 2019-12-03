@@ -18,24 +18,22 @@ import os
 
 from usienarl import Config, LayerType, run_experiment, command_line_parse
 from usienarl.td_models import DeepQLearning
-from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy, BoltzmannExplorationPolicy
+from usienarl.agents import DeepQLearningAgentEpsilonGreedy, DeepQLearningAgentBoltzmann, DeepQLearningAgentDirichlet
 
 # Import required src
 # Require error handling to support both deployment and pycharm versions
 
 try:
-    from src.deep_q_learning_agent import DeepQLearningAgent
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from usienarl.agents.deep_q_learning_agent_epsilon_greedy import DeepQLearningAgent
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
 
 
-def _define_dqn_model(config: Config, error_clip: bool) -> DeepQLearning:
+def _define_dqn_model(config: Config, error_clip: bool = True) -> DeepQLearning:
     # Define attributes
     learning_rate: float = 0.001
     discount_factor: float = 0.99
@@ -53,46 +51,46 @@ def _define_dqn_model(config: Config, error_clip: bool) -> DeepQLearning:
                          config, error_clip)
 
 
-def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolicy:
+def _define_epsilon_greedy_agent(model: DeepQLearning) -> DeepQLearningAgentEpsilonGreedy:
     # Define attributes
+    weight_copy_step_interval: int = 25
+    batch_size: int = 100
     exploration_rate_max: float = 1.0
     exploration_rate_min: float = 0.001
     exploration_rate_decay: float = 0.001
-    # Return the explorer
-    return EpsilonGreedyExplorationPolicy(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
+    # Return the agent
+    return DeepQLearningAgentEpsilonGreedy("dqn_agent", model, weight_copy_step_interval, batch_size,
+                                           exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
 
-def _define_boltzmann_exploration_policy() -> BoltzmannExplorationPolicy:
+def _define_boltzmann_agent(model: DeepQLearning) -> DeepQLearningAgentBoltzmann:
     # Define attributes
+    weight_copy_step_interval: int = 25
+    batch_size: int = 100
     temperature_max: float = 1.0
     temperature_min: float = 0.001
     temperature_decay: float = 0.001
-    # Return the explorer
-    return BoltzmannExplorationPolicy(temperature_max, temperature_min, temperature_decay)
+    # Return the agent
+    return DeepQLearningAgentBoltzmann("dqn_agent", model, weight_copy_step_interval, batch_size,
+                                       temperature_max, temperature_min, temperature_decay)
 
 
-def _define_epsilon_greedy_agent(model: DeepQLearning, exploration_policy: EpsilonGreedyExplorationPolicy) -> DeepQLearningAgent:
+def _define_dirichlet_agent(model: DeepQLearning) -> DeepQLearningAgentDirichlet:
     # Define attributes
     weight_copy_step_interval: int = 25
     batch_size: int = 100
+    alpha: float = 1.0
+    dirichlet_trade_off_min: float = 0.5
+    dirichlet_trade_off_max: float = 1.0
+    dirichlet_trade_off_update: float = 0.001
     # Return the agent
-    return DeepQLearningAgent("dqn_egreedy_agent", model, exploration_policy, weight_copy_step_interval, batch_size)
+    return DeepQLearningAgentDirichlet("dqn_agent", model, weight_copy_step_interval, batch_size,
+                                       alpha, dirichlet_trade_off_min, dirichlet_trade_off_max, dirichlet_trade_off_update)
 
 
-def _define_boltzmann_agent(model: DeepQLearning, exploration_policy: BoltzmannExplorationPolicy) -> DeepQLearningAgent:
-    # Define attributes
-    weight_copy_step_interval: int = 25
-    batch_size: int = 100
-    # Return the agent
-    return DeepQLearningAgent("dqn_boltzmann_agent", model, exploration_policy, weight_copy_step_interval, batch_size)
-
-
-if __name__ == "__main__":
-    # Parse the command line arguments
-    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
-    # Define the CUDA devices in which to run the experiment
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+def run(workspace: str,
+        experiment_iterations: int,
+        render_training: bool, render_validation: bool, render_test: bool):
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
@@ -104,28 +102,21 @@ if __name__ == "__main__":
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define Neural Network layers
     nn_config: Config = Config()
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu])
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu])
-    # Define models
-    inner_model_huber: DeepQLearning = _define_dqn_model(nn_config, True)
-    inner_model_mse: DeepQLearning = _define_dqn_model(nn_config, False)
-    # Define exploration_policies
-    epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_exploration_policy()
-    boltzmann_exploration_policy: BoltzmannExplorationPolicy = _define_boltzmann_exploration_policy()
+    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
+    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
+    # Define model
+    inner_model: DeepQLearning = _define_dqn_model(nn_config)
     # Define agents
-    dqn_epsilon_greedy_agent_huber: DeepQLearningAgent = _define_epsilon_greedy_agent(inner_model_huber, epsilon_greedy_exploration_policy)
-    dqn_boltzmann_agent_huber: DeepQLearningAgent = _define_boltzmann_agent(inner_model_huber, boltzmann_exploration_policy)
-    dqn_epsilon_greedy_agent_mse: DeepQLearningAgent = _define_epsilon_greedy_agent(inner_model_mse, epsilon_greedy_exploration_policy)
-    dqn_boltzmann_agent_mse: DeepQLearningAgent = _define_boltzmann_agent(inner_model_mse, boltzmann_exploration_policy)
+    dqn_agent_epsilon_greedy: DeepQLearningAgentEpsilonGreedy = _define_epsilon_greedy_agent(inner_model)
+    dqn_agent_boltzmann: DeepQLearningAgentBoltzmann = _define_boltzmann_agent(inner_model)
+    dqn_agent_dirichlet: DeepQLearningAgentDirichlet = _define_dirichlet_agent(inner_model)
     # Define experiments
-    experiment_egreedy_huber: BenchmarkExperiment = BenchmarkExperiment("eg_experiment_huber", success_threshold, environment,
-                                                                        dqn_epsilon_greedy_agent_huber)
-    experiment_boltzmann_huber: BenchmarkExperiment = BenchmarkExperiment("b_experiment_huber", success_threshold, environment,
-                                                                          dqn_boltzmann_agent_huber)
-    experiment_egreedy_mse: BenchmarkExperiment = BenchmarkExperiment("eg_experiment_mse", success_threshold, environment,
-                                                                      dqn_epsilon_greedy_agent_mse)
-    experiment_boltzmann_mse: BenchmarkExperiment = BenchmarkExperiment("b_experiment_mse", success_threshold, environment,
-                                                                        dqn_boltzmann_agent_mse)
+    experiment_epsilon_greedy: BenchmarkExperiment = BenchmarkExperiment("experiment_epsilon_greedy", success_threshold, environment,
+                                                                         dqn_agent_epsilon_greedy)
+    experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("experiment_boltzmann", success_threshold, environment,
+                                                                    dqn_agent_boltzmann)
+    experiment_dirichlet: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold, environment,
+                                                                    dqn_agent_dirichlet)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
@@ -133,37 +124,38 @@ if __name__ == "__main__":
     validation_episodes: int = 100
     max_training_episodes: int = 10000
     episode_length_max: int = 100
-    # Run epsilon greedy experiments
-    run_experiment(experiment_egreedy_huber,
+    # Run experiments
+    run_experiment(experiment_epsilon_greedy,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
                    testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
-    run_experiment(experiment_egreedy_mse,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations)
+    run_experiment(experiment_boltzmann,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
                    testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
-    # Run boltzmann experiments
-    run_experiment(experiment_boltzmann_huber,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations)
+    run_experiment(experiment_dirichlet,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
                    testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
-    run_experiment(experiment_boltzmann_mse,
-                   training_episodes,
-                   max_training_episodes, episode_length_max,
-                   validation_episodes,
-                   testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations)
+
+
+if __name__ == "__main__":
+    # Parse the command line arguments
+    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
+    # Define the CUDA devices in which to run the experiment
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+    # Run this experiment
+    run(workspace_path, experiment_iterations_number, render_during_training, render_during_validation, render_during_test)

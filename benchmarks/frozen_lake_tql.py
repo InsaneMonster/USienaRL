@@ -17,17 +17,16 @@ import os
 
 from usienarl import run_experiment, command_line_parse
 from usienarl.td_models import TabularQLearning
-from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy, BoltzmannExplorationPolicy
+from usienarl.agents import TabularQLearningAgentEpsilonGreedy, TabularQLearningAgentBoltzmann, TabularQLearningAgentDirichlet
 
 # Import required src
 # Require error handling to support both deployment and pycharm versions
 
 try:
-    from src.tabular_q_learning_agent import TabularQLearningAgent
     from src.openai_gym_environment import OpenAIGymEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from usienarl.agents.tabular_q_learning_agent_epsilon_greedy import TabularQLearningAgent
+
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
@@ -51,44 +50,44 @@ def _define_tql_model() -> TabularQLearning:
                             importance_sampling_value, importance_sampling_value_increment)
 
 
-def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolicy:
+def _define_epsilon_greedy_agent(model: TabularQLearning) -> TabularQLearningAgentEpsilonGreedy:
     # Define attributes
+    weight_copy_step_interval: int = 25
+    batch_size: int = 100
     exploration_rate_max: float = 1.0
     exploration_rate_min: float = 0.001
     exploration_rate_decay: float = 0.001
-    # Return the explorer
-    return EpsilonGreedyExplorationPolicy(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
+    # Return the agent
+    return TabularQLearningAgentEpsilonGreedy("tql_agent", model, batch_size,
+                                              exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
 
-def _define_boltzmann_exploration_policy() -> BoltzmannExplorationPolicy:
+def _define_boltzmann_agent(model: TabularQLearning) -> TabularQLearningAgentBoltzmann:
     # Define attributes
+    batch_size: int = 100
     temperature_max: float = 1.0
     temperature_min: float = 0.001
     temperature_decay: float = 0.001
-    # Return the explorer
-    return BoltzmannExplorationPolicy(temperature_max, temperature_min, temperature_decay)
+    # Return the agent
+    return TabularQLearningAgentBoltzmann("tql_agent", model, batch_size,
+                                          temperature_max, temperature_min, temperature_decay)
 
 
-def _define_epsilon_greedy_agent(model: TabularQLearning, exploration_policy: EpsilonGreedyExplorationPolicy) -> TabularQLearningAgent:
+def _define_dirichlet_agent(model: TabularQLearning) -> TabularQLearningAgentDirichlet:
     # Define attributes
     batch_size: int = 100
+    alpha: float = 1.0
+    dirichlet_trade_off_min: float = 0.5
+    dirichlet_trade_off_max: float = 1.0
+    dirichlet_trade_off_update: float = 0.001
     # Return the agent
-    return TabularQLearningAgent("tql_egreedy_agent", model, exploration_policy, batch_size)
+    return TabularQLearningAgentDirichlet("tql_agent", model,  batch_size,
+                                          alpha, dirichlet_trade_off_min, dirichlet_trade_off_max, dirichlet_trade_off_update)
 
 
-def _define_boltzmann_agent(model: TabularQLearning, exploration_policy: BoltzmannExplorationPolicy) -> TabularQLearningAgent:
-    # Define attributes
-    batch_size: int = 100
-    # Return the agent
-    return TabularQLearningAgent("tql_boltzmann_agent", model, exploration_policy, batch_size)
-
-
-if __name__ == "__main__":
-    # Parse the command line arguments
-    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
-    # Define the CUDA devices in which to run the experiment
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+def run(workspace: str,
+        experiment_iterations: int,
+        render_training: bool, render_validation: bool, render_test: bool):
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
@@ -100,17 +99,17 @@ if __name__ == "__main__":
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define model
     inner_model: TabularQLearning = _define_tql_model()
-    # Define exploration_policies
-    epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_exploration_policy()
-    boltzmann_exploration_policy: BoltzmannExplorationPolicy = _define_boltzmann_exploration_policy()
     # Define agents
-    tql_epsilon_greedy_agent: TabularQLearningAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
-    tql_boltzmann_agent: TabularQLearningAgent = _define_boltzmann_agent(inner_model, boltzmann_exploration_policy)
+    tql_agent_epsilon_greedy: TabularQLearningAgentEpsilonGreedy = _define_epsilon_greedy_agent(inner_model)
+    tql_agent_boltzmann: TabularQLearningAgentBoltzmann = _define_boltzmann_agent(inner_model)
+    tql_agent_dirichlet: TabularQLearningAgentDirichlet = _define_dirichlet_agent(inner_model)
     # Define experiments
-    experiment_egreedy: BenchmarkExperiment = BenchmarkExperiment("eg_experiment", success_threshold, environment,
-                                                                  tql_epsilon_greedy_agent)
-    experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("b_experiment", success_threshold, environment,
-                                                                    tql_boltzmann_agent)
+    experiment_epsilon_greedy: BenchmarkExperiment = BenchmarkExperiment("experiment_epsilon_greedy", success_threshold, environment,
+                                                                         tql_agent_epsilon_greedy)
+    experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("experiment_boltzmann", success_threshold, environment,
+                                                                    tql_agent_boltzmann)
+    experiment_dirichlet: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold, environment,
+                                                                    tql_agent_dirichlet)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
@@ -118,21 +117,38 @@ if __name__ == "__main__":
     validation_episodes: int = 100
     max_training_episodes: int = 10000
     episode_length_max: int = 100
-    # Run epsilon greedy experiment
-    run_experiment(experiment_egreedy,
+    # Run experiments
+    run_experiment(experiment_epsilon_greedy,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
                    testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
-    # Run boltzmann experiment
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations)
     run_experiment(experiment_boltzmann,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
                    testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations)
+    run_experiment(experiment_dirichlet,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations)
+
+
+if __name__ == "__main__":
+    # Parse the command line arguments
+    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
+    # Define the CUDA devices in which to run the experiment
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+    # Run this experiment
+    run(workspace_path, experiment_iterations_number, render_during_training, render_during_validation, render_during_test)
