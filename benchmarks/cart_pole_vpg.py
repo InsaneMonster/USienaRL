@@ -115,6 +115,9 @@ def run(workspace: str,
 
 
 if __name__ == "__main__":
+    # Remove tensorflow deprecation warnings
+    from tensorflow.python.util import deprecation
+    deprecation._PRINT_DEPRECATION_WARNINGS = False
     # Parse the command line arguments
     workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
     # Define the CUDA devices in which to run the experiment
