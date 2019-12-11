@@ -198,6 +198,8 @@ class ProximalPolicyOptimization(Model):
         self._value_stream_optimizer = None
         self._policy_stream_optimizer = None
         self._approximated_kl_divergence = None
+        self._approximated_entropy = None
+        self._clip_fraction = None
         # Generate the base model
         super(ProximalPolicyOptimization, self).__init__(name)
         # Define the types of allowed observation and action spaces
@@ -267,16 +269,21 @@ class ProximalPolicyOptimization(Model):
             self._policy_stream_loss = -tensorflow.reduce_mean(tensorflow.minimum(self._ratio * self._advantages, self._min_advantage), name="policy_loss")
             # Define the optimizer for the policy stream
             self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
-            # Define approximated KL divergence (used to early stop update)
-            self._approximated_kl_divergence = tensorflow.reduce_mean(self._previous_log_likelihoods - self._log_likelihood_targets)
+            # Define approximated KL divergence (also used to early stop), approximated entropy and clip fraction for the logger
+            self._approximated_kl_divergence = tensorflow.reduce_mean(self._previous_log_likelihoods - self._log_likelihood_targets, name="approximated_kl_divergence")
+            self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_targets, name="approximated_entropy")
+            self._clip_fraction = tensorflow.reduce_mean(tensorflow.cast(tensorflow.logical_or(self._ratio > (1 + self._clip_ratio), self._ratio < (1 - self._clip_ratio)), tensorflow.float32), name="clip_fraction")
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
 
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define the _summary operation for this graph with losses summaries
+            # Define the _summary operation for this graph with losses and approximated KL and entropy summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
-                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
+                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss),
+                                                     tensorflow.summary.scalar("approximated_kl_divergence", self._approximated_kl_divergence),
+                                                     tensorflow.summary.scalar("approximated_entropy", self._approximated_entropy),
+                                                     tensorflow.summary.scalar("clip_fraction", self._clip_fraction)])
 
     def sample_action(self,
                       session,

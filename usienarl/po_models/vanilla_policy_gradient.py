@@ -182,6 +182,7 @@ class VanillaPolicyGradient(Model):
         self._policy_stream_loss = None
         self._value_stream_optimizer = None
         self._policy_stream_optimizer = None
+        self._approximated_entropy = None
         # Generate the base model
         super(VanillaPolicyGradient, self).__init__(name)
         # Define the types of allowed observation and action spaces
@@ -244,14 +245,17 @@ class VanillaPolicyGradient(Model):
             self._policy_stream_loss = -tensorflow.reduce_mean(self._advantages * self._log_likelihood_targets, name="policy_loss")
             # Define the optimizer for the policy stream
             self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
+            # Define approximated entropy for the logger
+            self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_targets, name="approximated_entropy")
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
 
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define the _summary operation for this graph with losses summaries
+            # Define the _summary operation for this graph with losses and approximated entropy summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
-                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
+                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss),
+                                                     tensorflow.summary.scalar("approximated_entropy", self._approximated_entropy)])
 
     def sample_action(self,
                       session,
