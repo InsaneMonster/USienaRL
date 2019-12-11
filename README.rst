@@ -30,7 +30,7 @@ work should be done by yourself.
     - Mean and standard deviation of minimum training episodes over test in all experiment iterations (if more than one)
     - Experiment iteration achieving best results in each one of the metrics described above
     - Easy to use .csv file with all the results for each experiment iteration
-    - Plots of total and scaled rewards over both all training and validation episodes, saved as .png files
+    - Plots of total and scaled rewards over both all training and validation episodes, as well as std of both and average episode length, all saved as .png files
 - Many state-of-the-art algorithms already implemented in pre-defined models, including:
     - Tabular Temporal Difference Q-Learning, SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
     - Deep Temporal Difference Q-Learning (DQN), SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
@@ -117,7 +117,11 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
-- Added default agents to the package: Tabular QL, Tabular SARSA, Tabular ESARSA, DQN, DDQN, DDDQN, DSARSA, DESARSA, VPG, PPO
+- Added default agents to the package: Tabular QL, Tabular SARSA, Tabular ExpectedSARSA, DQN, DDQN, DDDQN, DSARSA, DExpectedSARSA, VPG, PPO
 - Removed exploration policies, now embedded into agents. This allows for further customization when making your own agents
-- Added Dirichlet exploration policy for discrete action space policy gradient agents
+- Added Dirichlet exploration policy to overall all agents supporting it
+- Added average episode length (measured in steps) as plot, improved plots differentiations and coloring
+- Improved Tensorboard summaries for policy optimization algorithms
+- Added progress reports over training and validation volleys with additional information
+- Default agents now come with additional information regarding what are they doing when training/updating
 - Some minor fix and improvements
