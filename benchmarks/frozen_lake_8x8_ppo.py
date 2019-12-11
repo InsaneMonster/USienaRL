@@ -75,10 +75,10 @@ def run(workspace: str,
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
-    # Cart Pole environment:
-    #       - general success threshold to consider the training and the experiment successful is 195.0 over 100 episodes according to OpenAI guidelines
-    environment_name: str = 'CartPole-v0'
-    success_threshold: float = 195.0
+    # Frozen Lake environment:
+    #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
+    environment_name: str = 'FrozenLake8x8-v0'
+    success_threshold: float = 0.78
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define Neural Network layers
@@ -98,11 +98,11 @@ def run(workspace: str,
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
-    training_episodes: int = 1000
+    training_episodes: int = 5000
     validation_episodes: int = 100
-    max_training_episodes: int = 100000
-    episode_length_max: int = 100000
-    plot_sample_density_training_episodes: int = 100
+    max_training_episodes: int = 1000000
+    episode_length_max: int = 100
+    plot_sample_density_training_episodes: int = 500
     plot_sample_density_validation_episodes: int = 10
     # Run experiments
     run_experiment(experiment_default,

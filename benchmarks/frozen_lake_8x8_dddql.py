@@ -25,26 +25,27 @@ from usienarl.agents import DuelingDeepQLearningAgentEpsilonGreedy, DuelingDeepQ
 
 try:
     from src.openai_gym_environment import OpenAIGymEnvironment
+    from src.frozen_lake_refactored_environment import FrozenLakeRefactoredEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
+    from benchmarks.src.frozen_lake_refactored_environment import FrozenLakeRefactoredEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
 
 
-def _define_dddqn_model(config: Config) -> DuelingDeepQLearning:
+def _define_dddqn_model(config: Config, error_clip: bool = True) -> DuelingDeepQLearning:
     # Define attributes
     learning_rate: float = 0.001
     discount_factor: float = 0.99
-    buffer_capacity: int = 1000
+    buffer_capacity: int = 10000
     minimum_sample_probability: float = 0.01
     random_sample_trade_off: float = 0.6
     importance_sampling_value_increment: float = 0.4
     importance_sampling_value: float = 0.001
-    error_clip: bool = False
-    # Return the model
-    return DuelingDeepQLearning("model",
+    # Return the _model
+    return DuelingDeepQLearning("model_mse" if not error_clip else "model_huber",
                                 learning_rate, discount_factor,
                                 buffer_capacity,
                                 minimum_sample_probability, random_sample_trade_off,
@@ -54,8 +55,8 @@ def _define_dddqn_model(config: Config) -> DuelingDeepQLearning:
 
 def _define_epsilon_greedy_agent(model: DuelingDeepQLearning) -> DuelingDeepQLearningAgentEpsilonGreedy:
     # Define attributes
-    weight_copy_step_interval: int = 25
-    batch_size: int = 100
+    weight_copy_step_interval: int = 50
+    batch_size: int = 150
     exploration_rate_max: float = 1.0
     exploration_rate_min: float = 0.001
     exploration_rate_decay: float = 0.001
@@ -66,8 +67,8 @@ def _define_epsilon_greedy_agent(model: DuelingDeepQLearning) -> DuelingDeepQLea
 
 def _define_boltzmann_agent(model: DuelingDeepQLearning) -> DuelingDeepQLearningAgentBoltzmann:
     # Define attributes
-    weight_copy_step_interval: int = 25
-    batch_size: int = 100
+    weight_copy_step_interval: int = 50
+    batch_size: int = 150
     temperature_max: float = 1.0
     temperature_min: float = 0.001
     temperature_decay: float = 0.001
@@ -78,8 +79,8 @@ def _define_boltzmann_agent(model: DuelingDeepQLearning) -> DuelingDeepQLearning
 
 def _define_dirichlet_agent(model: DuelingDeepQLearning) -> DuelingDeepQLearningAgentDirichlet:
     # Define attributes
-    weight_copy_step_interval: int = 25
-    batch_size: int = 100
+    weight_copy_step_interval: int = 50
+    batch_size: int = 150
     alpha: float = 1.0
     dirichlet_trade_off_min: float = 0.5
     dirichlet_trade_off_max: float = 1.0
@@ -95,16 +96,20 @@ def run(workspace: str,
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
-    # Cart Pole environment:
-    #       - general success threshold to consider the training and the experiment successful is 195.0 over 100 episodes according to OpenAI guidelines
-    environment_name: str = 'CartPole-v0'
-    success_threshold: float = 195.0
+    # Frozen Lake environment:
+    #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
+    #       - general success threshold for refactored environment is little above (slippery) the minimum number of steps required to reach the goal
+    environment_name: str = 'FrozenLake8x8-v0'
+    success_threshold: float = 0.78
+    success_threshold_refactored: float = -16
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
+    # Generate the refactored environment
+    environment_refactored: FrozenLakeRefactoredEnvironment = FrozenLakeRefactoredEnvironment(environment_name)
     # Define Neural Network layers
     nn_config: Config = Config()
-    neurons_number: int = 32
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
+    nn_config.add_hidden_layer(LayerType.dense, [64, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
     # Define model
     inner_model: DuelingDeepQLearning = _define_dddqn_model(nn_config)
@@ -119,14 +124,24 @@ def run(workspace: str,
                                                                     dddqn_agent_boltzmann)
     experiment_dirichlet: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold, environment,
                                                                     dddqn_agent_dirichlet)
+    # Define refactored experiments
+    experiment_epsilon_greedy_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_epsilon_greedy", success_threshold_refactored,
+                                                                                    environment_refactored,
+                                                                                    dddqn_agent_epsilon_greedy)
+    experiment_boltzmann_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_boltzmann", success_threshold_refactored,
+                                                                               environment_refactored,
+                                                                               dddqn_agent_boltzmann)
+    experiment_dirichlet_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold_refactored,
+                                                                               environment_refactored,
+                                                                               dddqn_agent_dirichlet)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
-    training_episodes: int = 10
+    training_episodes: int = 100
     validation_episodes: int = 100
-    max_training_episodes: int = 1000
-    episode_length_max: int = 100000
-    plot_sample_density_training_episodes: int = 1
+    max_training_episodes: int = 10000
+    episode_length_max: int = 200
+    plot_sample_density_training_episodes: int = 10
     plot_sample_density_validation_episodes: int = 10
     # Run experiments
     run_experiment(experiment_epsilon_greedy,
@@ -159,6 +174,37 @@ def run(workspace: str,
                    logger, None, experiment_iterations,
                    None,
                    plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    # Run refactored experiments
+    run_experiment(experiment_epsilon_greedy_refactored,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    run_experiment(experiment_boltzmann_refactored,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    run_experiment(experiment_dirichlet_refactored,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
 
 
 if __name__ == "__main__":
@@ -172,6 +218,4 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
     # Run this experiment
     run(workspace_path, experiment_iterations_number, render_during_training, render_during_validation, render_during_test)
-
-
 

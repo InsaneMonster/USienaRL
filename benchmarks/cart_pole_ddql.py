@@ -125,6 +125,8 @@ def run(workspace: str,
     validation_episodes: int = 100
     max_training_episodes: int = 1000
     episode_length_max: int = 100000
+    plot_sample_density_training_episodes: int = 1
+    plot_sample_density_validation_episodes: int = 10
     # Run experiments
     run_experiment(experiment_epsilon_greedy,
                    training_episodes,
@@ -133,7 +135,9 @@ def run(workspace: str,
                    testing_episodes, test_cycles,
                    render_training, render_validation, render_test,
                    workspace, __file__,
-                   logger, None, experiment_iterations)
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
     run_experiment(experiment_boltzmann,
                    training_episodes,
                    max_training_episodes, episode_length_max,
@@ -141,7 +145,9 @@ def run(workspace: str,
                    testing_episodes, test_cycles,
                    render_training, render_validation, render_test,
                    workspace, __file__,
-                   logger, None, experiment_iterations)
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
     run_experiment(experiment_dirichlet,
                    training_episodes,
                    max_training_episodes, episode_length_max,
@@ -149,7 +155,9 @@ def run(workspace: str,
                    testing_episodes, test_cycles,
                    render_training, render_validation, render_test,
                    workspace, __file__,
-                   logger, None, experiment_iterations)
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
 
 
 if __name__ == "__main__":

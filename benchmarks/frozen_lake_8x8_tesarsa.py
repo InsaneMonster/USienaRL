@@ -10,15 +10,14 @@
 
 # Import packages
 
-import tensorflow
 import logging
 import os
 
 # Import usienarl
 
-from usienarl import Config, LayerType, run_experiment, command_line_parse
-from usienarl.td_models import DoubleDeepQLearning
-from usienarl.agents import DoubleDeepQLearningAgentEpsilonGreedy, DoubleDeepQLearningAgentBoltzmann, DoubleDeepQLearningAgentDirichlet
+from usienarl import run_experiment, command_line_parse
+from usienarl.td_models import TabularExpectedSARSA
+from usienarl.agents import TabularExpectedSARSAAgentEpsilonGreedy, TabularExpectedSARSAAgentBoltzmann, TabularExpectedSARSAAgentDirichlet
 
 # Import required src
 # Require error handling to support both deployment and pycharm versions
@@ -33,7 +32,7 @@ except ImportError:
 # Define utility functions to run the experiment
 
 
-def _define_ddqn_model(config: Config, error_clip: bool = True) -> DoubleDeepQLearning:
+def _define_tesarsa_model() -> TabularExpectedSARSA:
     # Define attributes
     learning_rate: float = 0.001
     discount_factor: float = 0.99
@@ -43,15 +42,14 @@ def _define_ddqn_model(config: Config, error_clip: bool = True) -> DoubleDeepQLe
     importance_sampling_value_increment: float = 0.4
     importance_sampling_value: float = 0.001
     # Return the _model
-    return DoubleDeepQLearning("model_mse" if not error_clip else "model_huber",
-                               learning_rate, discount_factor,
-                               buffer_capacity,
-                               minimum_sample_probability, random_sample_trade_off,
-                               importance_sampling_value, importance_sampling_value_increment,
-                               config, error_clip)
+    return TabularExpectedSARSA("model",
+                                learning_rate, discount_factor,
+                                buffer_capacity,
+                                minimum_sample_probability, random_sample_trade_off,
+                                importance_sampling_value, importance_sampling_value_increment)
 
 
-def _define_epsilon_greedy_agent(model: DoubleDeepQLearning) -> DoubleDeepQLearningAgentEpsilonGreedy:
+def _define_epsilon_greedy_agent(model: TabularExpectedSARSA) -> TabularExpectedSARSAAgentEpsilonGreedy:
     # Define attributes
     weight_copy_step_interval: int = 25
     batch_size: int = 100
@@ -59,33 +57,31 @@ def _define_epsilon_greedy_agent(model: DoubleDeepQLearning) -> DoubleDeepQLearn
     exploration_rate_min: float = 0.001
     exploration_rate_decay: float = 0.001
     # Return the agent
-    return DoubleDeepQLearningAgentEpsilonGreedy("ddqn_agent", model, weight_copy_step_interval, batch_size,
-                                                 exploration_rate_max, exploration_rate_min, exploration_rate_decay)
+    return TabularExpectedSARSAAgentEpsilonGreedy("tesarsa_agent", model, batch_size,
+                                                  exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
 
-def _define_boltzmann_agent(model: DoubleDeepQLearning) -> DoubleDeepQLearningAgentBoltzmann:
+def _define_boltzmann_agent(model: TabularExpectedSARSA) -> TabularExpectedSARSAAgentBoltzmann:
     # Define attributes
-    weight_copy_step_interval: int = 25
     batch_size: int = 100
     temperature_max: float = 1.0
     temperature_min: float = 0.001
     temperature_decay: float = 0.001
     # Return the agent
-    return DoubleDeepQLearningAgentBoltzmann("ddqn_agent", model, weight_copy_step_interval, batch_size,
-                                             temperature_max, temperature_min, temperature_decay)
+    return TabularExpectedSARSAAgentBoltzmann("tesarsa_agent", model, batch_size,
+                                              temperature_max, temperature_min, temperature_decay)
 
 
-def _define_dirichlet_agent(model: DoubleDeepQLearning) -> DoubleDeepQLearningAgentDirichlet:
+def _define_dirichlet_agent(model: TabularExpectedSARSA) -> TabularExpectedSARSAAgentDirichlet:
     # Define attributes
-    weight_copy_step_interval: int = 25
     batch_size: int = 100
     alpha: float = 1.0
     dirichlet_trade_off_min: float = 0.5
     dirichlet_trade_off_max: float = 1.0
     dirichlet_trade_off_update: float = 0.001
     # Return the agent
-    return DoubleDeepQLearningAgentDirichlet("ddqn_agent", model, weight_copy_step_interval, batch_size,
-                                             alpha, dirichlet_trade_off_min, dirichlet_trade_off_max, dirichlet_trade_off_update)
+    return TabularExpectedSARSAAgentDirichlet("tesarsa_agent", model,  batch_size,
+                                              alpha, dirichlet_trade_off_min, dirichlet_trade_off_max, dirichlet_trade_off_update)
 
 
 def run(workspace: str,
@@ -96,27 +92,23 @@ def run(workspace: str,
     logger.setLevel(logging.INFO)
     # Frozen Lake environment:
     #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
-    environment_name: str = 'FrozenLake-v0'
+    environment_name: str = 'FrozenLake8x8-v0'
     success_threshold: float = 0.78
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
-    # Define Neural Network layers
-    nn_config: Config = Config()
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
-    nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
     # Define model
-    inner_model: DoubleDeepQLearning = _define_ddqn_model(nn_config)
+    inner_model: TabularExpectedSARSA = _define_tesarsa_model()
     # Define agents
-    ddqn_agent_epsilon_greedy: DoubleDeepQLearningAgentEpsilonGreedy = _define_epsilon_greedy_agent(inner_model)
-    ddqn_agent_boltzmann: DoubleDeepQLearningAgentBoltzmann = _define_boltzmann_agent(inner_model)
-    ddqn_agent_dirichlet: DoubleDeepQLearningAgentDirichlet = _define_dirichlet_agent(inner_model)
+    tesarsa_agent_epsilon_greedy: TabularExpectedSARSAAgentEpsilonGreedy = _define_epsilon_greedy_agent(inner_model)
+    tesarsa_agent_boltzmann: TabularExpectedSARSAAgentBoltzmann = _define_boltzmann_agent(inner_model)
+    tesarsa_agent_dirichlet: TabularExpectedSARSAAgentDirichlet = _define_dirichlet_agent(inner_model)
     # Define experiments
     experiment_epsilon_greedy: BenchmarkExperiment = BenchmarkExperiment("experiment_epsilon_greedy", success_threshold, environment,
-                                                                         ddqn_agent_epsilon_greedy)
+                                                                         tesarsa_agent_epsilon_greedy)
     experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("experiment_boltzmann", success_threshold, environment,
-                                                                    ddqn_agent_boltzmann)
+                                                                    tesarsa_agent_boltzmann)
     experiment_dirichlet: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold, environment,
-                                                                    ddqn_agent_dirichlet)
+                                                                    tesarsa_agent_dirichlet)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10

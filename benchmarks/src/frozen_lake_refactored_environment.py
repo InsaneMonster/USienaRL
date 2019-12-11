@@ -18,9 +18,9 @@ import logging
 from usienarl.environment import Environment, SpaceType
 
 
-class OpenAIGymEnvironment(Environment):
+class FrozenLakeRefactoredEnvironment(Environment):
     """
-    Wrapper environment for any OpenAI gym environment.
+    Wrapper environment for any OpenAI gym FrozenLake environment with changed rewards.
     """
 
     def __init__(self,
@@ -28,15 +28,18 @@ class OpenAIGymEnvironment(Environment):
         # Define environment specific attributes
         self._gym_environment = None
         # Generate the base environment
-        super(OpenAIGymEnvironment, self).__init__(name)
+        super(FrozenLakeRefactoredEnvironment, self).__init__(name)
 
     def setup(self,
               logger: logging.Logger) -> bool:
         # If the environment is already defined, close it first and then make it again (resetting it)
         if self._gym_environment is not None:
             self.close(logger, None)
-        self._gym_environment = gym.make(self.name)
-        return True
+        if self.name == "FrozenLake-v0" or self.name == "FrozenLake8x8-v0":
+            self._gym_environment = gym.make(self.name)
+            return True
+        logger.error("FrozenLake Refactored environment requires a version of OpenAI gym FrozenLake to run!")
+        return False
 
     def initialize(self,
                    logger: logging.Logger,
@@ -58,6 +61,11 @@ class OpenAIGymEnvironment(Environment):
              action,
              session):
         state_next, reward, episode_done, _ = self._gym_environment.step(action)
+        # Change reward in order to make it easier to learn
+        if reward == 0:
+            reward = -1
+        else:
+            reward = 0
         return state_next, reward, episode_done
 
     def render(self,

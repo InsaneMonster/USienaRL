@@ -96,7 +96,7 @@ def run(workspace: str,
     logger.setLevel(logging.INFO)
     # Frozen Lake environment:
     #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
-    environment_name: str = 'FrozenLake-v0'
+    environment_name: str = 'FrozenLake8x8-v0'
     success_threshold: float = 0.78
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
