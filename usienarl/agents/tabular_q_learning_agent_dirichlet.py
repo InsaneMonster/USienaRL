@@ -89,9 +89,9 @@ class TabularQLearningAgentDirichlet(Agent):
                   interface: Interface,
                   agent_observation_current):
         # Act according to dirichlet approach: first get the softmax over all the actions predicted by the model
-        prior_probabilities = softmax(self._model.get_all_action_values(session, agent_observation_current))
+        prior_probabilities = softmax(self._model.get_all_action_values(session, agent_observation_current)).flatten()
         # Then generate a dirichlet distribution (d) with parameter alpha
-        dirichlet_probabilities = numpy.random.dirichlet(self._alpha, prior_probabilities.size)
+        dirichlet_probabilities = numpy.random.dirichlet(self._alpha * numpy.ones(prior_probabilities.size), 1).flatten()
         # Get a random action value (random output) using x * p + (1 - x) * d as probability distribution where x is the trade-off
         output = self._dirichlet_trade_off * prior_probabilities + (1 - self._dirichlet_trade_off) * dirichlet_probabilities
         # Make sure output sums up to 1.0
