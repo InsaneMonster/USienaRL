@@ -103,7 +103,6 @@ def run(workspace: str,
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
     # Define Neural Network layers
     nn_config: Config = Config()
-    neurons_number: int = 32
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
     # Define model

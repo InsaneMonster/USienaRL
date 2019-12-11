@@ -113,7 +113,7 @@ def run(workspace: str,
     test_cycles: int = 10
     training_episodes: int = 5000
     validation_episodes: int = 100
-    max_training_episodes: int = 1000000
+    max_training_episodes: int = 100000
     episode_length_max: int = 100
     plot_sample_density_training_episodes: int = 500
     plot_sample_density_validation_episodes: int = 10
