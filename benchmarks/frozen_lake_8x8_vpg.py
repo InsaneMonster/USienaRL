@@ -25,9 +25,11 @@ from usienarl.agents.vpg_agent import VPGAgent
 
 try:
     from src.openai_gym_environment import OpenAIGymEnvironment
+    from src.frozen_lake_refactored_environment import FrozenLakeRefactoredEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
+    from benchmarks.src.frozen_lake_refactored_environment import FrozenLakeRefactoredEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
@@ -70,24 +72,38 @@ def run(workspace: str,
     logger.setLevel(logging.INFO)
     # Frozen Lake environment:
     #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
+    #       - general success threshold for refactored environment is little above (slippery) the minimum number of steps required to reach the goal
     environment_name: str = 'FrozenLake8x8-v0'
     success_threshold: float = 0.78
+    success_threshold_refactored: float = -16
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
+    # Generate the refactored environment
+    environment_refactored: FrozenLakeRefactoredEnvironment = FrozenLakeRefactoredEnvironment(environment_name)
     # Define Neural Network layers
     nn_config: Config = Config()
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
+    nn_config.add_hidden_layer(LayerType.dense, [64, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
     nn_config.add_hidden_layer(LayerType.dense, [32, tensorflow.nn.relu, True, tensorflow.contrib.layers.xavier_initializer()])
     # Define model
     inner_model: VanillaPolicyGradient = _define_vpg_model(nn_config)
     # Define agents
-    ppo_agent_default: VPGAgent = _define_agent(inner_model, False)
-    ppo_agent_explore: VPGAgent = _define_agent(inner_model, True)
+    vpg_agent_default: VPGAgent = _define_agent(inner_model, False)
+    vpg_agent_explore: VPGAgent = _define_agent(inner_model, True)
     # Define experiments
     experiment_default: BenchmarkExperiment = BenchmarkExperiment("experiment_default", success_threshold, environment,
-                                                                  ppo_agent_default)
+                                                                  vpg_agent_default)
     experiment_explore: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold, environment,
-                                                                  ppo_agent_explore)
+                                                                  vpg_agent_explore)
+    # Define refactored experiments
+    experiment_refactored_default: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_default",
+                                                                             success_threshold_refactored,
+                                                                             environment_refactored,
+                                                                             vpg_agent_default)
+    experiment_refactored_explore: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_dirichlet",
+                                                                             success_threshold_refactored,
+                                                                             environment_refactored,
+                                                                             vpg_agent_explore)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
@@ -109,6 +125,27 @@ def run(workspace: str,
                    None,
                    plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
     run_experiment(experiment_explore,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    # Run refactored experiments
+    run_experiment(experiment_refactored_default,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    run_experiment(experiment_refactored_explore,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,

@@ -24,9 +24,11 @@ from usienarl.agents import TabularExpectedSARSAAgentEpsilonGreedy, TabularExpec
 
 try:
     from src.openai_gym_environment import OpenAIGymEnvironment
+    from src.frozen_lake_refactored_environment import FrozenLakeRefactoredEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
+    from benchmarks.src.frozen_lake_refactored_environment import FrozenLakeRefactoredEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
@@ -51,7 +53,6 @@ def _define_tesarsa_model() -> TabularExpectedSARSA:
 
 def _define_epsilon_greedy_agent(model: TabularExpectedSARSA) -> TabularExpectedSARSAAgentEpsilonGreedy:
     # Define attributes
-    weight_copy_step_interval: int = 25
     batch_size: int = 100
     exploration_rate_max: float = 1.0
     exploration_rate_min: float = 0.001
@@ -92,10 +93,14 @@ def run(workspace: str,
     logger.setLevel(logging.INFO)
     # Frozen Lake environment:
     #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
+    #       - general success threshold for refactored environment is little above (slippery) the minimum number of steps required to reach the goal
     environment_name: str = 'FrozenLake-v0'
     success_threshold: float = 0.78
+    success_threshold_refactored: float = -8
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
+    # Generate the refactored environment
+    environment_refactored: FrozenLakeRefactoredEnvironment = FrozenLakeRefactoredEnvironment(environment_name)
     # Define model
     inner_model: TabularExpectedSARSA = _define_tesarsa_model()
     # Define agents
@@ -109,6 +114,16 @@ def run(workspace: str,
                                                                     tesarsa_agent_boltzmann)
     experiment_dirichlet: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold, environment,
                                                                     tesarsa_agent_dirichlet)
+    # Define refactored experiments
+    experiment_epsilon_greedy_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_epsilon_greedy", success_threshold_refactored,
+                                                                                    environment_refactored,
+                                                                                    tesarsa_agent_epsilon_greedy)
+    experiment_boltzmann_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_boltzmann", success_threshold_refactored,
+                                                                               environment_refactored,
+                                                                               tesarsa_agent_boltzmann)
+    experiment_dirichlet_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_dirichlet", success_threshold_refactored,
+                                                                               environment_refactored,
+                                                                               tesarsa_agent_dirichlet)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
@@ -140,6 +155,37 @@ def run(workspace: str,
                    None,
                    plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
     run_experiment(experiment_dirichlet,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    # Run refactored experiments
+    run_experiment(experiment_epsilon_greedy_refactored,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    run_experiment(experiment_boltzmann_refactored,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    run_experiment(experiment_dirichlet_refactored,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
