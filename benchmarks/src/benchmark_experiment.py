@@ -46,7 +46,7 @@ class BenchmarkExperiment(Experiment):
                       last_std_validation_total_reward: float, last_std_validation_scaled_reward: float,
                       last_std_training_total_reward: float, last_std_training_scaled_reward: float,
                       last_validation_volley_rewards: [], last_training_volley_rewards: [],
-                      plot_sample_density: int = 1) -> bool:
+                      plot_sample_density_training: int = 1, plot_sample_density_validation: int = 1) -> bool:
         # Check if average validation reward (score) is over validation threshold
         if last_average_validation_total_reward >= self._validation_threshold:
             return True
@@ -59,7 +59,7 @@ class BenchmarkExperiment(Experiment):
                                     last_test_cycle_std_total_reward: float,
                                     last_test_cycle_std_scaled_reward: float,
                                     last_test_cycle_rewards: [],
-                                    plot_sample_density: int = 1):
+                                    plot_sample_density_training: int = 1, plot_sample_density_validation: int = 1):
         pass
 
     def _is_successful(self,
@@ -74,7 +74,7 @@ class BenchmarkExperiment(Experiment):
                        last_std_training_total_reward: float, last_std_training_scaled_reward: float,
                        test_cycles_rewards: [],
                        last_validation_volley_rewards: [], last_training_volley_rewards: [],
-                       plot_sample_density: int = 1) -> bool:
+                       plot_sample_density_training: int = 1, plot_sample_density_validation: int = 1) -> bool:
         # Check if last validation reward (score) was above threshold
         if last_average_validation_total_reward >= self._validation_threshold:
             return True

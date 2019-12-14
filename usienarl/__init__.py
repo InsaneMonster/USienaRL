@@ -16,7 +16,6 @@ from .interface import Interface
 from .agent import Agent
 from .model import Model
 from .experiment import Experiment
-from .exploration_policy import ExplorationPolicy
 
 # Import functions
 

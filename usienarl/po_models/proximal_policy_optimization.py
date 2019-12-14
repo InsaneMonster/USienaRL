@@ -7,6 +7,7 @@ import scipy.signal
 # Import required src
 
 from usienarl import SpaceType, Config, Model
+from usienarl.utils.common import softmax
 
 
 class Buffer:
@@ -182,17 +183,23 @@ class ProximalPolicyOptimization(Model):
         self._rewards = None
         self._mask = None
         self._logits = None
+        self._masked_logits = None
         self._expected_value = None
         self._std = None
+        self._log_std = None
         self._log_likelihood_targets = None
         self._log_likelihood_actions = None
         self._previous_log_likelihoods = None
         self._value = None
+        self._ratio = None
+        self._min_advantage = None
         self._value_stream_loss = None
         self._policy_stream_loss = None
         self._value_stream_optimizer = None
         self._policy_stream_optimizer = None
         self._approximated_kl_divergence = None
+        self._approximated_entropy = None
+        self._clip_fraction = None
         # Generate the base model
         super(ProximalPolicyOptimization, self).__init__(name)
         # Define the types of allowed observation and action spaces
@@ -217,29 +224,29 @@ class ProximalPolicyOptimization(Model):
                 # Define the mask placeholder
                 self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="mask")
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
-                self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="logits")
+                self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="logits")
                 # Compute the masked logits using the given mask
-                masked_logits = tensorflow.add(self._logits, self._mask)
+                self._masked_logits = tensorflow.add(self._logits, self._mask)
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
-                self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=masked_logits, num_samples=1), axis=1)
+                self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=self._masked_logits, num_samples=1), axis=1)
                 # Define the log likelihood according to the categorical distribution on targets and actions
                 self._log_likelihood_targets, _ = self.get_categorical_log_likelihood(self._targets, self._logits)
                 self._log_likelihood_actions, _ = self.get_categorical_log_likelihood(tensorflow.one_hot(self._actions, depth=self._agent_action_space_shape[0]), self._logits)
             else:
                 # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape
-                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="expected_value")
+                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="expected_value")
                 # Define the log standard deviation
-                log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
+                self._log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
                 # Define the standard deviation
-                self._std = tensorflow.exp(log_std, name="std")
+                self._std = tensorflow.exp(self._log_std, name="std")
                 # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
                 self._actions = self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std
                 # Define the log likelihood according to the gaussian distribution on targets and actions
-                self._log_likelihood_targets = self.get_gaussian_log_likelihood(self._targets, self._expected_value, log_std)
-                self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, log_std)
+                self._log_likelihood_targets = self.get_gaussian_log_likelihood(self._targets, self._expected_value, self._log_std)
+                self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, self._log_std)
             # Define the value estimator (a deep MLP)
             value_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
-            value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None)
+            value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
             # Define value by squeezing the output of the advantage stream MLP
             self._value = tensorflow.squeeze(value_stream_output, axis=1, name="value")
             # Define the rewards as an adaptable vector of floats (they are actually rewards-to-go computed with GAE)
@@ -255,23 +262,28 @@ class ProximalPolicyOptimization(Model):
             # Note: the model get the previous log-likelihoods from the buffer
             self._previous_log_likelihoods = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="previous_log_likelihood")
             # Define the ratio between the current log-likelihood and the previous one (when using exponential, minus is a division)
-            ratio = tensorflow.exp(self._log_likelihood_targets - self._previous_log_likelihoods)
+            self._ratio = tensorflow.exp(self._log_likelihood_targets - self._previous_log_likelihoods)
             # Define the minimum advantages with respect to clip ratio
-            min_advantage = tensorflow.where(self._advantages > 0, (1 + self._clip_ratio) * self._advantages, (1 - self._clip_ratio) * self._advantages)
+            self._min_advantage = tensorflow.where(self._advantages > 0, (1 + self._clip_ratio) * self._advantages, (1 - self._clip_ratio) * self._advantages)
             # Define the policy stream loss as the mean of minimum between the advantages multiplied the ratio and the minimum advantage
-            self._policy_stream_loss = -tensorflow.reduce_mean(tensorflow.minimum(ratio * self._advantages, min_advantage), name="policy_loss")
+            self._policy_stream_loss = -tensorflow.reduce_mean(tensorflow.minimum(self._ratio * self._advantages, self._min_advantage), name="policy_loss")
             # Define the optimizer for the policy stream
             self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
-            # Define approximated KL divergence (used to early stop update)
-            self._approximated_kl_divergence = tensorflow.reduce_mean(self._previous_log_likelihoods - self._log_likelihood_targets)
+            # Define approximated KL divergence (also used to early stop), approximated entropy and clip fraction for the logger
+            self._approximated_kl_divergence = tensorflow.reduce_mean(self._previous_log_likelihoods - self._log_likelihood_targets, name="approximated_kl_divergence")
+            self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_targets, name="approximated_entropy")
+            self._clip_fraction = tensorflow.reduce_mean(tensorflow.cast(tensorflow.logical_or(self._ratio > (1 + self._clip_ratio), self._ratio < (1 - self._clip_ratio)), tensorflow.float32), name="clip_fraction")
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
 
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define the _summary operation for this graph with losses summaries
+            # Define the _summary operation for this graph with losses and approximated KL and entropy summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
-                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
+                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss),
+                                                     tensorflow.summary.scalar("approximated_kl_divergence", self._approximated_kl_divergence),
+                                                     tensorflow.summary.scalar("approximated_entropy", self._approximated_entropy),
+                                                     tensorflow.summary.scalar("clip_fraction", self._clip_fraction)])
 
     def sample_action(self,
                       session,
@@ -283,7 +295,7 @@ class ProximalPolicyOptimization(Model):
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
         :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: the action predicted by the model, with the value and the relative log-likelihood
+        :return: the action predicted by the model, with the value estimated at the current state and the relative log-likelihood of the sampled action
         """
         # If there is no mask and the action space type is discrete generate a full pass-through mask
         if mask is None and self._agent_action_space_type == SpaceType.discrete:
@@ -308,18 +320,132 @@ class ProximalPolicyOptimization(Model):
         # Return the predicted action, the estimated value and the log-likelihood
         return action[0], value[0], log_likelihood[0]
 
+    def get_value_and_log_likelihood(self,
+                                     session,
+                                     action,
+                                     observation_current,
+                                     mask: numpy.ndarray = None):
+        """
+        Get the estimated value of the given current observation and the log-likelihood of the given action.
+
+        :param session: the session of tensorflow currently running
+        :param action: the action of which to compute the log-likelihood
+        :param observation_current: the current observation of the agent in the environment to estimate the value
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :return: the value estimated at the current state and the log-likelihood of the given action
+        """
+        # If there is no mask and the action space type is discrete generate a full pass-through mask
+        if mask is None and self._agent_action_space_type == SpaceType.discrete:
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
+        # Generate a one-hot encoded version of the action if action space type is discrete
+        if self._agent_action_space_type == SpaceType.discrete:
+            action: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(action).reshape(-1)]
+        # Return the estimated value of the given current state and the log-likelihood of the given action
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            if self._agent_action_space_type == SpaceType.discrete:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    feed_dict={self._inputs: [observation_current_one_hot],
+                                                               self._mask: [mask],
+                                                               self._targets: action})
+            else:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    feed_dict={self._inputs: [observation_current_one_hot],
+                                                               self._targets: action})
+        else:
+            if self._agent_action_space_type == SpaceType.discrete:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    feed_dict={self._inputs: [observation_current],
+                                                               self._mask: [mask],
+                                                               self._targets: action})
+            else:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    eed_dict={self._inputs: [observation_current],
+                                                              self._targets: action})
+        # Return the estimated value and the log-likelihood
+        return value[0], log_likelihood[0]
+
+    def get_value(self,
+                  session,
+                  observation_current):
+        """
+        Get the estimated value of the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to estimate the value
+        :return: the value estimated at the current state
+        """
+        # Return the value predicted by the network at the current state
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            value = session.run(self._value,
+                                eed_dict={self._inputs: [observation_current_one_hot]})
+        else:
+            value = session.run(self._value,
+                                feed_dict={self._inputs: [observation_current]})
+        # Return the estimated value
+        return value[0]
+
+    def get_log_likelihood(self,
+                           session,
+                           action,
+                           observation_current,
+                           mask: numpy.ndarray = None):
+        """
+        Get the the log-likelihood of the given action.
+
+        :param session: the session of tensorflow currently running
+        :param action: the action of which to compute the log-likelihood
+        :param observation_current: the current observation of the agent in the environment
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :return: the log-likelihood of the given action
+        """
+        # If there is no mask and the action space type is discrete generate a full pass-through mask
+        if mask is None and self._agent_action_space_type == SpaceType.discrete:
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
+        # Generate a one-hot encoded version of the action if action space type is discrete
+        if self._agent_action_space_type == SpaceType.discrete:
+            action: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(action).reshape(-1)]
+        # Return log likelihood over the given action with the given current observation and the given mask
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            if self._agent_action_space_type == SpaceType.discrete:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current_one_hot],
+                                                        self._mask: [mask],
+                                                        self._targets: action})
+            else:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current_one_hot],
+                                                        self._targets: action})
+        else:
+            if self._agent_action_space_type == SpaceType.discrete:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current],
+                                                        self._mask: [mask],
+                                                        self._targets: action})
+            else:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current],
+                                                        self._targets: action})
+        # Return the log-likelihood
+        return log_likelihood[0]
+
     def get_action_probabilities(self,
                                  session,
                                  observation_current,
                                  mask: numpy.ndarray = None) -> []:
         """
-        Get all the action probabilities (logits if discrete, expected value if continuous) for the given current observation and
-        an optional mask.
+        Get all the action probabilities (softmax over masked logits if discrete, expected value if continuous) for the
+        given current observation and an optional mask.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
         :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: the list of action probabilities (logits or expected values depending on the agent action space type)
+        :return: the list of action probabilities (softmax over masked logits or expected values depending on the agent action space type)
         """
         if mask is None and self._agent_action_space_type == SpaceType.discrete:
             mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
@@ -328,22 +454,23 @@ class ProximalPolicyOptimization(Model):
             if self._observation_space_type == SpaceType.discrete:
                 observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
                 if self._agent_action_space_type == SpaceType.discrete:
-                    logits = session.run([self._logits],
+                    logits = session.run([self._masked_logits],
                                          feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
                 else:
-                    logits = session.run([self._logits],
+                    logits = session.run([self._masked_logits],
                                          feed_dict={self._inputs: [observation_current_one_hot]})
             else:
                 if self._agent_action_space_type == SpaceType.discrete:
-                    logits = session.run([self._logits],
-                                         feed_dict={self._inputs: [observation_current]})
-                else:
-                    logits = session.run([self._logits],
+                    logits = session.run([self._masked_logits],
                                          feed_dict={self._inputs: [observation_current], self._mask: [mask]})
-            # Return the logits (probabilities of all actions)
-            return logits
+                else:
+                    logits = session.run([self._masked_logits],
+                                         feed_dict={self._inputs: [observation_current]})
+            # Return the softmax over the logits (probabilities of all actions)
+            return softmax(logits[0]).flatten()
         else:
-            expected_value, std = session.run([self._expected_value, self._std], feed_dict={self._inputs: [observation_current]})
+            expected_value, std = session.run([self._expected_value, self._std],
+                                              feed_dict={self._inputs: [observation_current]})
             # Return the expected value
             return expected_value
 
@@ -391,7 +518,7 @@ class ProximalPolicyOptimization(Model):
         return summary, policy_loss, value_loss
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         return 0
 
     @staticmethod

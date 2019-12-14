@@ -70,7 +70,8 @@ def run_experiment(experiment: Experiment,
                    render_during_training: bool, render_during_validation: bool, render_during_test: bool,
                    workspace_path: str, file_name: str, logger: logging.Logger,
                    checkpoint_path: str = None, experiment_iterations_number: int = 1,
-                   intro: str = None, plot_sample_density: int = 1) -> []:
+                   intro: str = None,
+                   plot_sample_density_training: int = 1, plot_sample_density_validation: int = 1) -> []:
     """
     Run the given experiment with the given parameters. It automatically creates all the directories to store the
     experiment results, summaries and meta-graphs for each iteration.
@@ -91,7 +92,8 @@ def run_experiment(experiment: Experiment,
     :param checkpoint_path: the optional checkpoint path to gather the model from, useful to further train an already trained model
     :param experiment_iterations_number: the number of iterations of the experiment to run, by default just one
     :param intro: the optional string intro of the experiment, describing what the experiment is about
-    :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
+    :param plot_sample_density_training: the optional number represent after how many episodes a sample for the episode-related training plots is sampled (default to 1, i.e. each episode)
+    :param plot_sample_density_validation: the optional number represent after how many episodes a sample for the episode-related validation plots is sampled (default to 1, i.e. each episode)
     :return the list of saved metagraph paths of each iteration of the experiment
     """
     # Generate the workspace directory if not defined
@@ -181,7 +183,7 @@ def run_experiment(experiment: Experiment,
                                                                                                                                                                   render_during_validation,
                                                                                                                                                                   render_during_test,
                                                                                                                                                                   checkpoint_path,
-                                                                                                                                                                  plot_sample_density)
+                                                                                                                                                                  plot_sample_density_training, plot_sample_density_validation)
             # Save the result of the iteration in the table
             experiment_results_table[iteration] = ("YES" if success else "NO",
                                                    numpy.round(average_total_reward, 3),
@@ -292,8 +294,7 @@ def watch_experiment(experiment: Experiment,
                      episode_length_max: int,
                      render: bool,
                      logger: logging.Logger,
-                     checkpoint_path: str,
-                     plot_sample_density: int = 1):
+                     checkpoint_path: str):
     """
     Run the given experiment with the given parameters. It automatically creates all the directories to store the
     experiment results, summaries and meta-graphs for each iteration.
@@ -304,7 +305,6 @@ def watch_experiment(experiment: Experiment,
     :param episode_length_max: the maximum number of steps for each episode
     :param render: flag to render or not the environment
     :param logger: the logger used to record information, warnings and errors
-    :param plot_sample_density: the optional number represent after how many episodes a sample for the episode-related plots is sampled (default to 1, i.e. each episode)
     :param checkpoint_path: the checkpoint path to gather the model from
     """
     # Setup of the logger for the current experiment
@@ -326,5 +326,4 @@ def watch_experiment(experiment: Experiment,
         experiment.watch(episode_length_max,
                          testing_episodes, test_cycles,
                          logger, checkpoint_path,
-                         render,
-                         plot_sample_density)
+                         render)

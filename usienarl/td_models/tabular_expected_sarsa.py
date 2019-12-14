@@ -6,7 +6,7 @@ import numpy
 # Import required src
 
 from usienarl import SpaceType, Model
-from usienarl.libs import SumTree
+from usienarl.utils import SumTree
 
 
 class Buffer:
@@ -213,7 +213,6 @@ class TabularExpectedSARSA(Model):
 
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define the _summary operation for this graph with loss and absolute error summaries
             self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
 
     def get_all_action_values(self,
@@ -305,7 +304,7 @@ class TabularExpectedSARSA(Model):
         return summary, loss, absolute_error
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         return self._buffer_capacity
 
     @property

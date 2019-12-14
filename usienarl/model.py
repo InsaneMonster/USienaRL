@@ -156,10 +156,10 @@ class Model:
         raise NotImplementedError()
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         """
-        Get the number of episodes required to warm-up the model.
+        Get the number of steps required to warm-up the model.
 
-        :return: the integer number of warm-up episodes required by the model
+        :return: the integer number of warm-up steps required by the model
         """
         raise NotImplementedError()

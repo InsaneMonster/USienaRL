@@ -7,6 +7,7 @@ import scipy.signal
 # Import required src
 
 from usienarl import SpaceType, Config, Model
+from usienarl.utils import softmax
 
 
 class Buffer:
@@ -170,8 +171,10 @@ class VanillaPolicyGradient(Model):
         self._rewards = None
         self._mask = None
         self._logits = None
+        self._masked_logits = None
         self._expected_value = None
         self._std = None
+        self._log_std = None
         self._log_likelihood_targets = None
         self._log_likelihood_actions = None
         self._value = None
@@ -179,6 +182,7 @@ class VanillaPolicyGradient(Model):
         self._policy_stream_loss = None
         self._value_stream_optimizer = None
         self._policy_stream_optimizer = None
+        self._approximated_entropy = None
         # Generate the base model
         super(VanillaPolicyGradient, self).__init__(name)
         # Define the types of allowed observation and action spaces
@@ -203,29 +207,29 @@ class VanillaPolicyGradient(Model):
                 # Define the mask placeholder
                 self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="mask")
                 # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
-                self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="logits")
+                self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="logits")
                 # Compute the masked logits using the given mask
-                masked_logits = tensorflow.add(self._logits, self._mask)
+                self._masked_logits = tensorflow.add(self._logits, self._mask)
                 # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
-                self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=masked_logits, num_samples=1), axis=1)
+                self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=self._masked_logits, num_samples=1), axis=1)
                 # Define the log likelihood on targets and actions according to the categorical distribution
                 self._log_likelihood_targets, _ = self.get_categorical_log_likelihood(self._targets, self._logits)
                 self._log_likelihood_actions, _ = self.get_categorical_log_likelihood(tensorflow.one_hot(self._actions, depth=self._agent_action_space_shape[0]), self._logits)
             else:
                 # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape
-                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, name="expected_value")
+                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="expected_value")
                 # Define the log standard deviation
-                log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
+                self._log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
                 # Define the standard deviation
-                self._std = tensorflow.exp(log_std, name="std")
+                self._std = tensorflow.exp(self._log_std, name="std")
                 # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
                 self._actions = self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std
                 # Define the log likelihood on targets and actions according to the gaussian distribution
-                self._log_likelihood_targets = self.get_gaussian_log_likelihood(self._targets, self._expected_value, log_std)
-                self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, log_std)
+                self._log_likelihood_targets = self.get_gaussian_log_likelihood(self._targets, self._expected_value, self._log_std)
+                self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, self._log_std)
             # Define the value estimator (a deep MLP)
             value_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
-            value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None)
+            value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
             # Define value by squeezing the output of the advantage stream MLP
             self._value = tensorflow.squeeze(value_stream_output, axis=1, name="value")
             # Define the rewards as an adaptable vector of floats (they are actually rewards-to-go computed with GAE)
@@ -241,14 +245,17 @@ class VanillaPolicyGradient(Model):
             self._policy_stream_loss = -tensorflow.reduce_mean(self._advantages * self._log_likelihood_targets, name="policy_loss")
             # Define the optimizer for the policy stream
             self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
+            # Define approximated entropy for the logger
+            self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_targets, name="approximated_entropy")
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
 
     def _define_summary(self):
         with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define the _summary operation for this graph with losses summaries
+            # Define the _summary operation for this graph with losses and approximated entropy summaries
             self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
-                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss)])
+                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss),
+                                                     tensorflow.summary.scalar("approximated_entropy", self._approximated_entropy)])
 
     def sample_action(self,
                       session,
@@ -260,30 +267,144 @@ class VanillaPolicyGradient(Model):
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
         :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: the action predicted by the model
+        :return: the action predicted by the model, with the value estimated at the current state and the relative log-likelihood of the sampled action
         """
         # If there is no mask and the action space type is discrete generate a full pass-through mask
         if mask is None and self._agent_action_space_type == SpaceType.discrete:
             mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Return a random action sample given the current state and depending on the observation space type and also compute value estimate
+        # Return a random action sample given the current state and depending on the observation space type and also compute value estimate and log-likelihood
         if self._observation_space_type == SpaceType.discrete:
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             if self._agent_action_space_type == SpaceType.discrete:
-                action, value = session.run([self._actions, self._value],
-                                            feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
+                                                            feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
             else:
-                action, value = session.run([self._actions, self._value],
-                                            feed_dict={self._inputs: [observation_current_one_hot]})
+                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
+                                                            feed_dict={self._inputs: [observation_current_one_hot]})
         else:
             if self._agent_action_space_type == SpaceType.discrete:
-                action, value = session.run([self._actions, self._value],
-                                            feed_dict={self._inputs: [observation_current], self._mask: [mask]})
+                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
+                                                            feed_dict={self._inputs: [observation_current], self._mask: [mask]})
             else:
-                action, value = session.run([self._actions, self._value],
-                                            feed_dict={self._inputs: [observation_current]})
-        # Return the predicted action and the estimated value
-        return action[0], value[0]
+                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
+                                                            feed_dict={self._inputs: [observation_current]})
+        # Return the predicted action, the estimated value and the log-likelihood
+        return action[0], value[0], log_likelihood[0]
+
+    def get_value_and_log_likelihood(self,
+                                     session,
+                                     action,
+                                     observation_current,
+                                     mask: numpy.ndarray = None):
+        """
+        Get the estimated value of the given current observation and the log-likelihood of the given action.
+
+        :param session: the session of tensorflow currently running
+        :param action: the action of which to compute the log-likelihood
+        :param observation_current: the current observation of the agent in the environment to estimate the value
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :return: the value estimated at the current state and the log-likelihood of the given action
+        """
+        # If there is no mask and the action space type is discrete generate a full pass-through mask
+        if mask is None and self._agent_action_space_type == SpaceType.discrete:
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
+        # Generate a one-hot encoded version of the action if action space type is discrete
+        if self._agent_action_space_type == SpaceType.discrete:
+            action: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(action).reshape(-1)]
+        # Return the estimated value of the given current state and the log-likelihood of the given action
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            if self._agent_action_space_type == SpaceType.discrete:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    feed_dict={self._inputs: [observation_current_one_hot],
+                                                               self._mask: [mask],
+                                                               self._targets: action})
+            else:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    feed_dict={self._inputs: [observation_current_one_hot],
+                                                               self._targets: action})
+        else:
+            if self._agent_action_space_type == SpaceType.discrete:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    feed_dict={self._inputs: [observation_current],
+                                                               self._mask: [mask],
+                                                               self._targets: action})
+            else:
+                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
+                                                    eed_dict={self._inputs: [observation_current],
+                                                              self._targets: action})
+        # Return the estimated value and the log-likelihood
+        return value[0], log_likelihood[0]
+
+    def get_value(self,
+                  session,
+                  observation_current):
+        """
+        Get the estimated value of the given current observation.
+
+        :param session: the session of tensorflow currently running
+        :param observation_current: the current observation of the agent in the environment to estimate the value
+        :return: the value estimated at the current state
+        """
+        # Return the value predicted by the network at the current state
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            value = session.run(self._value,
+                                eed_dict={self._inputs: [observation_current_one_hot]})
+        else:
+            value = session.run(self._value,
+                                feed_dict={self._inputs: [observation_current]})
+        # Return the estimated value
+        return value[0]
+
+    def get_log_likelihood(self,
+                           session,
+                           action,
+                           observation_current,
+                           mask: numpy.ndarray = None):
+        """
+        Get the the log-likelihood of the given action.
+
+        :param session: the session of tensorflow currently running
+        :param action: the action of which to compute the log-likelihood
+        :param observation_current: the current observation of the agent in the environment
+        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :return: the log-likelihood of the given action
+        """
+        # If there is no mask and the action space type is discrete generate a full pass-through mask
+        if mask is None and self._agent_action_space_type == SpaceType.discrete:
+            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
+        # Generate a one-hot encoded version of the action if action space type is discrete
+        if self._agent_action_space_type == SpaceType.discrete:
+            action: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(action).reshape(-1)]
+        # Return log likelihood over the given action with the given current observation and the given mask
+        if self._observation_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the observation if observation space type is discrete
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            if self._agent_action_space_type == SpaceType.discrete:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current_one_hot],
+                                                        self._mask: [mask],
+                                                        self._targets: action})
+            else:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current_one_hot],
+                                                        self._targets: action})
+        else:
+            if self._agent_action_space_type == SpaceType.discrete:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current],
+                                                        self._mask: [mask],
+                                                        self._targets: action})
+            else:
+                log_likelihood = session.run(self._log_likelihood_targets,
+                                             feed_dict={self._inputs: [observation_current],
+                                                        self._targets: action})
+        # Return the log-likelihood
+        return log_likelihood[0]
 
     def get_action_probabilities(self,
                                  session,
@@ -303,22 +424,24 @@ class VanillaPolicyGradient(Model):
         # Get the logits or the expected value as the distribution of the action probabilities depending on the action space shape
         if self._agent_action_space_type == SpaceType.discrete:
             if self._observation_space_type == SpaceType.discrete:
-                observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+                observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[
+                    observation_current]
                 if self._agent_action_space_type == SpaceType.discrete:
-                    logits = session.run([self._logits],
-                                         feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+                    logits = session.run([self._masked_logits],
+                                         feed_dict={self._inputs: [observation_current_one_hot],
+                                                    self._mask: [mask]})
                 else:
-                    logits = session.run([self._logits],
+                    logits = session.run([self._masked_logits],
                                          feed_dict={self._inputs: [observation_current_one_hot]})
             else:
                 if self._agent_action_space_type == SpaceType.discrete:
-                    logits = session.run([self._logits],
-                                         feed_dict={self._inputs: [observation_current]})
-                else:
-                    logits = session.run([self._logits],
+                    logits = session.run([self._masked_logits],
                                          feed_dict={self._inputs: [observation_current], self._mask: [mask]})
-            # Return the logits (probabilities of all actions)
-            return logits
+                else:
+                    logits = session.run([self._masked_logits],
+                                         feed_dict={self._inputs: [observation_current]})
+            # Return the softmax over the logits (probabilities of all actions)
+            return softmax(logits[0]).flatten()
         else:
             expected_value, std = session.run([self._expected_value, self._std], feed_dict={self._inputs: [observation_current]})
             # Return the expected value
@@ -362,7 +485,7 @@ class VanillaPolicyGradient(Model):
         return summary, policy_loss, value_loss
 
     @property
-    def warmup_episodes(self) -> int:
+    def warmup_steps(self) -> int:
         return 0
 
     @staticmethod

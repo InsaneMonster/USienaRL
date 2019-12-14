@@ -17,18 +17,19 @@ import os
 
 from usienarl import run_experiment, command_line_parse
 from usienarl.td_models import TabularQLearning
-from usienarl.exploration_policies import EpsilonGreedyExplorationPolicy, BoltzmannExplorationPolicy
+from usienarl.agents import TabularQLearningAgentEpsilonGreedy, TabularQLearningAgentBoltzmann, TabularQLearningAgentDirichlet
 
 # Import required src
 # Require error handling to support both deployment and pycharm versions
 
 try:
-    from src.tabular_q_learning_agent import TabularQLearningAgent
     from src.openai_gym_environment import OpenAIGymEnvironment
+    from src.frozen_lake_refactored_environment import FrozenLakeRefactoredEnvironment
     from src.benchmark_experiment import BenchmarkExperiment
 except ImportError:
-    from benchmarks.src.tabular_q_learning_agent import TabularQLearningAgent
+
     from benchmarks.src.openai_gym_environment import OpenAIGymEnvironment
+    from benchmarks.src.frozen_lake_refactored_environment import FrozenLakeRefactoredEnvironment
     from benchmarks.src.benchmark_experiment import BenchmarkExperiment
 
 # Define utility functions to run the experiment
@@ -51,66 +52,79 @@ def _define_tql_model() -> TabularQLearning:
                             importance_sampling_value, importance_sampling_value_increment)
 
 
-def _define_epsilon_greedy_exploration_policy() -> EpsilonGreedyExplorationPolicy:
+def _define_epsilon_greedy_agent(model: TabularQLearning) -> TabularQLearningAgentEpsilonGreedy:
     # Define attributes
+    batch_size: int = 100
     exploration_rate_max: float = 1.0
     exploration_rate_min: float = 0.001
     exploration_rate_decay: float = 0.001
-    # Return the explorer
-    return EpsilonGreedyExplorationPolicy(exploration_rate_max, exploration_rate_min, exploration_rate_decay)
+    # Return the agent
+    return TabularQLearningAgentEpsilonGreedy("tql_agent", model, batch_size,
+                                              exploration_rate_max, exploration_rate_min, exploration_rate_decay)
 
 
-def _define_boltzmann_exploration_policy() -> BoltzmannExplorationPolicy:
+def _define_boltzmann_agent(model: TabularQLearning) -> TabularQLearningAgentBoltzmann:
     # Define attributes
+    batch_size: int = 100
     temperature_max: float = 1.0
     temperature_min: float = 0.001
     temperature_decay: float = 0.001
-    # Return the explorer
-    return BoltzmannExplorationPolicy(temperature_max, temperature_min, temperature_decay)
+    # Return the agent
+    return TabularQLearningAgentBoltzmann("tql_agent", model, batch_size,
+                                          temperature_max, temperature_min, temperature_decay)
 
 
-def _define_epsilon_greedy_agent(model: TabularQLearning, exploration_policy: EpsilonGreedyExplorationPolicy) -> TabularQLearningAgent:
+def _define_dirichlet_agent(model: TabularQLearning) -> TabularQLearningAgentDirichlet:
     # Define attributes
     batch_size: int = 100
+    alpha: float = 1.0
+    dirichlet_trade_off_min: float = 0.5
+    dirichlet_trade_off_max: float = 1.0
+    dirichlet_trade_off_update: float = 0.001
     # Return the agent
-    return TabularQLearningAgent("tql_egreedy_agent", model, exploration_policy, batch_size)
+    return TabularQLearningAgentDirichlet("tql_agent", model,  batch_size,
+                                          alpha, dirichlet_trade_off_min, dirichlet_trade_off_max, dirichlet_trade_off_update)
 
 
-def _define_boltzmann_agent(model: TabularQLearning, exploration_policy: BoltzmannExplorationPolicy) -> TabularQLearningAgent:
-    # Define attributes
-    batch_size: int = 100
-    # Return the agent
-    return TabularQLearningAgent("tql_boltzmann_agent", model, exploration_policy, batch_size)
-
-
-if __name__ == "__main__":
-    # Parse the command line arguments
-    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
-    # Define the CUDA devices in which to run the experiment
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+def run(workspace: str,
+        experiment_iterations: int,
+        render_training: bool, render_validation: bool, render_test: bool):
     # Define the logger
     logger: logging.Logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
     # Frozen Lake environment:
     #       - general success threshold to consider the training and the experiment successful is 0.78 over 100 episodes according to OpenAI guidelines
+    #       - general success threshold for refactored environment is little above (slippery) the minimum number of steps required to reach the goal
     environment_name: str = 'FrozenLake-v0'
     success_threshold: float = 0.78
+    success_threshold_refactored: float = -8
     # Generate the OpenAI environment
     environment: OpenAIGymEnvironment = OpenAIGymEnvironment(environment_name)
+    # Generate the refactored environment
+    environment_refactored: FrozenLakeRefactoredEnvironment = FrozenLakeRefactoredEnvironment(environment_name)
     # Define model
     inner_model: TabularQLearning = _define_tql_model()
-    # Define exploration_policies
-    epsilon_greedy_exploration_policy: EpsilonGreedyExplorationPolicy = _define_epsilon_greedy_exploration_policy()
-    boltzmann_exploration_policy: BoltzmannExplorationPolicy = _define_boltzmann_exploration_policy()
     # Define agents
-    tql_epsilon_greedy_agent: TabularQLearningAgent = _define_epsilon_greedy_agent(inner_model, epsilon_greedy_exploration_policy)
-    tql_boltzmann_agent: TabularQLearningAgent = _define_boltzmann_agent(inner_model, boltzmann_exploration_policy)
+    tql_agent_epsilon_greedy: TabularQLearningAgentEpsilonGreedy = _define_epsilon_greedy_agent(inner_model)
+    tql_agent_boltzmann: TabularQLearningAgentBoltzmann = _define_boltzmann_agent(inner_model)
+    tql_agent_dirichlet: TabularQLearningAgentDirichlet = _define_dirichlet_agent(inner_model)
     # Define experiments
-    experiment_egreedy: BenchmarkExperiment = BenchmarkExperiment("eg_experiment", success_threshold, environment,
-                                                                  tql_epsilon_greedy_agent)
-    experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("b_experiment", success_threshold, environment,
-                                                                    tql_boltzmann_agent)
+    experiment_epsilon_greedy: BenchmarkExperiment = BenchmarkExperiment("experiment_epsilon_greedy", success_threshold, environment,
+                                                                         tql_agent_epsilon_greedy)
+    experiment_boltzmann: BenchmarkExperiment = BenchmarkExperiment("experiment_boltzmann", success_threshold, environment,
+                                                                    tql_agent_boltzmann)
+    experiment_dirichlet: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold, environment,
+                                                                    tql_agent_dirichlet)
+    # Define refactored experiments
+    experiment_epsilon_greedy_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_epsilon_greedy", success_threshold_refactored,
+                                                                                    environment_refactored,
+                                                                                    tql_agent_epsilon_greedy)
+    experiment_boltzmann_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_boltzmann", success_threshold_refactored,
+                                                                               environment_refactored,
+                                                                               tql_agent_boltzmann)
+    experiment_dirichlet_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_dirichlet", success_threshold_refactored,
+                                                                               environment_refactored,
+                                                                               tql_agent_dirichlet)
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
@@ -118,21 +132,80 @@ if __name__ == "__main__":
     validation_episodes: int = 100
     max_training_episodes: int = 10000
     episode_length_max: int = 100
-    # Run epsilon greedy experiment
-    run_experiment(experiment_egreedy,
+    plot_sample_density_training_episodes: int = 10
+    plot_sample_density_validation_episodes: int = 10
+    # Run experiments
+    run_experiment(experiment_epsilon_greedy,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
                    testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
-    # Run boltzmann experiment
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
     run_experiment(experiment_boltzmann,
                    training_episodes,
                    max_training_episodes, episode_length_max,
                    validation_episodes,
                    testing_episodes, test_cycles,
-                   render_during_training, render_during_validation, render_during_test,
-                   workspace_path, __file__,
-                   logger, None, experiment_iterations_number)
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    run_experiment(experiment_dirichlet,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    # Run refactored experiments
+    run_experiment(experiment_epsilon_greedy_refactored,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    run_experiment(experiment_boltzmann_refactored,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+    run_experiment(experiment_dirichlet_refactored,
+                   training_episodes,
+                   max_training_episodes, episode_length_max,
+                   validation_episodes,
+                   testing_episodes, test_cycles,
+                   render_training, render_validation, render_test,
+                   workspace, __file__,
+                   logger, None, experiment_iterations,
+                   None,
+                   plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
+
+
+if __name__ == "__main__":
+    # Remove tensorflow deprecation warnings
+    from tensorflow.python.util import deprecation
+    deprecation._PRINT_DEPRECATION_WARNINGS = False
+    # Parse the command line arguments
+    workspace_path, experiment_iterations_number, cuda_devices, render_during_training, render_during_validation, render_during_test = command_line_parse()
+    # Define the CUDA devices in which to run the experiment
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+    # Run this experiment
+    run(workspace_path, experiment_iterations_number, render_during_training, render_during_validation, render_during_test)

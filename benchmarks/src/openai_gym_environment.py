@@ -82,7 +82,7 @@ class OpenAIGymEnvironment(Environment):
     def state_space_shape(self):
         # Get the state space size depending on the gym space type
         if isinstance(self._gym_environment.observation_space, gym.spaces.Discrete):
-            return (self._gym_environment.observation_space.n, )
+            return self._gym_environment.observation_space.n,
         else:
             return self._gym_environment.observation_space.high.shape
 
@@ -98,7 +98,7 @@ class OpenAIGymEnvironment(Environment):
     def action_space_shape(self):
         # Get the action space size depending on the gym space type
         if isinstance(self._gym_environment.action_space, gym.spaces.Discrete):
-            return (self._gym_environment.action_space.n, )
+            return self._gym_environment.action_space.n,
         else:
             return self._gym_environment.action_space.high.shape
 
