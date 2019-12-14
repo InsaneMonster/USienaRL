@@ -25,9 +25,6 @@ try:
     from cart_pole_dql import run as dql_run
     from cart_pole_desarsa import run as desarsa_run
     from cart_pole_dsarsa import run as dsarsa_run
-    from cart_pole_tql import run as tql_run
-    from cart_pole_tsarsa import run as tsarsa_run
-    from cart_pole_tesarsa import run as tesarsa_run
     from cart_pole_vpg import run as vpg_run
     from cart_pole_ppo import run as ppo_run
 except ImportError:
