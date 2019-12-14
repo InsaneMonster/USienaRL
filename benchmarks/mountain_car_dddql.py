@@ -55,7 +55,7 @@ def _define_dddqn_model(config: Config) -> DuelingDeepQLearning:
 def _define_epsilon_greedy_agent(model: DuelingDeepQLearning) -> DuelingDeepQLearningAgentEpsilonGreedy:
     # Define attributes
     weight_copy_step_interval: int = 100
-    batch_size: int = 200
+    batch_size: int = 32
     exploration_rate_max: float = 1.0
     exploration_rate_min: float = 0.001
     exploration_rate_decay: float = 0.001
@@ -67,7 +67,7 @@ def _define_epsilon_greedy_agent(model: DuelingDeepQLearning) -> DuelingDeepQLea
 def _define_boltzmann_agent(model: DuelingDeepQLearning) -> DuelingDeepQLearningAgentBoltzmann:
     # Define attributes
     weight_copy_step_interval: int = 100
-    batch_size: int = 200
+    batch_size: int = 32
     temperature_max: float = 1.0
     temperature_min: float = 0.001
     temperature_decay: float = 0.001
@@ -79,7 +79,7 @@ def _define_boltzmann_agent(model: DuelingDeepQLearning) -> DuelingDeepQLearning
 def _define_dirichlet_agent(model: DuelingDeepQLearning) -> DuelingDeepQLearningAgentDirichlet:
     # Define attributes
     weight_copy_step_interval: int = 100
-    batch_size: int = 200
+    batch_size: int = 32
     alpha: float = 1.0
     dirichlet_trade_off_min: float = 0.5
     dirichlet_trade_off_max: float = 1.0
@@ -122,11 +122,11 @@ def run(workspace: str,
     # Define experiments data
     testing_episodes: int = 100
     test_cycles: int = 10
-    training_episodes: int = 10
+    training_episodes: int = 100
     validation_episodes: int = 100
-    max_training_episodes: int = 2000
+    max_training_episodes: int = 5000
     episode_length_max: int = 100000
-    plot_sample_density_training_episodes: int = 1
+    plot_sample_density_training_episodes: int = 10
     plot_sample_density_validation_episodes: int = 10
     # Run experiments
     run_experiment(experiment_epsilon_greedy,
