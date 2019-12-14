@@ -25,9 +25,6 @@ try:
     from mountain_car_dql import run as dql_run
     from mountain_car_desarsa import run as desarsa_run
     from mountain_car_dsarsa import run as dsarsa_run
-    from mountain_car_tql import run as tql_run
-    from mountain_car_tsarsa import run as tsarsa_run
-    from mountain_car_tesarsa import run as tesarsa_run
     from mountain_car_vpg import run as vpg_run
     from mountain_car_ppo import run as ppo_run
 except ImportError:
