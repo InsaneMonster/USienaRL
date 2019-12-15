@@ -118,6 +118,8 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
+- Version 0.6.1: Hot-fixed deep SARSA agent and tabular SARSA agent dirichlet exploration policy not working correctly
+
 - Added default agents to the package: Tabular QL, Tabular SARSA, Tabular ExpectedSARSA, DQN, DDQN, DDDQN, DSARSA, DExpectedSARSA, VPG, PPO
 - Removed exploration policies, now embedded into agents. This allows for further customization when making your own agents
 - Added Dirichlet exploration policy to overall all agents supporting it
