@@ -1,0 +1,241 @@
+2019-12-16 10:22:03,932 - INFO - Setup of experiment experiment_boltzmann_2...
+2019-12-16 10:22:03,932 - INFO - Environment setup...
+2019-12-16 10:22:03,933 - INFO - Environment setup is successful!
+2019-12-16 10:22:03,933 - INFO - Agent setup...
+2019-12-16 10:22:03,933 - INFO - Setup of agent dddqn_agent with scope experiment_boltzmann_2...
+2019-12-16 10:22:03,934 - INFO - A Tensorboard summary for the agent will be updated during training of its internal model
+2019-12-16 10:22:03,934 - INFO - Tensorboard summary path: ./experiments/cart_pole_dddql_2019-12-16/experiment_boltzmann/2/summary
+2019-12-16 10:22:03,934 - INFO - Generating model model with scope experiment_boltzmann_2/dddqn_agent...
+2019-12-16 10:22:03,934 - INFO - Model generation successful
+2019-12-16 10:22:04,133 - INFO - Agent setup is successful!
+2019-12-16 10:22:04,145 - INFO - Agent internal model will be saved after each train volley
+2019-12-16 10:22:04,145 - INFO - Agent internal model metagraph save path: ./experiments/cart_pole_dddql_2019-12-16/experiment_boltzmann/2/metagraph
+2019-12-16 10:22:04,145 - INFO - Tensorflow configuration is successful!
+2019-12-16 10:22:04,145 - INFO - Experiment setup is successful. Now can conduct the experiment
+2019-12-16 10:22:04,145 - INFO - Conducting experiment experiment_boltzmann_2...
+2019-12-16 10:22:04,216 - INFO - Model initialized to default state
+2019-12-16 10:22:04,237 - INFO - Warming-up for 1000 steps...
+2019-12-16 10:22:04,239 - INFO - Warmed-up for 100/1000 steps...
+2019-12-16 10:22:04,241 - INFO - Warmed-up for 200/1000 steps...
+2019-12-16 10:22:04,243 - INFO - Warmed-up for 300/1000 steps...
+2019-12-16 10:22:04,244 - INFO - Warmed-up for 400/1000 steps...
+2019-12-16 10:22:04,246 - INFO - Warmed-up for 500/1000 steps...
+2019-12-16 10:22:04,248 - INFO - Warmed-up for 600/1000 steps...
+2019-12-16 10:22:04,249 - INFO - Warmed-up for 700/1000 steps...
+2019-12-16 10:22:04,251 - INFO - Warmed-up for 800/1000 steps...
+2019-12-16 10:22:04,253 - INFO - Warmed-up for 900/1000 steps...
+2019-12-16 10:22:04,254 - INFO - Warmed-up for 1000/1000 steps...
+2019-12-16 10:22:04,254 - INFO - Training for 10 episodes...
+2019-12-16 10:22:04,591 - INFO - Copying weights from main network to target network at step 25
+2019-12-16 10:22:04,841 - INFO - Copying weights from main network to target network at step 50
+2019-12-16 10:22:05,066 - INFO - Copying weights from main network to target network at step 75
+2019-12-16 10:22:05,272 - INFO - Copying weights from main network to target network at step 100
+2019-12-16 10:22:05,471 - INFO - Copying weights from main network to target network at step 125
+2019-12-16 10:22:05,650 - INFO - Copying weights from main network to target network at step 150
+2019-12-16 10:22:05,849 - INFO - Copying weights from main network to target network at step 175
+2019-12-16 10:22:05,885 - INFO - Training of 10 episodes finished with following result:
+2019-12-16 10:22:05,886 - INFO - Average total reward over 10 training episodes after 10 total training episodes: 17.9
+2019-12-16 10:22:05,886 - INFO - Standard deviation of total reward over 10 training episodes after 10 total training episodes: 16.065
+2019-12-16 10:22:05,886 - INFO - Average scaled reward over 10 training episodes after 10 total training episodes: 1.0
+2019-12-16 10:22:05,886 - INFO - Standard deviation of scaled reward over 10 training episodes after 10 total training episodes: 0.0
+2019-12-16 10:22:05,886 - INFO - Average episode length over 10 training episodes after 10 total training episodes: 17.0 steps
+2019-12-16 10:22:05,886 - INFO - Total environmental steps in training mode up to now: 179
+2019-12-16 10:22:05,886 - INFO - Saving the agent...
+2019-12-16 10:22:05,937 - INFO - Validating for 100 episodes...
+2019-12-16 10:22:06,152 - INFO - Validation of 100 episodes finished with following result:
+2019-12-16 10:22:06,152 - INFO - Average total reward over 100 validation episodes after 10 total training episodes: 9.37
+2019-12-16 10:22:06,152 - INFO - Standard deviation of total reward over 100 validation episodes after 10 total training episodes: 0.73
+2019-12-16 10:22:06,152 - INFO - Average scaled reward over 100 validation episodes after 10 total training episodes: 1.0
+2019-12-16 10:22:06,152 - INFO - Standard deviation of scaled reward over 100 validation episodes after 10 total training episodes: 0.0
+2019-12-16 10:22:06,152 - INFO - Average episode length over 100 validation episodes after 10 total training episodes: 8.0 steps
+2019-12-16 10:22:06,152 - INFO - Training for 10 episodes...
+2019-12-16 10:22:06,329 - INFO - Copying weights from main network to target network at step 200
+2019-12-16 10:22:06,490 - INFO - Copying weights from main network to target network at step 225
+2019-12-16 10:22:06,719 - INFO - Copying weights from main network to target network at step 250
+2019-12-16 10:22:06,954 - INFO - Copying weights from main network to target network at step 275
+2019-12-16 10:22:07,159 - INFO - Copying weights from main network to target network at step 300
+2019-12-16 10:22:07,310 - INFO - Training of 10 episodes finished with following result:
+2019-12-16 10:22:07,310 - INFO - Average total reward over 10 training episodes after 20 total training episodes: 14.0
+2019-12-16 10:22:07,310 - INFO - Standard deviation of total reward over 10 training episodes after 20 total training episodes: 6.293
+2019-12-16 10:22:07,310 - INFO - Average scaled reward over 10 training episodes after 20 total training episodes: 1.0
+2019-12-16 10:22:07,310 - INFO - Standard deviation of scaled reward over 10 training episodes after 20 total training episodes: 0.0
+2019-12-16 10:22:07,310 - INFO - Average episode length over 10 training episodes after 20 total training episodes: 13.0 steps
+2019-12-16 10:22:07,310 - INFO - Total environmental steps in training mode up to now: 319
+2019-12-16 10:22:07,311 - INFO - Saving the agent...
+2019-12-16 10:22:07,345 - INFO - Validating for 100 episodes...
+2019-12-16 10:22:07,563 - INFO - Validation of 100 episodes finished with following result:
+2019-12-16 10:22:07,563 - INFO - Average total reward over 100 validation episodes after 20 total training episodes: 9.31
+2019-12-16 10:22:07,563 - INFO - Standard deviation of total reward over 100 validation episodes after 20 total training episodes: 0.758
+2019-12-16 10:22:07,563 - INFO - Average scaled reward over 100 validation episodes after 20 total training episodes: 1.0
+2019-12-16 10:22:07,563 - INFO - Standard deviation of scaled reward over 100 validation episodes after 20 total training episodes: 0.0
+2019-12-16 10:22:07,563 - INFO - Average episode length over 100 validation episodes after 20 total training episodes: 8.0 steps
+2019-12-16 10:22:07,563 - INFO - Training for 10 episodes...
+2019-12-16 10:22:07,590 - INFO - Copying weights from main network to target network at step 325
+2019-12-16 10:22:07,746 - INFO - Copying weights from main network to target network at step 350
+2019-12-16 10:22:07,878 - INFO - Copying weights from main network to target network at step 375
+2019-12-16 10:22:08,098 - INFO - Copying weights from main network to target network at step 400
+2019-12-16 10:22:08,333 - INFO - Copying weights from main network to target network at step 425
+2019-12-16 10:22:08,520 - INFO - Copying weights from main network to target network at step 450
+2019-12-16 10:22:08,699 - INFO - Copying weights from main network to target network at step 475
+2019-12-16 10:22:08,903 - INFO - Copying weights from main network to target network at step 500
+2019-12-16 10:22:09,068 - INFO - Copying weights from main network to target network at step 525
+2019-12-16 10:22:09,281 - INFO - Copying weights from main network to target network at step 550
+2019-12-16 10:22:09,491 - INFO - Copying weights from main network to target network at step 575
+2019-12-16 10:22:09,720 - INFO - Copying weights from main network to target network at step 600
+2019-12-16 10:22:09,812 - INFO - Training of 10 episodes finished with following result:
+2019-12-16 10:22:09,813 - INFO - Average total reward over 10 training episodes after 30 total training episodes: 29.1
+2019-12-16 10:22:09,813 - INFO - Standard deviation of total reward over 10 training episodes after 30 total training episodes: 25.645
+2019-12-16 10:22:09,813 - INFO - Average scaled reward over 10 training episodes after 30 total training episodes: 1.0
+2019-12-16 10:22:09,813 - INFO - Standard deviation of scaled reward over 10 training episodes after 30 total training episodes: 0.0
+2019-12-16 10:22:09,813 - INFO - Average episode length over 10 training episodes after 30 total training episodes: 28.0 steps
+2019-12-16 10:22:09,813 - INFO - Total environmental steps in training mode up to now: 610
+2019-12-16 10:22:09,813 - INFO - Saving the agent...
+2019-12-16 10:22:09,851 - INFO - Validating for 100 episodes...
+2019-12-16 10:22:12,039 - INFO - Validation of 100 episodes finished with following result:
+2019-12-16 10:22:12,039 - INFO - Average total reward over 100 validation episodes after 30 total training episodes: 98.82
+2019-12-16 10:22:12,039 - INFO - Standard deviation of total reward over 100 validation episodes after 30 total training episodes: 54.366
+2019-12-16 10:22:12,039 - INFO - Average scaled reward over 100 validation episodes after 30 total training episodes: 1.0
+2019-12-16 10:22:12,040 - INFO - Standard deviation of scaled reward over 100 validation episodes after 30 total training episodes: 0.0
+2019-12-16 10:22:12,040 - INFO - Average episode length over 100 validation episodes after 30 total training episodes: 98.0 steps
+2019-12-16 10:22:12,040 - INFO - Training for 10 episodes...
+2019-12-16 10:22:12,151 - INFO - Copying weights from main network to target network at step 625
+2019-12-16 10:22:12,343 - INFO - Copying weights from main network to target network at step 650
+2019-12-16 10:22:12,580 - INFO - Copying weights from main network to target network at step 675
+2019-12-16 10:22:12,789 - INFO - Copying weights from main network to target network at step 700
+2019-12-16 10:22:13,020 - INFO - Copying weights from main network to target network at step 725
+2019-12-16 10:22:13,193 - INFO - Copying weights from main network to target network at step 750
+2019-12-16 10:22:13,399 - INFO - Copying weights from main network to target network at step 775
+2019-12-16 10:22:13,607 - INFO - Copying weights from main network to target network at step 800
+2019-12-16 10:22:13,836 - INFO - Copying weights from main network to target network at step 825
+2019-12-16 10:22:14,057 - INFO - Copying weights from main network to target network at step 850
+2019-12-16 10:22:14,198 - INFO - Copying weights from main network to target network at step 875
+2019-12-16 10:22:14,405 - INFO - Copying weights from main network to target network at step 900
+2019-12-16 10:22:14,619 - INFO - Copying weights from main network to target network at step 925
+2019-12-16 10:22:14,841 - INFO - Copying weights from main network to target network at step 950
+2019-12-16 10:22:15,025 - INFO - Copying weights from main network to target network at step 975
+2019-12-16 10:22:15,230 - INFO - Copying weights from main network to target network at step 1000
+2019-12-16 10:22:15,421 - INFO - Copying weights from main network to target network at step 1025
+2019-12-16 10:22:15,646 - INFO - Copying weights from main network to target network at step 1050
+2019-12-16 10:22:15,827 - INFO - Copying weights from main network to target network at step 1075
+2019-12-16 10:22:16,072 - INFO - Copying weights from main network to target network at step 1100
+2019-12-16 10:22:16,209 - INFO - Copying weights from main network to target network at step 1125
+2019-12-16 10:22:16,432 - INFO - Copying weights from main network to target network at step 1150
+2019-12-16 10:22:16,587 - INFO - Copying weights from main network to target network at step 1175
+2019-12-16 10:22:16,766 - INFO - Copying weights from main network to target network at step 1200
+2019-12-16 10:22:16,994 - INFO - Copying weights from main network to target network at step 1225
+2019-12-16 10:22:17,227 - INFO - Copying weights from main network to target network at step 1250
+2019-12-16 10:22:17,470 - INFO - Copying weights from main network to target network at step 1275
+2019-12-16 10:22:17,673 - INFO - Copying weights from main network to target network at step 1300
+2019-12-16 10:22:17,852 - INFO - Copying weights from main network to target network at step 1325
+2019-12-16 10:22:18,046 - INFO - Copying weights from main network to target network at step 1350
+2019-12-16 10:22:18,207 - INFO - Copying weights from main network to target network at step 1375
+2019-12-16 10:22:18,397 - INFO - Copying weights from main network to target network at step 1400
+2019-12-16 10:22:18,615 - INFO - Copying weights from main network to target network at step 1425
+2019-12-16 10:22:18,806 - INFO - Copying weights from main network to target network at step 1450
+2019-12-16 10:22:19,029 - INFO - Copying weights from main network to target network at step 1475
+2019-12-16 10:22:19,215 - INFO - Copying weights from main network to target network at step 1500
+2019-12-16 10:22:19,411 - INFO - Copying weights from main network to target network at step 1525
+2019-12-16 10:22:19,668 - INFO - Copying weights from main network to target network at step 1550
+2019-12-16 10:22:19,817 - INFO - Copying weights from main network to target network at step 1575
+2019-12-16 10:22:20,000 - INFO - Copying weights from main network to target network at step 1600
+2019-12-16 10:22:20,196 - INFO - Copying weights from main network to target network at step 1625
+2019-12-16 10:22:20,336 - INFO - Training of 10 episodes finished with following result:
+2019-12-16 10:22:20,336 - INFO - Average total reward over 10 training episodes after 40 total training episodes: 103.4
+2019-12-16 10:22:20,336 - INFO - Standard deviation of total reward over 10 training episodes after 40 total training episodes: 53.576
+2019-12-16 10:22:20,336 - INFO - Average scaled reward over 10 training episodes after 40 total training episodes: 1.0
+2019-12-16 10:22:20,336 - INFO - Standard deviation of scaled reward over 10 training episodes after 40 total training episodes: 0.0
+2019-12-16 10:22:20,336 - INFO - Average episode length over 10 training episodes after 40 total training episodes: 102.0 steps
+2019-12-16 10:22:20,336 - INFO - Total environmental steps in training mode up to now: 1644
+2019-12-16 10:22:20,337 - INFO - Saving the agent...
+2019-12-16 10:22:20,372 - INFO - Validating for 100 episodes...
+2019-12-16 10:22:24,789 - INFO - Validation of 100 episodes finished with following result:
+2019-12-16 10:22:24,789 - INFO - Average total reward over 100 validation episodes after 40 total training episodes: 200.0
+2019-12-16 10:22:24,789 - INFO - Standard deviation of total reward over 100 validation episodes after 40 total training episodes: 0.0
+2019-12-16 10:22:24,789 - INFO - Average scaled reward over 100 validation episodes after 40 total training episodes: 1.0
+2019-12-16 10:22:24,789 - INFO - Standard deviation of scaled reward over 100 validation episodes after 40 total training episodes: 0.0
+2019-12-16 10:22:24,789 - INFO - Average episode length over 100 validation episodes after 40 total training episodes: 199.0 steps
+2019-12-16 10:22:24,789 - INFO - Validation of the agent is successful
+2019-12-16 10:22:24,789 - INFO - End of training
+2019-12-16 10:22:24,789 - INFO - Cycle 1 - Testing for 100 episodes...
+2019-12-16 10:22:29,233 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:22:29,233 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:22:29,233 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:22:29,233 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:22:29,233 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:22:29,233 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:22:29,233 - INFO - Cycle 2 - Testing for 100 episodes...
+2019-12-16 10:22:33,626 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:22:33,627 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:22:33,627 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:22:33,627 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:22:33,627 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:22:33,627 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:22:33,627 - INFO - Cycle 3 - Testing for 100 episodes...
+2019-12-16 10:22:38,066 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:22:38,066 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:22:38,066 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:22:38,066 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:22:38,066 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:22:38,066 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:22:38,066 - INFO - Cycle 4 - Testing for 100 episodes...
+2019-12-16 10:22:42,475 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:22:42,475 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:22:42,475 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:22:42,475 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:22:42,475 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:22:42,475 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:22:42,475 - INFO - Cycle 5 - Testing for 100 episodes...
+2019-12-16 10:22:46,929 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:22:46,929 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:22:46,930 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:22:46,930 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:22:46,930 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:22:46,930 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:22:46,930 - INFO - Cycle 6 - Testing for 100 episodes...
+2019-12-16 10:22:51,345 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:22:51,345 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:22:51,345 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:22:51,345 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:22:51,345 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:22:51,345 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:22:51,345 - INFO - Cycle 7 - Testing for 100 episodes...
+2019-12-16 10:22:55,814 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:22:55,814 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:22:55,815 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:22:55,815 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:22:55,815 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:22:55,815 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:22:55,815 - INFO - Cycle 8 - Testing for 100 episodes...
+2019-12-16 10:23:00,175 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:23:00,175 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:23:00,175 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:23:00,175 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:23:00,175 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:23:00,175 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:23:00,175 - INFO - Cycle 9 - Testing for 100 episodes...
+2019-12-16 10:23:04,498 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:23:04,498 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:23:04,498 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:23:04,498 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:23:04,499 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:23:04,499 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:23:04,499 - INFO - Cycle 10 - Testing for 100 episodes...
+2019-12-16 10:23:08,789 - INFO - Testing of 100 episodes finished with following result:
+2019-12-16 10:23:08,789 - INFO - Average total reward over 100 test episodes: 200.0
+2019-12-16 10:23:08,789 - INFO - Standard deviation of total reward over 100 test episodes: 0.0
+2019-12-16 10:23:08,789 - INFO - Average scaled reward over 100 test episodes: 1.0
+2019-12-16 10:23:08,789 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-16 10:23:08,789 - INFO - Average episode length over 100 test episodes: 199.0 steps
+2019-12-16 10:23:08,789 - INFO - End of test
+2019-12-16 10:23:08,789 - INFO - Average test total reward is 200.0 with 40 training episodes
+2019-12-16 10:23:08,789 - INFO - Average test scaled reward is 1.0 with 40 training episodes
+2019-12-16 10:23:08,789 - INFO - Max test total reward over 100 and 10 cycles is: 200.0
+2019-12-16 10:23:08,789 - INFO - Max test scaled reward over 100 and 10 cycles is: 1.0
+2019-12-16 10:23:08,789 - INFO - Average test standard deviation of total reward is 0.0 with 40 training episodes
+2019-12-16 10:23:08,789 - INFO - Average test standard deviation of scaled reward is 0.0 with 40 training episodes
+2019-12-16 10:23:08,789 - INFO - Min test standard deviation of total reward over 100 and 10 cycles is: 0.0
+2019-12-16 10:23:08,789 - INFO - Min test standard deviation of scaled reward over 100 and 10 cycles is: 0.0
+2019-12-16 10:23:08,789 - INFO - Average test episode length is 199.0 with 40 training episodes
+2019-12-16 10:23:08,789 - INFO - Saving plots...
+2019-12-16 10:23:13,380 - INFO - Plots saved successfully
+2019-12-16 10:23:13,380 - INFO - The experiment terminated successfully
