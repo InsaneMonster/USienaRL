@@ -361,7 +361,7 @@ class ProximalPolicyOptimization(Model):
                                                                self._targets: action})
             else:
                 value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
-                                                    eed_dict={self._inputs: [observation_current],
+                                                    feed_dict={self._inputs: [observation_current],
                                                               self._targets: action})
         # Return the estimated value and the log-likelihood
         return value[0], log_likelihood[0]
@@ -381,7 +381,7 @@ class ProximalPolicyOptimization(Model):
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             value = session.run(self._value,
-                                eed_dict={self._inputs: [observation_current_one_hot]})
+                                feed_dict={self._inputs: [observation_current_one_hot]})
         else:
             value = session.run(self._value,
                                 feed_dict={self._inputs: [observation_current]})
