@@ -1,0 +1,128 @@
+2019-12-17 11:33:32,640 - INFO - Setup of experiment experiment_refactored_epsilon_greedy_1...
+2019-12-17 11:33:32,640 - INFO - Environment setup...
+2019-12-17 11:33:32,640 - INFO - Environment setup is successful!
+2019-12-17 11:33:32,641 - INFO - Agent setup...
+2019-12-17 11:33:32,641 - INFO - Setup of agent tql_agent with scope experiment_refactored_epsilon_greedy_1...
+2019-12-17 11:33:32,642 - INFO - A Tensorboard summary for the agent will be updated during training of its internal model
+2019-12-17 11:33:32,642 - INFO - Tensorboard summary path: ./experiments/frozen_lake_tql_2019-12-17/experiment_refactored_epsilon_greedy/1/summary
+2019-12-17 11:33:32,642 - INFO - Generating model model with scope experiment_refactored_epsilon_greedy_1/tql_agent...
+2019-12-17 11:33:32,642 - INFO - Model generation successful
+2019-12-17 11:33:32,665 - INFO - Agent setup is successful!
+2019-12-17 11:33:32,669 - INFO - Agent internal model will be saved after each train volley
+2019-12-17 11:33:32,669 - INFO - Agent internal model metagraph save path: ./experiments/frozen_lake_tql_2019-12-17/experiment_refactored_epsilon_greedy/1/metagraph
+2019-12-17 11:33:32,669 - INFO - Tensorflow configuration is successful!
+2019-12-17 11:33:32,669 - INFO - Experiment setup is successful. Now can conduct the experiment
+2019-12-17 11:33:32,670 - INFO - Conducting experiment experiment_refactored_epsilon_greedy_1...
+2019-12-17 11:33:32,678 - INFO - Model initialized to default state
+2019-12-17 11:33:32,678 - INFO - Warming-up for 1000 steps...
+2019-12-17 11:33:32,680 - INFO - Warmed-up for 100/1000 steps...
+2019-12-17 11:33:32,682 - INFO - Warmed-up for 200/1000 steps...
+2019-12-17 11:33:32,684 - INFO - Warmed-up for 300/1000 steps...
+2019-12-17 11:33:32,686 - INFO - Warmed-up for 400/1000 steps...
+2019-12-17 11:33:32,688 - INFO - Warmed-up for 500/1000 steps...
+2019-12-17 11:33:32,690 - INFO - Warmed-up for 600/1000 steps...
+2019-12-17 11:33:32,692 - INFO - Warmed-up for 700/1000 steps...
+2019-12-17 11:33:32,694 - INFO - Warmed-up for 800/1000 steps...
+2019-12-17 11:33:32,696 - INFO - Warmed-up for 900/1000 steps...
+2019-12-17 11:33:32,698 - INFO - Warmed-up for 1000/1000 steps...
+2019-12-17 11:33:32,698 - INFO - Training for 100 episodes...
+2019-12-17 11:33:35,062 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 11:33:35,062 - INFO - Average total reward over 100 training episodes after 100 total training episodes: -6.66
+2019-12-17 11:33:35,062 - INFO - Standard deviation of total reward over 100 training episodes after 100 total training episodes: 4.077
+2019-12-17 11:33:35,062 - INFO - Average scaled reward over 100 training episodes after 100 total training episodes: -0.999
+2019-12-17 11:33:35,062 - INFO - Standard deviation of scaled reward over 100 training episodes after 100 total training episodes: 0.008
+2019-12-17 11:33:35,062 - INFO - Average episode length over 100 training episodes after 100 total training episodes: 6.0 steps
+2019-12-17 11:33:35,062 - INFO - Total environmental steps in training mode up to now: 668
+2019-12-17 11:33:35,062 - INFO - Saving the agent...
+2019-12-17 11:33:35,073 - INFO - Validating for 100 episodes...
+2019-12-17 11:33:35,220 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 11:33:35,220 - INFO - Average total reward over 100 validation episodes after 100 total training episodes: -6.96
+2019-12-17 11:33:35,220 - INFO - Standard deviation of total reward over 100 validation episodes after 100 total training episodes: 9.046
+2019-12-17 11:33:35,220 - INFO - Average scaled reward over 100 validation episodes after 100 total training episodes: -0.998
+2019-12-17 11:33:35,220 - INFO - Standard deviation of scaled reward over 100 validation episodes after 100 total training episodes: 0.012
+2019-12-17 11:33:35,220 - INFO - Average episode length over 100 validation episodes after 100 total training episodes: 6.0 steps
+2019-12-17 11:33:35,220 - INFO - Validation of the agent is successful
+2019-12-17 11:33:35,220 - INFO - End of training
+2019-12-17 11:33:35,220 - INFO - Cycle 1 - Testing for 100 episodes...
+2019-12-17 11:33:35,383 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:35,383 - INFO - Average total reward over 100 test episodes: -7.81
+2019-12-17 11:33:35,383 - INFO - Standard deviation of total reward over 100 test episodes: 9.305
+2019-12-17 11:33:35,383 - INFO - Average scaled reward over 100 test episodes: -0.999
+2019-12-17 11:33:35,383 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.006
+2019-12-17 11:33:35,383 - INFO - Average episode length over 100 test episodes: 7.0 steps
+2019-12-17 11:33:35,383 - INFO - Cycle 2 - Testing for 100 episodes...
+2019-12-17 11:33:35,568 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:35,568 - INFO - Average total reward over 100 test episodes: -8.92
+2019-12-17 11:33:35,568 - INFO - Standard deviation of total reward over 100 test episodes: 11.418
+2019-12-17 11:33:35,568 - INFO - Average scaled reward over 100 test episodes: -1.0
+2019-12-17 11:33:35,568 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.004
+2019-12-17 11:33:35,568 - INFO - Average episode length over 100 test episodes: 8.0 steps
+2019-12-17 11:33:35,568 - INFO - Cycle 3 - Testing for 100 episodes...
+2019-12-17 11:33:35,753 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:35,753 - INFO - Average total reward over 100 test episodes: -9.06
+2019-12-17 11:33:35,753 - INFO - Standard deviation of total reward over 100 test episodes: 10.402
+2019-12-17 11:33:35,753 - INFO - Average scaled reward over 100 test episodes: -0.997
+2019-12-17 11:33:35,753 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.016
+2019-12-17 11:33:35,753 - INFO - Average episode length over 100 test episodes: 8.0 steps
+2019-12-17 11:33:35,753 - INFO - Cycle 4 - Testing for 100 episodes...
+2019-12-17 11:33:35,943 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:35,943 - INFO - Average total reward over 100 test episodes: -9.23
+2019-12-17 11:33:35,943 - INFO - Standard deviation of total reward over 100 test episodes: 11.075
+2019-12-17 11:33:35,943 - INFO - Average scaled reward over 100 test episodes: -0.999
+2019-12-17 11:33:35,943 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.008
+2019-12-17 11:33:35,943 - INFO - Average episode length over 100 test episodes: 8.0 steps
+2019-12-17 11:33:35,943 - INFO - Cycle 5 - Testing for 100 episodes...
+2019-12-17 11:33:36,079 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:36,080 - INFO - Average total reward over 100 test episodes: -6.6
+2019-12-17 11:33:36,080 - INFO - Standard deviation of total reward over 100 test episodes: 6.707
+2019-12-17 11:33:36,080 - INFO - Average scaled reward over 100 test episodes: -0.997
+2019-12-17 11:33:36,080 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.018
+2019-12-17 11:33:36,080 - INFO - Average episode length over 100 test episodes: 6.0 steps
+2019-12-17 11:33:36,080 - INFO - Cycle 6 - Testing for 100 episodes...
+2019-12-17 11:33:36,249 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:36,249 - INFO - Average total reward over 100 test episodes: -8.22
+2019-12-17 11:33:36,249 - INFO - Standard deviation of total reward over 100 test episodes: 11.192
+2019-12-17 11:33:36,249 - INFO - Average scaled reward over 100 test episodes: -0.997
+2019-12-17 11:33:36,249 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.018
+2019-12-17 11:33:36,249 - INFO - Average episode length over 100 test episodes: 7.0 steps
+2019-12-17 11:33:36,249 - INFO - Cycle 7 - Testing for 100 episodes...
+2019-12-17 11:33:36,429 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:36,429 - INFO - Average total reward over 100 test episodes: -8.72
+2019-12-17 11:33:36,429 - INFO - Standard deviation of total reward over 100 test episodes: 10.211
+2019-12-17 11:33:36,429 - INFO - Average scaled reward over 100 test episodes: -0.994
+2019-12-17 11:33:36,429 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.025
+2019-12-17 11:33:36,429 - INFO - Average episode length over 100 test episodes: 8.0 steps
+2019-12-17 11:33:36,429 - INFO - Cycle 8 - Testing for 100 episodes...
+2019-12-17 11:33:36,586 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:36,586 - INFO - Average total reward over 100 test episodes: -7.61
+2019-12-17 11:33:36,586 - INFO - Standard deviation of total reward over 100 test episodes: 9.74
+2019-12-17 11:33:36,586 - INFO - Average scaled reward over 100 test episodes: -1.0
+2019-12-17 11:33:36,586 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.0
+2019-12-17 11:33:36,586 - INFO - Average episode length over 100 test episodes: 7.0 steps
+2019-12-17 11:33:36,586 - INFO - Cycle 9 - Testing for 100 episodes...
+2019-12-17 11:33:36,736 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:36,736 - INFO - Average total reward over 100 test episodes: -7.24
+2019-12-17 11:33:36,736 - INFO - Standard deviation of total reward over 100 test episodes: 6.931
+2019-12-17 11:33:36,736 - INFO - Average scaled reward over 100 test episodes: -0.994
+2019-12-17 11:33:36,736 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.027
+2019-12-17 11:33:36,736 - INFO - Average episode length over 100 test episodes: 6.0 steps
+2019-12-17 11:33:36,736 - INFO - Cycle 10 - Testing for 100 episodes...
+2019-12-17 11:33:36,924 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 11:33:36,924 - INFO - Average total reward over 100 test episodes: -9.14
+2019-12-17 11:33:36,924 - INFO - Standard deviation of total reward over 100 test episodes: 11.329
+2019-12-17 11:33:36,924 - INFO - Average scaled reward over 100 test episodes: -0.997
+2019-12-17 11:33:36,924 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.018
+2019-12-17 11:33:36,924 - INFO - Average episode length over 100 test episodes: 8.0 steps
+2019-12-17 11:33:36,924 - INFO - End of test
+2019-12-17 11:33:36,924 - INFO - Average test total reward is -8.255 with 100 training episodes
+2019-12-17 11:33:36,924 - INFO - Average test scaled reward is -0.997 with 100 training episodes
+2019-12-17 11:33:36,924 - INFO - Max test total reward over 100 and 10 cycles is: -6.6
+2019-12-17 11:33:36,924 - INFO - Max test scaled reward over 100 and 10 cycles is: -0.994
+2019-12-17 11:33:36,924 - INFO - Average test standard deviation of total reward is 9.831 with 100 training episodes
+2019-12-17 11:33:36,924 - INFO - Average test standard deviation of scaled reward is 0.014 with 100 training episodes
+2019-12-17 11:33:36,924 - INFO - Min test standard deviation of total reward over 100 and 10 cycles is: 6.707
+2019-12-17 11:33:36,924 - INFO - Min test standard deviation of scaled reward over 100 and 10 cycles is: 0.0
+2019-12-17 11:33:36,924 - INFO - Average test episode length is 7.0 with 100 training episodes
+2019-12-17 11:33:36,924 - INFO - Saving plots...
+2019-12-17 11:33:38,553 - INFO - Plots saved successfully
+2019-12-17 11:33:38,553 - INFO - The experiment terminated successfully

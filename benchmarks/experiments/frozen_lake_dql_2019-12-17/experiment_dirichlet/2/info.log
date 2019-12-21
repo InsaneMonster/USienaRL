@@ -1,0 +1,685 @@
+2019-12-17 02:40:39,502 - INFO - Setup of experiment experiment_dirichlet_2...
+2019-12-17 02:40:39,502 - INFO - Environment setup...
+2019-12-17 02:40:39,503 - INFO - Environment setup is successful!
+2019-12-17 02:40:39,503 - INFO - Agent setup...
+2019-12-17 02:40:39,503 - INFO - Setup of agent dqn_agent with scope experiment_dirichlet_2...
+2019-12-17 02:40:39,504 - INFO - A Tensorboard summary for the agent will be updated during training of its internal model
+2019-12-17 02:40:39,504 - INFO - Tensorboard summary path: ./experiments/frozen_lake_dql_2019-12-17/experiment_dirichlet/2/summary
+2019-12-17 02:40:39,504 - INFO - Generating model model_huber with scope experiment_dirichlet_2/dqn_agent...
+2019-12-17 02:40:39,504 - INFO - Model generation successful
+2019-12-17 02:40:39,623 - INFO - Agent setup is successful!
+2019-12-17 02:40:39,631 - INFO - Agent internal model will be saved after each train volley
+2019-12-17 02:40:39,631 - INFO - Agent internal model metagraph save path: ./experiments/frozen_lake_dql_2019-12-17/experiment_dirichlet/2/metagraph
+2019-12-17 02:40:39,631 - INFO - Tensorflow configuration is successful!
+2019-12-17 02:40:39,631 - INFO - Experiment setup is successful. Now can conduct the experiment
+2019-12-17 02:40:39,631 - INFO - Conducting experiment experiment_dirichlet_2...
+2019-12-17 02:40:39,674 - INFO - Model initialized to default state
+2019-12-17 02:40:39,686 - INFO - Warming-up for 1000 steps...
+2019-12-17 02:40:39,690 - INFO - Warmed-up for 100/1000 steps...
+2019-12-17 02:40:39,695 - INFO - Warmed-up for 200/1000 steps...
+2019-12-17 02:40:39,700 - INFO - Warmed-up for 300/1000 steps...
+2019-12-17 02:40:39,704 - INFO - Warmed-up for 400/1000 steps...
+2019-12-17 02:40:39,707 - INFO - Warmed-up for 500/1000 steps...
+2019-12-17 02:40:39,710 - INFO - Warmed-up for 600/1000 steps...
+2019-12-17 02:40:39,713 - INFO - Warmed-up for 700/1000 steps...
+2019-12-17 02:40:39,715 - INFO - Warmed-up for 800/1000 steps...
+2019-12-17 02:40:39,717 - INFO - Warmed-up for 900/1000 steps...
+2019-12-17 02:40:39,719 - INFO - Warmed-up for 1000/1000 steps...
+2019-12-17 02:40:39,719 - INFO - Training for 100 episodes...
+2019-12-17 02:40:39,904 - INFO - Copying weights from main network to target network at step 25
+2019-12-17 02:40:40,020 - INFO - Copying weights from main network to target network at step 50
+2019-12-17 02:40:40,232 - INFO - Copying weights from main network to target network at step 75
+2019-12-17 02:40:40,457 - INFO - Copying weights from main network to target network at step 100
+2019-12-17 02:40:40,622 - INFO - Copying weights from main network to target network at step 125
+2019-12-17 02:40:40,820 - INFO - Copying weights from main network to target network at step 150
+2019-12-17 02:40:41,037 - INFO - Copying weights from main network to target network at step 175
+2019-12-17 02:40:41,238 - INFO - Copying weights from main network to target network at step 200
+2019-12-17 02:40:41,459 - INFO - Copying weights from main network to target network at step 225
+2019-12-17 02:40:41,612 - INFO - Copying weights from main network to target network at step 250
+2019-12-17 02:40:41,805 - INFO - Copying weights from main network to target network at step 275
+2019-12-17 02:40:41,957 - INFO - Copying weights from main network to target network at step 300
+2019-12-17 02:40:42,132 - INFO - Copying weights from main network to target network at step 325
+2019-12-17 02:40:42,334 - INFO - Copying weights from main network to target network at step 350
+2019-12-17 02:40:42,569 - INFO - Copying weights from main network to target network at step 375
+2019-12-17 02:40:42,748 - INFO - Copying weights from main network to target network at step 400
+2019-12-17 02:40:42,920 - INFO - Copying weights from main network to target network at step 425
+2019-12-17 02:40:43,142 - INFO - Copying weights from main network to target network at step 450
+2019-12-17 02:40:43,378 - INFO - Copying weights from main network to target network at step 475
+2019-12-17 02:40:43,589 - INFO - Copying weights from main network to target network at step 500
+2019-12-17 02:40:43,755 - INFO - Copying weights from main network to target network at step 525
+2019-12-17 02:40:43,927 - INFO - Copying weights from main network to target network at step 550
+2019-12-17 02:40:44,094 - INFO - Copying weights from main network to target network at step 575
+2019-12-17 02:40:44,262 - INFO - Copying weights from main network to target network at step 600
+2019-12-17 02:40:44,455 - INFO - Copying weights from main network to target network at step 625
+2019-12-17 02:40:44,587 - INFO - Copying weights from main network to target network at step 650
+2019-12-17 02:40:44,764 - INFO - Copying weights from main network to target network at step 675
+2019-12-17 02:40:44,897 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:40:44,898 - INFO - Average total reward over 100 training episodes after 100 total training episodes: 0.01
+2019-12-17 02:40:44,898 - INFO - Standard deviation of total reward over 100 training episodes after 100 total training episodes: 0.099
+2019-12-17 02:40:44,898 - INFO - Average scaled reward over 100 training episodes after 100 total training episodes: 0.001
+2019-12-17 02:40:44,898 - INFO - Standard deviation of scaled reward over 100 training episodes after 100 total training episodes: 0.008
+2019-12-17 02:40:44,898 - INFO - Average episode length over 100 training episodes after 100 total training episodes: 6.0 steps
+2019-12-17 02:40:44,898 - INFO - Total environmental steps in training mode up to now: 691
+2019-12-17 02:40:44,898 - INFO - Saving the agent...
+2019-12-17 02:40:44,942 - INFO - Validating for 100 episodes...
+2019-12-17 02:40:45,367 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:40:45,367 - INFO - Average total reward over 100 validation episodes after 100 total training episodes: 0.2
+2019-12-17 02:40:45,367 - INFO - Standard deviation of total reward over 100 validation episodes after 100 total training episodes: 0.4
+2019-12-17 02:40:45,367 - INFO - Average scaled reward over 100 validation episodes after 100 total training episodes: 0.014
+2019-12-17 02:40:45,367 - INFO - Standard deviation of scaled reward over 100 validation episodes after 100 total training episodes: 0.033
+2019-12-17 02:40:45,367 - INFO - Average episode length over 100 validation episodes after 100 total training episodes: 18.0 steps
+2019-12-17 02:40:45,367 - INFO - Training for 100 episodes...
+2019-12-17 02:40:45,423 - INFO - Copying weights from main network to target network at step 700
+2019-12-17 02:40:45,627 - INFO - Copying weights from main network to target network at step 725
+2019-12-17 02:40:45,835 - INFO - Copying weights from main network to target network at step 750
+2019-12-17 02:40:46,040 - INFO - Copying weights from main network to target network at step 775
+2019-12-17 02:40:46,254 - INFO - Copying weights from main network to target network at step 800
+2019-12-17 02:40:46,434 - INFO - Copying weights from main network to target network at step 825
+2019-12-17 02:40:46,659 - INFO - Copying weights from main network to target network at step 850
+2019-12-17 02:40:46,871 - INFO - Copying weights from main network to target network at step 875
+2019-12-17 02:40:47,064 - INFO - Copying weights from main network to target network at step 900
+2019-12-17 02:40:47,232 - INFO - Copying weights from main network to target network at step 925
+2019-12-17 02:40:47,381 - INFO - Copying weights from main network to target network at step 950
+2019-12-17 02:40:47,577 - INFO - Copying weights from main network to target network at step 975
+2019-12-17 02:40:47,739 - INFO - Copying weights from main network to target network at step 1000
+2019-12-17 02:40:47,904 - INFO - Copying weights from main network to target network at step 1025
+2019-12-17 02:40:48,077 - INFO - Copying weights from main network to target network at step 1050
+2019-12-17 02:40:48,204 - INFO - Copying weights from main network to target network at step 1075
+2019-12-17 02:40:48,413 - INFO - Copying weights from main network to target network at step 1100
+2019-12-17 02:40:48,596 - INFO - Copying weights from main network to target network at step 1125
+2019-12-17 02:40:48,762 - INFO - Copying weights from main network to target network at step 1150
+2019-12-17 02:40:48,911 - INFO - Copying weights from main network to target network at step 1175
+2019-12-17 02:40:49,070 - INFO - Copying weights from main network to target network at step 1200
+2019-12-17 02:40:49,278 - INFO - Copying weights from main network to target network at step 1225
+2019-12-17 02:40:49,505 - INFO - Copying weights from main network to target network at step 1250
+2019-12-17 02:40:49,683 - INFO - Copying weights from main network to target network at step 1275
+2019-12-17 02:40:49,854 - INFO - Copying weights from main network to target network at step 1300
+2019-12-17 02:40:50,031 - INFO - Copying weights from main network to target network at step 1325
+2019-12-17 02:40:50,208 - INFO - Copying weights from main network to target network at step 1350
+2019-12-17 02:40:50,407 - INFO - Copying weights from main network to target network at step 1375
+2019-12-17 02:40:50,599 - INFO - Copying weights from main network to target network at step 1400
+2019-12-17 02:40:50,788 - INFO - Copying weights from main network to target network at step 1425
+2019-12-17 02:40:50,870 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:40:50,870 - INFO - Average total reward over 100 training episodes after 200 total training episodes: 0.0
+2019-12-17 02:40:50,870 - INFO - Standard deviation of total reward over 100 training episodes after 200 total training episodes: 0.0
+2019-12-17 02:40:50,870 - INFO - Average scaled reward over 100 training episodes after 200 total training episodes: 0.0
+2019-12-17 02:40:50,870 - INFO - Standard deviation of scaled reward over 100 training episodes after 200 total training episodes: 0.0
+2019-12-17 02:40:50,871 - INFO - Average episode length over 100 training episodes after 200 total training episodes: 6.0 steps
+2019-12-17 02:40:50,871 - INFO - Total environmental steps in training mode up to now: 1434
+2019-12-17 02:40:50,871 - INFO - Saving the agent...
+2019-12-17 02:40:50,892 - INFO - Validating for 100 episodes...
+2019-12-17 02:40:51,201 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:40:51,201 - INFO - Average total reward over 100 validation episodes after 200 total training episodes: 0.12
+2019-12-17 02:40:51,201 - INFO - Standard deviation of total reward over 100 validation episodes after 200 total training episodes: 0.325
+2019-12-17 02:40:51,201 - INFO - Average scaled reward over 100 validation episodes after 200 total training episodes: 0.011
+2019-12-17 02:40:51,201 - INFO - Standard deviation of scaled reward over 100 validation episodes after 200 total training episodes: 0.033
+2019-12-17 02:40:51,201 - INFO - Average episode length over 100 validation episodes after 200 total training episodes: 13.0 steps
+2019-12-17 02:40:51,201 - INFO - Training for 100 episodes...
+2019-12-17 02:40:51,289 - INFO - Copying weights from main network to target network at step 1450
+2019-12-17 02:40:51,448 - INFO - Copying weights from main network to target network at step 1475
+2019-12-17 02:40:51,604 - INFO - Copying weights from main network to target network at step 1500
+2019-12-17 02:40:51,799 - INFO - Copying weights from main network to target network at step 1525
+2019-12-17 02:40:52,014 - INFO - Copying weights from main network to target network at step 1550
+2019-12-17 02:40:52,232 - INFO - Copying weights from main network to target network at step 1575
+2019-12-17 02:40:52,420 - INFO - Copying weights from main network to target network at step 1600
+2019-12-17 02:40:52,611 - INFO - Copying weights from main network to target network at step 1625
+2019-12-17 02:40:52,833 - INFO - Copying weights from main network to target network at step 1650
+2019-12-17 02:40:53,048 - INFO - Copying weights from main network to target network at step 1675
+2019-12-17 02:40:53,221 - INFO - Copying weights from main network to target network at step 1700
+2019-12-17 02:40:53,433 - INFO - Copying weights from main network to target network at step 1725
+2019-12-17 02:40:53,595 - INFO - Copying weights from main network to target network at step 1750
+2019-12-17 02:40:53,841 - INFO - Copying weights from main network to target network at step 1775
+2019-12-17 02:40:54,028 - INFO - Copying weights from main network to target network at step 1800
+2019-12-17 02:40:54,196 - INFO - Copying weights from main network to target network at step 1825
+2019-12-17 02:40:54,340 - INFO - Copying weights from main network to target network at step 1850
+2019-12-17 02:40:54,539 - INFO - Copying weights from main network to target network at step 1875
+2019-12-17 02:40:54,756 - INFO - Copying weights from main network to target network at step 1900
+2019-12-17 02:40:54,936 - INFO - Copying weights from main network to target network at step 1925
+2019-12-17 02:40:55,147 - INFO - Copying weights from main network to target network at step 1950
+2019-12-17 02:40:55,358 - INFO - Copying weights from main network to target network at step 1975
+2019-12-17 02:40:55,552 - INFO - Copying weights from main network to target network at step 2000
+2019-12-17 02:40:55,727 - INFO - Copying weights from main network to target network at step 2025
+2019-12-17 02:40:55,936 - INFO - Copying weights from main network to target network at step 2050
+2019-12-17 02:40:56,156 - INFO - Copying weights from main network to target network at step 2075
+2019-12-17 02:40:56,364 - INFO - Copying weights from main network to target network at step 2100
+2019-12-17 02:40:56,581 - INFO - Copying weights from main network to target network at step 2125
+2019-12-17 02:40:56,742 - INFO - Copying weights from main network to target network at step 2150
+2019-12-17 02:40:56,902 - INFO - Copying weights from main network to target network at step 2175
+2019-12-17 02:40:57,134 - INFO - Copying weights from main network to target network at step 2200
+2019-12-17 02:40:57,174 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:40:57,174 - INFO - Average total reward over 100 training episodes after 300 total training episodes: 0.01
+2019-12-17 02:40:57,174 - INFO - Standard deviation of total reward over 100 training episodes after 300 total training episodes: 0.099
+2019-12-17 02:40:57,174 - INFO - Average scaled reward over 100 training episodes after 300 total training episodes: 0.001
+2019-12-17 02:40:57,174 - INFO - Standard deviation of scaled reward over 100 training episodes after 300 total training episodes: 0.008
+2019-12-17 02:40:57,174 - INFO - Average episode length over 100 training episodes after 300 total training episodes: 7.0 steps
+2019-12-17 02:40:57,174 - INFO - Total environmental steps in training mode up to now: 2206
+2019-12-17 02:40:57,175 - INFO - Saving the agent...
+2019-12-17 02:40:57,200 - INFO - Validating for 100 episodes...
+2019-12-17 02:40:58,049 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:40:58,049 - INFO - Average total reward over 100 validation episodes after 300 total training episodes: 0.49
+2019-12-17 02:40:58,049 - INFO - Standard deviation of total reward over 100 validation episodes after 300 total training episodes: 0.5
+2019-12-17 02:40:58,049 - INFO - Average scaled reward over 100 validation episodes after 300 total training episodes: 0.023
+2019-12-17 02:40:58,049 - INFO - Standard deviation of scaled reward over 100 validation episodes after 300 total training episodes: 0.031
+2019-12-17 02:40:58,049 - INFO - Average episode length over 100 validation episodes after 300 total training episodes: 38.0 steps
+2019-12-17 02:40:58,049 - INFO - Training for 100 episodes...
+2019-12-17 02:40:58,147 - INFO - Copying weights from main network to target network at step 2225
+2019-12-17 02:40:58,346 - INFO - Copying weights from main network to target network at step 2250
+2019-12-17 02:40:58,530 - INFO - Copying weights from main network to target network at step 2275
+2019-12-17 02:40:58,724 - INFO - Copying weights from main network to target network at step 2300
+2019-12-17 02:40:58,883 - INFO - Copying weights from main network to target network at step 2325
+2019-12-17 02:40:59,089 - INFO - Copying weights from main network to target network at step 2350
+2019-12-17 02:40:59,291 - INFO - Copying weights from main network to target network at step 2375
+2019-12-17 02:40:59,410 - INFO - Copying weights from main network to target network at step 2400
+2019-12-17 02:40:59,564 - INFO - Copying weights from main network to target network at step 2425
+2019-12-17 02:40:59,794 - INFO - Copying weights from main network to target network at step 2450
+2019-12-17 02:40:59,998 - INFO - Copying weights from main network to target network at step 2475
+2019-12-17 02:41:00,198 - INFO - Copying weights from main network to target network at step 2500
+2019-12-17 02:41:00,437 - INFO - Copying weights from main network to target network at step 2525
+2019-12-17 02:41:00,663 - INFO - Copying weights from main network to target network at step 2550
+2019-12-17 02:41:00,854 - INFO - Copying weights from main network to target network at step 2575
+2019-12-17 02:41:01,003 - INFO - Copying weights from main network to target network at step 2600
+2019-12-17 02:41:01,202 - INFO - Copying weights from main network to target network at step 2625
+2019-12-17 02:41:01,359 - INFO - Copying weights from main network to target network at step 2650
+2019-12-17 02:41:01,556 - INFO - Copying weights from main network to target network at step 2675
+2019-12-17 02:41:01,737 - INFO - Copying weights from main network to target network at step 2700
+2019-12-17 02:41:01,972 - INFO - Copying weights from main network to target network at step 2725
+2019-12-17 02:41:02,087 - INFO - Copying weights from main network to target network at step 2750
+2019-12-17 02:41:02,290 - INFO - Copying weights from main network to target network at step 2775
+2019-12-17 02:41:02,475 - INFO - Copying weights from main network to target network at step 2800
+2019-12-17 02:41:02,627 - INFO - Copying weights from main network to target network at step 2825
+2019-12-17 02:41:02,808 - INFO - Copying weights from main network to target network at step 2850
+2019-12-17 02:41:03,024 - INFO - Copying weights from main network to target network at step 2875
+2019-12-17 02:41:03,230 - INFO - Copying weights from main network to target network at step 2900
+2019-12-17 02:41:03,460 - INFO - Copying weights from main network to target network at step 2925
+2019-12-17 02:41:03,609 - INFO - Copying weights from main network to target network at step 2950
+2019-12-17 02:41:03,806 - INFO - Copying weights from main network to target network at step 2975
+2019-12-17 02:41:03,975 - INFO - Copying weights from main network to target network at step 3000
+2019-12-17 02:41:04,040 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:41:04,040 - INFO - Average total reward over 100 training episodes after 400 total training episodes: 0.01
+2019-12-17 02:41:04,040 - INFO - Standard deviation of total reward over 100 training episodes after 400 total training episodes: 0.099
+2019-12-17 02:41:04,041 - INFO - Average scaled reward over 100 training episodes after 400 total training episodes: 0.001
+2019-12-17 02:41:04,041 - INFO - Standard deviation of scaled reward over 100 training episodes after 400 total training episodes: 0.01
+2019-12-17 02:41:04,041 - INFO - Average episode length over 100 training episodes after 400 total training episodes: 7.0 steps
+2019-12-17 02:41:04,041 - INFO - Total environmental steps in training mode up to now: 3010
+2019-12-17 02:41:04,041 - INFO - Saving the agent...
+2019-12-17 02:41:04,060 - INFO - Validating for 100 episodes...
+2019-12-17 02:41:04,714 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:41:04,714 - INFO - Average total reward over 100 validation episodes after 400 total training episodes: 0.18
+2019-12-17 02:41:04,714 - INFO - Standard deviation of total reward over 100 validation episodes after 400 total training episodes: 0.384
+2019-12-17 02:41:04,714 - INFO - Average scaled reward over 100 validation episodes after 400 total training episodes: 0.011
+2019-12-17 02:41:04,714 - INFO - Standard deviation of scaled reward over 100 validation episodes after 400 total training episodes: 0.026
+2019-12-17 02:41:04,714 - INFO - Average episode length over 100 validation episodes after 400 total training episodes: 30.0 steps
+2019-12-17 02:41:04,714 - INFO - Training for 100 episodes...
+2019-12-17 02:41:04,815 - INFO - Copying weights from main network to target network at step 3025
+2019-12-17 02:41:04,971 - INFO - Copying weights from main network to target network at step 3050
+2019-12-17 02:41:05,157 - INFO - Copying weights from main network to target network at step 3075
+2019-12-17 02:41:05,330 - INFO - Copying weights from main network to target network at step 3100
+2019-12-17 02:41:05,559 - INFO - Copying weights from main network to target network at step 3125
+2019-12-17 02:41:05,787 - INFO - Copying weights from main network to target network at step 3150
+2019-12-17 02:41:06,026 - INFO - Copying weights from main network to target network at step 3175
+2019-12-17 02:41:06,163 - INFO - Copying weights from main network to target network at step 3200
+2019-12-17 02:41:06,338 - INFO - Copying weights from main network to target network at step 3225
+2019-12-17 02:41:06,538 - INFO - Copying weights from main network to target network at step 3250
+2019-12-17 02:41:06,695 - INFO - Copying weights from main network to target network at step 3275
+2019-12-17 02:41:06,883 - INFO - Copying weights from main network to target network at step 3300
+2019-12-17 02:41:07,082 - INFO - Copying weights from main network to target network at step 3325
+2019-12-17 02:41:07,264 - INFO - Copying weights from main network to target network at step 3350
+2019-12-17 02:41:07,486 - INFO - Copying weights from main network to target network at step 3375
+2019-12-17 02:41:07,691 - INFO - Copying weights from main network to target network at step 3400
+2019-12-17 02:41:07,901 - INFO - Copying weights from main network to target network at step 3425
+2019-12-17 02:41:08,076 - INFO - Copying weights from main network to target network at step 3450
+2019-12-17 02:41:08,238 - INFO - Copying weights from main network to target network at step 3475
+2019-12-17 02:41:08,424 - INFO - Copying weights from main network to target network at step 3500
+2019-12-17 02:41:08,622 - INFO - Copying weights from main network to target network at step 3525
+2019-12-17 02:41:08,793 - INFO - Copying weights from main network to target network at step 3550
+2019-12-17 02:41:08,960 - INFO - Copying weights from main network to target network at step 3575
+2019-12-17 02:41:09,163 - INFO - Copying weights from main network to target network at step 3600
+2019-12-17 02:41:09,391 - INFO - Copying weights from main network to target network at step 3625
+2019-12-17 02:41:09,521 - INFO - Copying weights from main network to target network at step 3650
+2019-12-17 02:41:09,701 - INFO - Copying weights from main network to target network at step 3675
+2019-12-17 02:41:09,881 - INFO - Copying weights from main network to target network at step 3700
+2019-12-17 02:41:10,047 - INFO - Copying weights from main network to target network at step 3725
+2019-12-17 02:41:10,256 - INFO - Copying weights from main network to target network at step 3750
+2019-12-17 02:41:10,343 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:41:10,343 - INFO - Average total reward over 100 training episodes after 500 total training episodes: 0.02
+2019-12-17 02:41:10,344 - INFO - Standard deviation of total reward over 100 training episodes after 500 total training episodes: 0.14
+2019-12-17 02:41:10,344 - INFO - Average scaled reward over 100 training episodes after 500 total training episodes: 0.003
+2019-12-17 02:41:10,344 - INFO - Standard deviation of scaled reward over 100 training episodes after 500 total training episodes: 0.019
+2019-12-17 02:41:10,344 - INFO - Average episode length over 100 training episodes after 500 total training episodes: 7.0 steps
+2019-12-17 02:41:10,344 - INFO - Total environmental steps in training mode up to now: 3761
+2019-12-17 02:41:10,344 - INFO - Saving the agent...
+2019-12-17 02:41:10,360 - INFO - Validating for 100 episodes...
+2019-12-17 02:41:11,215 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:41:11,215 - INFO - Average total reward over 100 validation episodes after 500 total training episodes: 0.0
+2019-12-17 02:41:11,215 - INFO - Standard deviation of total reward over 100 validation episodes after 500 total training episodes: 0.0
+2019-12-17 02:41:11,215 - INFO - Average scaled reward over 100 validation episodes after 500 total training episodes: 0.0
+2019-12-17 02:41:11,215 - INFO - Standard deviation of scaled reward over 100 validation episodes after 500 total training episodes: 0.0
+2019-12-17 02:41:11,215 - INFO - Average episode length over 100 validation episodes after 500 total training episodes: 39.0 steps
+2019-12-17 02:41:11,215 - INFO - Training for 100 episodes...
+2019-12-17 02:41:11,345 - INFO - Copying weights from main network to target network at step 3775
+2019-12-17 02:41:11,513 - INFO - Copying weights from main network to target network at step 3800
+2019-12-17 02:41:11,721 - INFO - Copying weights from main network to target network at step 3825
+2019-12-17 02:41:11,937 - INFO - Copying weights from main network to target network at step 3850
+2019-12-17 02:41:12,147 - INFO - Copying weights from main network to target network at step 3875
+2019-12-17 02:41:12,368 - INFO - Copying weights from main network to target network at step 3900
+2019-12-17 02:41:12,495 - INFO - Copying weights from main network to target network at step 3925
+2019-12-17 02:41:12,719 - INFO - Copying weights from main network to target network at step 3950
+2019-12-17 02:41:12,939 - INFO - Copying weights from main network to target network at step 3975
+2019-12-17 02:41:13,119 - INFO - Copying weights from main network to target network at step 4000
+2019-12-17 02:41:13,345 - INFO - Copying weights from main network to target network at step 4025
+2019-12-17 02:41:13,503 - INFO - Copying weights from main network to target network at step 4050
+2019-12-17 02:41:13,726 - INFO - Copying weights from main network to target network at step 4075
+2019-12-17 02:41:13,947 - INFO - Copying weights from main network to target network at step 4100
+2019-12-17 02:41:14,183 - INFO - Copying weights from main network to target network at step 4125
+2019-12-17 02:41:14,322 - INFO - Copying weights from main network to target network at step 4150
+2019-12-17 02:41:14,464 - INFO - Copying weights from main network to target network at step 4175
+2019-12-17 02:41:14,663 - INFO - Copying weights from main network to target network at step 4200
+2019-12-17 02:41:14,867 - INFO - Copying weights from main network to target network at step 4225
+2019-12-17 02:41:15,064 - INFO - Copying weights from main network to target network at step 4250
+2019-12-17 02:41:15,276 - INFO - Copying weights from main network to target network at step 4275
+2019-12-17 02:41:15,516 - INFO - Copying weights from main network to target network at step 4300
+2019-12-17 02:41:15,706 - INFO - Copying weights from main network to target network at step 4325
+2019-12-17 02:41:15,897 - INFO - Copying weights from main network to target network at step 4350
+2019-12-17 02:41:16,065 - INFO - Copying weights from main network to target network at step 4375
+2019-12-17 02:41:16,234 - INFO - Copying weights from main network to target network at step 4400
+2019-12-17 02:41:16,377 - INFO - Copying weights from main network to target network at step 4425
+2019-12-17 02:41:16,589 - INFO - Copying weights from main network to target network at step 4450
+2019-12-17 02:41:16,735 - INFO - Copying weights from main network to target network at step 4475
+2019-12-17 02:41:16,878 - INFO - Copying weights from main network to target network at step 4500
+2019-12-17 02:41:17,046 - INFO - Copying weights from main network to target network at step 4525
+2019-12-17 02:41:17,166 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:41:17,166 - INFO - Average total reward over 100 training episodes after 600 total training episodes: 0.03
+2019-12-17 02:41:17,166 - INFO - Standard deviation of total reward over 100 training episodes after 600 total training episodes: 0.171
+2019-12-17 02:41:17,166 - INFO - Average scaled reward over 100 training episodes after 600 total training episodes: 0.003
+2019-12-17 02:41:17,166 - INFO - Standard deviation of scaled reward over 100 training episodes after 600 total training episodes: 0.015
+2019-12-17 02:41:17,166 - INFO - Average episode length over 100 training episodes after 600 total training episodes: 7.0 steps
+2019-12-17 02:41:17,166 - INFO - Total environmental steps in training mode up to now: 4544
+2019-12-17 02:41:17,166 - INFO - Saving the agent...
+2019-12-17 02:41:17,194 - INFO - Validating for 100 episodes...
+2019-12-17 02:41:17,741 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:41:17,741 - INFO - Average total reward over 100 validation episodes after 600 total training episodes: 0.0
+2019-12-17 02:41:17,741 - INFO - Standard deviation of total reward over 100 validation episodes after 600 total training episodes: 0.0
+2019-12-17 02:41:17,741 - INFO - Average scaled reward over 100 validation episodes after 600 total training episodes: 0.0
+2019-12-17 02:41:17,741 - INFO - Standard deviation of scaled reward over 100 validation episodes after 600 total training episodes: 0.0
+2019-12-17 02:41:17,742 - INFO - Average episode length over 100 validation episodes after 600 total training episodes: 24.0 steps
+2019-12-17 02:41:17,742 - INFO - Training for 100 episodes...
+2019-12-17 02:41:17,767 - INFO - Copying weights from main network to target network at step 4550
+2019-12-17 02:41:17,948 - INFO - Copying weights from main network to target network at step 4575
+2019-12-17 02:41:18,127 - INFO - Copying weights from main network to target network at step 4600
+2019-12-17 02:41:18,274 - INFO - Copying weights from main network to target network at step 4625
+2019-12-17 02:41:18,486 - INFO - Copying weights from main network to target network at step 4650
+2019-12-17 02:41:18,645 - INFO - Copying weights from main network to target network at step 4675
+2019-12-17 02:41:18,854 - INFO - Copying weights from main network to target network at step 4700
+2019-12-17 02:41:19,062 - INFO - Copying weights from main network to target network at step 4725
+2019-12-17 02:41:19,279 - INFO - Copying weights from main network to target network at step 4750
+2019-12-17 02:41:19,509 - INFO - Copying weights from main network to target network at step 4775
+2019-12-17 02:41:19,689 - INFO - Copying weights from main network to target network at step 4800
+2019-12-17 02:41:19,852 - INFO - Copying weights from main network to target network at step 4825
+2019-12-17 02:41:20,070 - INFO - Copying weights from main network to target network at step 4850
+2019-12-17 02:41:20,247 - INFO - Copying weights from main network to target network at step 4875
+2019-12-17 02:41:20,424 - INFO - Copying weights from main network to target network at step 4900
+2019-12-17 02:41:20,606 - INFO - Copying weights from main network to target network at step 4925
+2019-12-17 02:41:20,750 - INFO - Copying weights from main network to target network at step 4950
+2019-12-17 02:41:20,866 - INFO - Copying weights from main network to target network at step 4975
+2019-12-17 02:41:21,055 - INFO - Copying weights from main network to target network at step 5000
+2019-12-17 02:41:21,212 - INFO - Copying weights from main network to target network at step 5025
+2019-12-17 02:41:21,405 - INFO - Copying weights from main network to target network at step 5050
+2019-12-17 02:41:21,617 - INFO - Copying weights from main network to target network at step 5075
+2019-12-17 02:41:21,812 - INFO - Copying weights from main network to target network at step 5100
+2019-12-17 02:41:22,023 - INFO - Copying weights from main network to target network at step 5125
+2019-12-17 02:41:22,212 - INFO - Copying weights from main network to target network at step 5150
+2019-12-17 02:41:22,437 - INFO - Copying weights from main network to target network at step 5175
+2019-12-17 02:41:22,635 - INFO - Copying weights from main network to target network at step 5200
+2019-12-17 02:41:22,834 - INFO - Copying weights from main network to target network at step 5225
+2019-12-17 02:41:23,027 - INFO - Copying weights from main network to target network at step 5250
+2019-12-17 02:41:23,239 - INFO - Copying weights from main network to target network at step 5275
+2019-12-17 02:41:23,442 - INFO - Copying weights from main network to target network at step 5300
+2019-12-17 02:41:23,650 - INFO - Copying weights from main network to target network at step 5325
+2019-12-17 02:41:23,855 - INFO - Copying weights from main network to target network at step 5350
+2019-12-17 02:41:24,089 - INFO - Copying weights from main network to target network at step 5375
+2019-12-17 02:41:24,279 - INFO - Copying weights from main network to target network at step 5400
+2019-12-17 02:41:24,489 - INFO - Copying weights from main network to target network at step 5425
+2019-12-17 02:41:24,693 - INFO - Copying weights from main network to target network at step 5450
+2019-12-17 02:41:24,929 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:41:24,930 - INFO - Average total reward over 100 training episodes after 700 total training episodes: 0.02
+2019-12-17 02:41:24,930 - INFO - Standard deviation of total reward over 100 training episodes after 700 total training episodes: 0.14
+2019-12-17 02:41:24,930 - INFO - Average scaled reward over 100 training episodes after 700 total training episodes: 0.001
+2019-12-17 02:41:24,930 - INFO - Standard deviation of scaled reward over 100 training episodes after 700 total training episodes: 0.007
+2019-12-17 02:41:24,930 - INFO - Average episode length over 100 training episodes after 700 total training episodes: 8.0 steps
+2019-12-17 02:41:24,930 - INFO - Total environmental steps in training mode up to now: 5474
+2019-12-17 02:41:24,930 - INFO - Saving the agent...
+2019-12-17 02:41:24,952 - INFO - Validating for 100 episodes...
+2019-12-17 02:41:25,564 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:41:25,564 - INFO - Average total reward over 100 validation episodes after 700 total training episodes: 0.45
+2019-12-17 02:41:25,564 - INFO - Standard deviation of total reward over 100 validation episodes after 700 total training episodes: 0.497
+2019-12-17 02:41:25,564 - INFO - Average scaled reward over 100 validation episodes after 700 total training episodes: 0.02
+2019-12-17 02:41:25,565 - INFO - Standard deviation of scaled reward over 100 validation episodes after 700 total training episodes: 0.026
+2019-12-17 02:41:25,565 - INFO - Average episode length over 100 validation episodes after 700 total training episodes: 26.0 steps
+2019-12-17 02:41:25,565 - INFO - Training for 100 episodes...
+2019-12-17 02:41:25,569 - INFO - Copying weights from main network to target network at step 5475
+2019-12-17 02:41:25,766 - INFO - Copying weights from main network to target network at step 5500
+2019-12-17 02:41:25,963 - INFO - Copying weights from main network to target network at step 5525
+2019-12-17 02:41:26,129 - INFO - Copying weights from main network to target network at step 5550
+2019-12-17 02:41:26,299 - INFO - Copying weights from main network to target network at step 5575
+2019-12-17 02:41:26,487 - INFO - Copying weights from main network to target network at step 5600
+2019-12-17 02:41:26,709 - INFO - Copying weights from main network to target network at step 5625
+2019-12-17 02:41:26,871 - INFO - Copying weights from main network to target network at step 5650
+2019-12-17 02:41:27,066 - INFO - Copying weights from main network to target network at step 5675
+2019-12-17 02:41:27,277 - INFO - Copying weights from main network to target network at step 5700
+2019-12-17 02:41:27,483 - INFO - Copying weights from main network to target network at step 5725
+2019-12-17 02:41:27,634 - INFO - Copying weights from main network to target network at step 5750
+2019-12-17 02:41:27,863 - INFO - Copying weights from main network to target network at step 5775
+2019-12-17 02:41:28,009 - INFO - Copying weights from main network to target network at step 5800
+2019-12-17 02:41:28,217 - INFO - Copying weights from main network to target network at step 5825
+2019-12-17 02:41:28,416 - INFO - Copying weights from main network to target network at step 5850
+2019-12-17 02:41:28,652 - INFO - Copying weights from main network to target network at step 5875
+2019-12-17 02:41:28,837 - INFO - Copying weights from main network to target network at step 5900
+2019-12-17 02:41:28,973 - INFO - Copying weights from main network to target network at step 5925
+2019-12-17 02:41:29,186 - INFO - Copying weights from main network to target network at step 5950
+2019-12-17 02:41:29,363 - INFO - Copying weights from main network to target network at step 5975
+2019-12-17 02:41:29,510 - INFO - Copying weights from main network to target network at step 6000
+2019-12-17 02:41:29,725 - INFO - Copying weights from main network to target network at step 6025
+2019-12-17 02:41:29,939 - INFO - Copying weights from main network to target network at step 6050
+2019-12-17 02:41:30,119 - INFO - Copying weights from main network to target network at step 6075
+2019-12-17 02:41:30,334 - INFO - Copying weights from main network to target network at step 6100
+2019-12-17 02:41:30,506 - INFO - Copying weights from main network to target network at step 6125
+2019-12-17 02:41:30,708 - INFO - Copying weights from main network to target network at step 6150
+2019-12-17 02:41:30,894 - INFO - Copying weights from main network to target network at step 6175
+2019-12-17 02:41:31,093 - INFO - Copying weights from main network to target network at step 6200
+2019-12-17 02:41:31,303 - INFO - Copying weights from main network to target network at step 6225
+2019-12-17 02:41:31,474 - INFO - Copying weights from main network to target network at step 6250
+2019-12-17 02:41:31,674 - INFO - Copying weights from main network to target network at step 6275
+2019-12-17 02:41:31,877 - INFO - Copying weights from main network to target network at step 6300
+2019-12-17 02:41:32,063 - INFO - Copying weights from main network to target network at step 6325
+2019-12-17 02:41:32,206 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:41:32,206 - INFO - Average total reward over 100 training episodes after 800 total training episodes: 0.02
+2019-12-17 02:41:32,206 - INFO - Standard deviation of total reward over 100 training episodes after 800 total training episodes: 0.14
+2019-12-17 02:41:32,206 - INFO - Average scaled reward over 100 training episodes after 800 total training episodes: 0.001
+2019-12-17 02:41:32,206 - INFO - Standard deviation of scaled reward over 100 training episodes after 800 total training episodes: 0.008
+2019-12-17 02:41:32,206 - INFO - Average episode length over 100 training episodes after 800 total training episodes: 8.0 steps
+2019-12-17 02:41:32,206 - INFO - Total environmental steps in training mode up to now: 6343
+2019-12-17 02:41:32,206 - INFO - Saving the agent...
+2019-12-17 02:41:32,228 - INFO - Validating for 100 episodes...
+2019-12-17 02:41:33,770 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:41:33,770 - INFO - Average total reward over 100 validation episodes after 800 total training episodes: 0.0
+2019-12-17 02:41:33,770 - INFO - Standard deviation of total reward over 100 validation episodes after 800 total training episodes: 0.0
+2019-12-17 02:41:33,770 - INFO - Average scaled reward over 100 validation episodes after 800 total training episodes: 0.0
+2019-12-17 02:41:33,770 - INFO - Standard deviation of scaled reward over 100 validation episodes after 800 total training episodes: 0.0
+2019-12-17 02:41:33,770 - INFO - Average episode length over 100 validation episodes after 800 total training episodes: 71.0 steps
+2019-12-17 02:41:33,770 - INFO - Training for 100 episodes...
+2019-12-17 02:41:33,819 - INFO - Copying weights from main network to target network at step 6350
+2019-12-17 02:41:34,010 - INFO - Copying weights from main network to target network at step 6375
+2019-12-17 02:41:34,238 - INFO - Copying weights from main network to target network at step 6400
+2019-12-17 02:41:34,441 - INFO - Copying weights from main network to target network at step 6425
+2019-12-17 02:41:34,643 - INFO - Copying weights from main network to target network at step 6450
+2019-12-17 02:41:34,835 - INFO - Copying weights from main network to target network at step 6475
+2019-12-17 02:41:35,040 - INFO - Copying weights from main network to target network at step 6500
+2019-12-17 02:41:35,203 - INFO - Copying weights from main network to target network at step 6525
+2019-12-17 02:41:35,329 - INFO - Copying weights from main network to target network at step 6550
+2019-12-17 02:41:35,449 - INFO - Copying weights from main network to target network at step 6575
+2019-12-17 02:41:35,600 - INFO - Copying weights from main network to target network at step 6600
+2019-12-17 02:41:35,840 - INFO - Copying weights from main network to target network at step 6625
+2019-12-17 02:41:36,063 - INFO - Copying weights from main network to target network at step 6650
+2019-12-17 02:41:36,238 - INFO - Copying weights from main network to target network at step 6675
+2019-12-17 02:41:36,341 - INFO - Copying weights from main network to target network at step 6700
+2019-12-17 02:41:36,441 - INFO - Copying weights from main network to target network at step 6725
+2019-12-17 02:41:36,633 - INFO - Copying weights from main network to target network at step 6750
+2019-12-17 02:41:36,845 - INFO - Copying weights from main network to target network at step 6775
+2019-12-17 02:41:36,996 - INFO - Copying weights from main network to target network at step 6800
+2019-12-17 02:41:37,179 - INFO - Copying weights from main network to target network at step 6825
+2019-12-17 02:41:37,391 - INFO - Copying weights from main network to target network at step 6850
+2019-12-17 02:41:37,545 - INFO - Copying weights from main network to target network at step 6875
+2019-12-17 02:41:37,726 - INFO - Copying weights from main network to target network at step 6900
+2019-12-17 02:41:37,895 - INFO - Copying weights from main network to target network at step 6925
+2019-12-17 02:41:38,112 - INFO - Copying weights from main network to target network at step 6950
+2019-12-17 02:41:38,304 - INFO - Copying weights from main network to target network at step 6975
+2019-12-17 02:41:38,519 - INFO - Copying weights from main network to target network at step 7000
+2019-12-17 02:41:38,753 - INFO - Copying weights from main network to target network at step 7025
+2019-12-17 02:41:38,935 - INFO - Copying weights from main network to target network at step 7050
+2019-12-17 02:41:39,161 - INFO - Copying weights from main network to target network at step 7075
+2019-12-17 02:41:39,327 - INFO - Copying weights from main network to target network at step 7100
+2019-12-17 02:41:39,474 - INFO - Copying weights from main network to target network at step 7125
+2019-12-17 02:41:39,686 - INFO - Copying weights from main network to target network at step 7150
+2019-12-17 02:41:39,695 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:41:39,695 - INFO - Average total reward over 100 training episodes after 900 total training episodes: 0.01
+2019-12-17 02:41:39,695 - INFO - Standard deviation of total reward over 100 training episodes after 900 total training episodes: 0.099
+2019-12-17 02:41:39,695 - INFO - Average scaled reward over 100 training episodes after 900 total training episodes: 0.001
+2019-12-17 02:41:39,695 - INFO - Standard deviation of scaled reward over 100 training episodes after 900 total training episodes: 0.01
+2019-12-17 02:41:39,695 - INFO - Average episode length over 100 training episodes after 900 total training episodes: 7.0 steps
+2019-12-17 02:41:39,695 - INFO - Total environmental steps in training mode up to now: 7151
+2019-12-17 02:41:39,695 - INFO - Saving the agent...
+2019-12-17 02:41:39,713 - INFO - Validating for 100 episodes...
+2019-12-17 02:41:40,494 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:41:40,494 - INFO - Average total reward over 100 validation episodes after 900 total training episodes: 0.6
+2019-12-17 02:41:40,494 - INFO - Standard deviation of total reward over 100 validation episodes after 900 total training episodes: 0.49
+2019-12-17 02:41:40,494 - INFO - Average scaled reward over 100 validation episodes after 900 total training episodes: 0.023
+2019-12-17 02:41:40,494 - INFO - Standard deviation of scaled reward over 100 validation episodes after 900 total training episodes: 0.028
+2019-12-17 02:41:40,494 - INFO - Average episode length over 100 validation episodes after 900 total training episodes: 35.0 steps
+2019-12-17 02:41:40,494 - INFO - Training for 100 episodes...
+2019-12-17 02:41:40,651 - INFO - Copying weights from main network to target network at step 7175
+2019-12-17 02:41:40,809 - INFO - Copying weights from main network to target network at step 7200
+2019-12-17 02:41:41,034 - INFO - Copying weights from main network to target network at step 7225
+2019-12-17 02:41:41,270 - INFO - Copying weights from main network to target network at step 7250
+2019-12-17 02:41:41,429 - INFO - Copying weights from main network to target network at step 7275
+2019-12-17 02:41:41,634 - INFO - Copying weights from main network to target network at step 7300
+2019-12-17 02:41:41,835 - INFO - Copying weights from main network to target network at step 7325
+2019-12-17 02:41:42,013 - INFO - Copying weights from main network to target network at step 7350
+2019-12-17 02:41:42,186 - INFO - Copying weights from main network to target network at step 7375
+2019-12-17 02:41:42,367 - INFO - Copying weights from main network to target network at step 7400
+2019-12-17 02:41:42,504 - INFO - Copying weights from main network to target network at step 7425
+2019-12-17 02:41:42,685 - INFO - Copying weights from main network to target network at step 7450
+2019-12-17 02:41:42,861 - INFO - Copying weights from main network to target network at step 7475
+2019-12-17 02:41:43,063 - INFO - Copying weights from main network to target network at step 7500
+2019-12-17 02:41:43,236 - INFO - Copying weights from main network to target network at step 7525
+2019-12-17 02:41:43,424 - INFO - Copying weights from main network to target network at step 7550
+2019-12-17 02:41:43,627 - INFO - Copying weights from main network to target network at step 7575
+2019-12-17 02:41:43,797 - INFO - Copying weights from main network to target network at step 7600
+2019-12-17 02:41:43,965 - INFO - Copying weights from main network to target network at step 7625
+2019-12-17 02:41:44,129 - INFO - Copying weights from main network to target network at step 7650
+2019-12-17 02:41:44,351 - INFO - Copying weights from main network to target network at step 7675
+2019-12-17 02:41:44,568 - INFO - Copying weights from main network to target network at step 7700
+2019-12-17 02:41:44,757 - INFO - Copying weights from main network to target network at step 7725
+2019-12-17 02:41:44,948 - INFO - Copying weights from main network to target network at step 7750
+2019-12-17 02:41:45,111 - INFO - Copying weights from main network to target network at step 7775
+2019-12-17 02:41:45,298 - INFO - Copying weights from main network to target network at step 7800
+2019-12-17 02:41:45,519 - INFO - Copying weights from main network to target network at step 7825
+2019-12-17 02:41:45,729 - INFO - Copying weights from main network to target network at step 7850
+2019-12-17 02:41:45,926 - INFO - Copying weights from main network to target network at step 7875
+2019-12-17 02:41:46,118 - INFO - Copying weights from main network to target network at step 7900
+2019-12-17 02:41:46,289 - INFO - Copying weights from main network to target network at step 7925
+2019-12-17 02:41:46,350 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:41:46,350 - INFO - Average total reward over 100 training episodes after 1000 total training episodes: 0.02
+2019-12-17 02:41:46,350 - INFO - Standard deviation of total reward over 100 training episodes after 1000 total training episodes: 0.14
+2019-12-17 02:41:46,350 - INFO - Average scaled reward over 100 training episodes after 1000 total training episodes: 0.002
+2019-12-17 02:41:46,350 - INFO - Standard deviation of scaled reward over 100 training episodes after 1000 total training episodes: 0.017
+2019-12-17 02:41:46,350 - INFO - Average episode length over 100 training episodes after 1000 total training episodes: 7.0 steps
+2019-12-17 02:41:46,350 - INFO - Total environmental steps in training mode up to now: 7934
+2019-12-17 02:41:46,350 - INFO - Saving the agent...
+2019-12-17 02:41:46,370 - INFO - Validating for 100 episodes...
+2019-12-17 02:41:48,497 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:41:48,497 - INFO - Average total reward over 100 validation episodes after 1000 total training episodes: 0.0
+2019-12-17 02:41:48,498 - INFO - Standard deviation of total reward over 100 validation episodes after 1000 total training episodes: 0.0
+2019-12-17 02:41:48,498 - INFO - Average scaled reward over 100 validation episodes after 1000 total training episodes: 0.0
+2019-12-17 02:41:48,498 - INFO - Standard deviation of scaled reward over 100 validation episodes after 1000 total training episodes: 0.0
+2019-12-17 02:41:48,498 - INFO - Average episode length over 100 validation episodes after 1000 total training episodes: 99.0 steps
+2019-12-17 02:41:48,498 - INFO - Training for 100 episodes...
+2019-12-17 02:41:48,611 - INFO - Copying weights from main network to target network at step 7950
+2019-12-17 02:41:48,801 - INFO - Copying weights from main network to target network at step 7975
+2019-12-17 02:41:48,999 - INFO - Copying weights from main network to target network at step 8000
+2019-12-17 02:41:49,208 - INFO - Copying weights from main network to target network at step 8025
+2019-12-17 02:41:49,462 - INFO - Copying weights from main network to target network at step 8050
+2019-12-17 02:41:49,653 - INFO - Copying weights from main network to target network at step 8075
+2019-12-17 02:41:49,886 - INFO - Copying weights from main network to target network at step 8100
+2019-12-17 02:41:50,048 - INFO - Copying weights from main network to target network at step 8125
+2019-12-17 02:41:50,238 - INFO - Copying weights from main network to target network at step 8150
+2019-12-17 02:41:50,392 - INFO - Copying weights from main network to target network at step 8175
+2019-12-17 02:41:50,512 - INFO - Copying weights from main network to target network at step 8200
+2019-12-17 02:41:50,670 - INFO - Copying weights from main network to target network at step 8225
+2019-12-17 02:41:50,849 - INFO - Copying weights from main network to target network at step 8250
+2019-12-17 02:41:51,029 - INFO - Copying weights from main network to target network at step 8275
+2019-12-17 02:41:51,198 - INFO - Copying weights from main network to target network at step 8300
+2019-12-17 02:41:51,375 - INFO - Copying weights from main network to target network at step 8325
+2019-12-17 02:41:51,580 - INFO - Copying weights from main network to target network at step 8350
+2019-12-17 02:41:51,787 - INFO - Copying weights from main network to target network at step 8375
+2019-12-17 02:41:51,983 - INFO - Copying weights from main network to target network at step 8400
+2019-12-17 02:41:52,200 - INFO - Copying weights from main network to target network at step 8425
+2019-12-17 02:41:52,406 - INFO - Copying weights from main network to target network at step 8450
+2019-12-17 02:41:52,552 - INFO - Copying weights from main network to target network at step 8475
+2019-12-17 02:41:52,670 - INFO - Copying weights from main network to target network at step 8500
+2019-12-17 02:41:52,870 - INFO - Copying weights from main network to target network at step 8525
+2019-12-17 02:41:52,984 - INFO - Copying weights from main network to target network at step 8550
+2019-12-17 02:41:53,148 - INFO - Copying weights from main network to target network at step 8575
+2019-12-17 02:41:53,351 - INFO - Copying weights from main network to target network at step 8600
+2019-12-17 02:41:53,557 - INFO - Copying weights from main network to target network at step 8625
+2019-12-17 02:41:53,786 - INFO - Copying weights from main network to target network at step 8650
+2019-12-17 02:41:53,942 - INFO - Copying weights from main network to target network at step 8675
+2019-12-17 02:41:54,081 - INFO - Copying weights from main network to target network at step 8700
+2019-12-17 02:41:54,257 - INFO - Copying weights from main network to target network at step 8725
+2019-12-17 02:41:54,450 - INFO - Copying weights from main network to target network at step 8750
+2019-12-17 02:41:54,663 - INFO - Copying weights from main network to target network at step 8775
+2019-12-17 02:41:54,855 - INFO - Copying weights from main network to target network at step 8800
+2019-12-17 02:41:54,927 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:41:54,927 - INFO - Average total reward over 100 training episodes after 1100 total training episodes: 0.01
+2019-12-17 02:41:54,927 - INFO - Standard deviation of total reward over 100 training episodes after 1100 total training episodes: 0.099
+2019-12-17 02:41:54,927 - INFO - Average scaled reward over 100 training episodes after 1100 total training episodes: 0.0
+2019-12-17 02:41:54,927 - INFO - Standard deviation of scaled reward over 100 training episodes after 1100 total training episodes: 0.005
+2019-12-17 02:41:54,927 - INFO - Average episode length over 100 training episodes after 1100 total training episodes: 8.0 steps
+2019-12-17 02:41:54,927 - INFO - Total environmental steps in training mode up to now: 8809
+2019-12-17 02:41:54,927 - INFO - Saving the agent...
+2019-12-17 02:41:54,951 - INFO - Validating for 100 episodes...
+2019-12-17 02:41:55,370 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:41:55,371 - INFO - Average total reward over 100 validation episodes after 1100 total training episodes: 0.18
+2019-12-17 02:41:55,371 - INFO - Standard deviation of total reward over 100 validation episodes after 1100 total training episodes: 0.384
+2019-12-17 02:41:55,371 - INFO - Average scaled reward over 100 validation episodes after 1100 total training episodes: 0.013
+2019-12-17 02:41:55,371 - INFO - Standard deviation of scaled reward over 100 validation episodes after 1100 total training episodes: 0.032
+2019-12-17 02:41:55,371 - INFO - Average episode length over 100 validation episodes after 1100 total training episodes: 17.0 steps
+2019-12-17 02:41:55,371 - INFO - Training for 100 episodes...
+2019-12-17 02:41:55,494 - INFO - Copying weights from main network to target network at step 8825
+2019-12-17 02:41:55,683 - INFO - Copying weights from main network to target network at step 8850
+2019-12-17 02:41:55,885 - INFO - Copying weights from main network to target network at step 8875
+2019-12-17 02:41:56,071 - INFO - Copying weights from main network to target network at step 8900
+2019-12-17 02:41:56,279 - INFO - Copying weights from main network to target network at step 8925
+2019-12-17 02:41:56,439 - INFO - Copying weights from main network to target network at step 8950
+2019-12-17 02:41:56,584 - INFO - Copying weights from main network to target network at step 8975
+2019-12-17 02:41:56,739 - INFO - Copying weights from main network to target network at step 9000
+2019-12-17 02:41:56,934 - INFO - Copying weights from main network to target network at step 9025
+2019-12-17 02:41:57,130 - INFO - Copying weights from main network to target network at step 9050
+2019-12-17 02:41:57,324 - INFO - Copying weights from main network to target network at step 9075
+2019-12-17 02:41:57,514 - INFO - Copying weights from main network to target network at step 9100
+2019-12-17 02:41:57,680 - INFO - Copying weights from main network to target network at step 9125
+2019-12-17 02:41:57,873 - INFO - Copying weights from main network to target network at step 9150
+2019-12-17 02:41:58,112 - INFO - Copying weights from main network to target network at step 9175
+2019-12-17 02:41:58,346 - INFO - Copying weights from main network to target network at step 9200
+2019-12-17 02:41:58,529 - INFO - Copying weights from main network to target network at step 9225
+2019-12-17 02:41:58,712 - INFO - Copying weights from main network to target network at step 9250
+2019-12-17 02:41:58,933 - INFO - Copying weights from main network to target network at step 9275
+2019-12-17 02:41:59,094 - INFO - Copying weights from main network to target network at step 9300
+2019-12-17 02:41:59,273 - INFO - Copying weights from main network to target network at step 9325
+2019-12-17 02:41:59,476 - INFO - Copying weights from main network to target network at step 9350
+2019-12-17 02:41:59,625 - INFO - Copying weights from main network to target network at step 9375
+2019-12-17 02:41:59,838 - INFO - Copying weights from main network to target network at step 9400
+2019-12-17 02:42:00,031 - INFO - Copying weights from main network to target network at step 9425
+2019-12-17 02:42:00,196 - INFO - Copying weights from main network to target network at step 9450
+2019-12-17 02:42:00,353 - INFO - Copying weights from main network to target network at step 9475
+2019-12-17 02:42:00,558 - INFO - Copying weights from main network to target network at step 9500
+2019-12-17 02:42:00,688 - INFO - Copying weights from main network to target network at step 9525
+2019-12-17 02:42:00,868 - INFO - Training of 100 episodes finished with following result:
+2019-12-17 02:42:00,868 - INFO - Average total reward over 100 training episodes after 1200 total training episodes: 0.01
+2019-12-17 02:42:00,869 - INFO - Standard deviation of total reward over 100 training episodes after 1200 total training episodes: 0.099
+2019-12-17 02:42:00,869 - INFO - Average scaled reward over 100 training episodes after 1200 total training episodes: 0.002
+2019-12-17 02:42:00,869 - INFO - Standard deviation of scaled reward over 100 training episodes after 1200 total training episodes: 0.017
+2019-12-17 02:42:00,869 - INFO - Average episode length over 100 training episodes after 1200 total training episodes: 6.0 steps
+2019-12-17 02:42:00,869 - INFO - Total environmental steps in training mode up to now: 9548
+2019-12-17 02:42:00,869 - INFO - Saving the agent...
+2019-12-17 02:42:00,887 - INFO - Validating for 100 episodes...
+2019-12-17 02:42:01,795 - INFO - Validation of 100 episodes finished with following result:
+2019-12-17 02:42:01,795 - INFO - Average total reward over 100 validation episodes after 1200 total training episodes: 0.79
+2019-12-17 02:42:01,796 - INFO - Standard deviation of total reward over 100 validation episodes after 1200 total training episodes: 0.407
+2019-12-17 02:42:01,796 - INFO - Average scaled reward over 100 validation episodes after 1200 total training episodes: 0.027
+2019-12-17 02:42:01,796 - INFO - Standard deviation of scaled reward over 100 validation episodes after 1200 total training episodes: 0.025
+2019-12-17 02:42:01,796 - INFO - Average episode length over 100 validation episodes after 1200 total training episodes: 41.0 steps
+2019-12-17 02:42:01,796 - INFO - Validation of the agent is successful
+2019-12-17 02:42:01,796 - INFO - End of training
+2019-12-17 02:42:01,796 - INFO - Cycle 1 - Testing for 100 episodes...
+2019-12-17 02:42:02,676 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:02,676 - INFO - Average total reward over 100 test episodes: 0.7
+2019-12-17 02:42:02,676 - INFO - Standard deviation of total reward over 100 test episodes: 0.458
+2019-12-17 02:42:02,676 - INFO - Average scaled reward over 100 test episodes: 0.029
+2019-12-17 02:42:02,676 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.028
+2019-12-17 02:42:02,676 - INFO - Average episode length over 100 test episodes: 40.0 steps
+2019-12-17 02:42:02,676 - INFO - Cycle 2 - Testing for 100 episodes...
+2019-12-17 02:42:03,630 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:03,630 - INFO - Average total reward over 100 test episodes: 0.73
+2019-12-17 02:42:03,630 - INFO - Standard deviation of total reward over 100 test episodes: 0.444
+2019-12-17 02:42:03,630 - INFO - Average scaled reward over 100 test episodes: 0.03
+2019-12-17 02:42:03,630 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.03
+2019-12-17 02:42:03,630 - INFO - Average episode length over 100 test episodes: 44.0 steps
+2019-12-17 02:42:03,630 - INFO - Cycle 3 - Testing for 100 episodes...
+2019-12-17 02:42:04,612 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:04,612 - INFO - Average total reward over 100 test episodes: 0.73
+2019-12-17 02:42:04,612 - INFO - Standard deviation of total reward over 100 test episodes: 0.444
+2019-12-17 02:42:04,612 - INFO - Average scaled reward over 100 test episodes: 0.023
+2019-12-17 02:42:04,612 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.022
+2019-12-17 02:42:04,612 - INFO - Average episode length over 100 test episodes: 45.0 steps
+2019-12-17 02:42:04,612 - INFO - Cycle 4 - Testing for 100 episodes...
+2019-12-17 02:42:05,402 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:05,402 - INFO - Average total reward over 100 test episodes: 0.76
+2019-12-17 02:42:05,402 - INFO - Standard deviation of total reward over 100 test episodes: 0.427
+2019-12-17 02:42:05,402 - INFO - Average scaled reward over 100 test episodes: 0.032
+2019-12-17 02:42:05,402 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.034
+2019-12-17 02:42:05,402 - INFO - Average episode length over 100 test episodes: 40.0 steps
+2019-12-17 02:42:05,402 - INFO - Cycle 5 - Testing for 100 episodes...
+2019-12-17 02:42:06,310 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:06,310 - INFO - Average total reward over 100 test episodes: 0.68
+2019-12-17 02:42:06,310 - INFO - Standard deviation of total reward over 100 test episodes: 0.466
+2019-12-17 02:42:06,311 - INFO - Average scaled reward over 100 test episodes: 0.025
+2019-12-17 02:42:06,311 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.027
+2019-12-17 02:42:06,311 - INFO - Average episode length over 100 test episodes: 47.0 steps
+2019-12-17 02:42:06,311 - INFO - Cycle 6 - Testing for 100 episodes...
+2019-12-17 02:42:07,126 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:07,126 - INFO - Average total reward over 100 test episodes: 0.7
+2019-12-17 02:42:07,126 - INFO - Standard deviation of total reward over 100 test episodes: 0.458
+2019-12-17 02:42:07,126 - INFO - Average scaled reward over 100 test episodes: 0.03
+2019-12-17 02:42:07,126 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.032
+2019-12-17 02:42:07,126 - INFO - Average episode length over 100 test episodes: 42.0 steps
+2019-12-17 02:42:07,126 - INFO - Cycle 7 - Testing for 100 episodes...
+2019-12-17 02:42:08,048 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:08,048 - INFO - Average total reward over 100 test episodes: 0.68
+2019-12-17 02:42:08,048 - INFO - Standard deviation of total reward over 100 test episodes: 0.466
+2019-12-17 02:42:08,048 - INFO - Average scaled reward over 100 test episodes: 0.025
+2019-12-17 02:42:08,048 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.026
+2019-12-17 02:42:08,048 - INFO - Average episode length over 100 test episodes: 44.0 steps
+2019-12-17 02:42:08,048 - INFO - Cycle 8 - Testing for 100 episodes...
+2019-12-17 02:42:09,070 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:09,070 - INFO - Average total reward over 100 test episodes: 0.71
+2019-12-17 02:42:09,070 - INFO - Standard deviation of total reward over 100 test episodes: 0.454
+2019-12-17 02:42:09,070 - INFO - Average scaled reward over 100 test episodes: 0.028
+2019-12-17 02:42:09,070 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.028
+2019-12-17 02:42:09,070 - INFO - Average episode length over 100 test episodes: 47.0 steps
+2019-12-17 02:42:09,070 - INFO - Cycle 9 - Testing for 100 episodes...
+2019-12-17 02:42:10,107 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:10,107 - INFO - Average total reward over 100 test episodes: 0.69
+2019-12-17 02:42:10,107 - INFO - Standard deviation of total reward over 100 test episodes: 0.462
+2019-12-17 02:42:10,107 - INFO - Average scaled reward over 100 test episodes: 0.024
+2019-12-17 02:42:10,108 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.027
+2019-12-17 02:42:10,108 - INFO - Average episode length over 100 test episodes: 48.0 steps
+2019-12-17 02:42:10,108 - INFO - Cycle 10 - Testing for 100 episodes...
+2019-12-17 02:42:11,145 - INFO - Testing of 100 episodes finished with following result:
+2019-12-17 02:42:11,145 - INFO - Average total reward over 100 test episodes: 0.73
+2019-12-17 02:42:11,145 - INFO - Standard deviation of total reward over 100 test episodes: 0.444
+2019-12-17 02:42:11,145 - INFO - Average scaled reward over 100 test episodes: 0.028
+2019-12-17 02:42:11,145 - INFO - Standard deviation of scaled reward over 100 test episodes: 0.027
+2019-12-17 02:42:11,145 - INFO - Average episode length over 100 test episodes: 46.0 steps
+2019-12-17 02:42:11,145 - INFO - End of test
+2019-12-17 02:42:11,145 - INFO - Average test total reward is 0.711 with 1200 training episodes
+2019-12-17 02:42:11,145 - INFO - Average test scaled reward is 0.027 with 1200 training episodes
+2019-12-17 02:42:11,145 - INFO - Max test total reward over 100 and 10 cycles is: 0.76
+2019-12-17 02:42:11,145 - INFO - Max test scaled reward over 100 and 10 cycles is: 0.032
+2019-12-17 02:42:11,145 - INFO - Average test standard deviation of total reward is 0.452 with 1200 training episodes
+2019-12-17 02:42:11,145 - INFO - Average test standard deviation of scaled reward is 0.028 with 1200 training episodes
+2019-12-17 02:42:11,145 - INFO - Min test standard deviation of total reward over 100 and 10 cycles is: 0.427
+2019-12-17 02:42:11,145 - INFO - Min test standard deviation of scaled reward over 100 and 10 cycles is: 0.022
+2019-12-17 02:42:11,146 - INFO - Average test episode length is 44.0 with 1200 training episodes
+2019-12-17 02:42:11,146 - INFO - Saving plots...
+2019-12-17 02:42:15,790 - INFO - Plots saved successfully
+2019-12-17 02:42:15,790 - INFO - The experiment terminated successfully
