@@ -116,7 +116,7 @@ class VPGAgent(Agent):
                       interface: Interface,
                       agent_observation_current):
         # Predict the action with the model by sampling from its probability distribution
-        action, _, _= self._model.sample_action(session, agent_observation_current)
+        action, _, _ = self._model.sample_action(session, agent_observation_current)
         # Return the predicted action
         return action
 
