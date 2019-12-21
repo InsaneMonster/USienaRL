@@ -118,6 +118,7 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
+- Version 0.6.3: Hot-fixed Vanilla Policy Gradient and Proximal Policy Optimization models not working correctly with discrete observation spaces
 - Version 0.6.2: Hot-fixed Vanilla Policy Gradient agent dirichlet exploration policy not working correctly
 - Version 0.6.1: Hot-fixed deep SARSA agent and tabular SARSA agent dirichlet exploration policy not working correctly
 
