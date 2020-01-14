@@ -103,9 +103,7 @@ class Agent:
                    session):
         """
         Initialize the agent before acting in the environment.
-        It is called right after tensorflow session generation.
-        Note: this should initialize the model and other components, if any. It can also reset all the agent internal
-        attributes in order to prepare for the experiment.
+        It is called right after tensorflow session generation and after the environment is initialized.
 
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running, if any

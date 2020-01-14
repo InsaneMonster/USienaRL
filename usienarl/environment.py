@@ -64,12 +64,25 @@ class Environment:
                    logger: logging.Logger,
                    session):
         """
-        Initialize the environment. Requires the environment to be setup.
+        Initialize the environment.
+        It is called right after tensorflow session generation and before the agent is initialized.
 
         :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running, if any
         """
         # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
+
+    def post_initialize(self,
+                        logger: logging.Logger,
+                        session):
+        """
+        Post-initialize the environment.
+        It is called after both the environment and the agent are initialized.
+
+        :param logger: the logger used to print the environment information, warnings and errors
+        :param session: the session of tensorflow currently running, if any
+        """
         raise NotImplementedError()
 
     def close(self,

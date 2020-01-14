@@ -386,6 +386,7 @@ class Experiment:
             # Initialize the environment and the agent
             self._environment.initialize(logger, session)
             self._agent.initialize(logger, session)
+            self._environment.post_initialize(logger, session)
             # Load the pre-trained model if required
             if checkpoint_path is not None:
                 checkpoint = tensorflow.train.get_checkpoint_state(checkpoint_path)

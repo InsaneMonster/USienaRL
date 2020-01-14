@@ -43,6 +43,11 @@ class OpenAIGymEnvironment(Environment):
                    session):
         pass
 
+    def post_initialize(self,
+                        logger: logging.Logger,
+                        session):
+        pass
+
     def close(self,
               logger: logging.Logger,
               session):
