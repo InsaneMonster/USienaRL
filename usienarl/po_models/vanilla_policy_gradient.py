@@ -26,7 +26,7 @@ class Buffer:
     def __init__(self,
                  discount_factor: float, lambda_parameter: float):
         # Define buffer components
-        self._states: [] = []
+        self._observations: [] = []
         self._actions: [] = []
         self._advantages: [] = []
         self._rewards: [] = []
@@ -40,17 +40,17 @@ class Buffer:
         self._path_start_index: int = 0
 
     def store(self,
-              state, action, reward: float, value: float):
+              observation, action, reward: float, value: float):
         """
         Store the time-step in the buffer.
 
-        :param state: the current state to store in the buffer
+        :param observation: the current observation to store in the buffer
         :param action: the last action to store in the buffer
         :param reward: the reward obtained from the action at the current state to store in the buffer
         :param value: the value of the state as estimated by the value stream of the model to store in the buffer
         """
         # Append all data and increase the pointer
-        self._states.append(state)
+        self._observations.append(observation)
         self._actions.append(action)
         self._rewards.append(reward)
         self._values.append(value)
@@ -74,13 +74,13 @@ class Buffer:
         # Adjust advantages according to the trick
         advantages_array = ((advantages_array - advantage_mean) / advantage_std)
         # Save the necessary values as numpy arrays before reset
-        states_array: numpy.ndarray = numpy.array(self._states)
+        states_array: numpy.ndarray = numpy.array(self._observations)
         actions_array: numpy.ndarray = numpy.array(self._actions)
         rewards_to_go_array: numpy.ndarray = numpy.array(self._rewards_to_go)
         # Reset the buffer and related pointers
         self._pointer = 0
         self._path_start_index = 0
-        self._states = []
+        self._observations = []
         self._actions = []
         self._advantages = []
         self._rewards = []
