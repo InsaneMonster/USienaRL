@@ -134,6 +134,7 @@ class Model:
         """
         return self._name
 
+    @property
     def scope(self) -> str:
         """
         The scope of the model.
