@@ -118,6 +118,7 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
+- Version 0.6.6: Hot-fixed scope in model not flagged as property
 - Version 0.6.5: Added name and shape properties for the abstract model class and exposed checkpoint path to the agent: now the checkpoint path along a list of scopes to restore is given during setup
 - Version 0.6.4: Added post-initialize method in environment to fix restore variable errors when initializing a tensorflow model inside the environment
 - Version 0.6.3: Hot-fixed Vanilla Policy Gradient and Proximal Policy Optimization models not working correctly with discrete observation spaces
