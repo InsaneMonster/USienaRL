@@ -42,7 +42,7 @@ def _define_dddqn_model(config: Config, error_clip: bool = True) -> DuelingDeepQ
     random_sample_trade_off: float = 0.6
     importance_sampling_value_increment: float = 0.4
     importance_sampling_value: float = 0.001
-    error_clip: bool = False
+    error_clip: bool = error_clip
     # Return the model
     return DuelingDeepQLearning("model",
                                 learning_rate, discount_factor,
@@ -138,7 +138,7 @@ def run(workspace: str,
                    testing_episodes, test_cycles,
                    render_training, render_validation, render_test,
                    workspace, __file__,
-                   logger, None, experiment_iterations,
+                   logger, None, None, experiment_iterations,
                    None,
                    plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
     run_experiment(experiment_boltzmann,
@@ -148,7 +148,7 @@ def run(workspace: str,
                    testing_episodes, test_cycles,
                    render_training, render_validation, render_test,
                    workspace, __file__,
-                   logger, None, experiment_iterations,
+                   logger, None, None, experiment_iterations,
                    None,
                    plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
     run_experiment(experiment_dirichlet,
@@ -158,7 +158,7 @@ def run(workspace: str,
                    testing_episodes, test_cycles,
                    render_training, render_validation, render_test,
                    workspace, __file__,
-                   logger, None, experiment_iterations,
+                   logger, None, None, experiment_iterations,
                    None,
                    plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
 
@@ -174,5 +174,3 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
     # Run this experiment
     run(workspace_path, experiment_iterations_number, render_during_training, render_during_validation, render_during_test)
-
-

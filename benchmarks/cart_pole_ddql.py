@@ -171,5 +171,3 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
     # Run this experiment
     run(workspace_path, experiment_iterations_number, render_during_training, render_during_validation, render_during_test)
-
-
