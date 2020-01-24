@@ -64,6 +64,7 @@ class Experiment:
         self._interface: Interface = interface if interface is not None else PassThroughInterface(self._environment)
         # Define empty experiment attributes
         self._agent_saver = None
+        self._checkpoint_path: str = None
         self._metagraph_path: str = None
         self._plots_path: str = None
         self._tensorflow_config = None
@@ -75,13 +76,21 @@ class Experiment:
     def setup(self,
               summary_path: str, metagraph_path: str,
               logger: logging.Logger,
+              checkpoint_path: str = None, scopes_to_restore: [] = None,
               iteration: int = -1) -> bool:
         """
         Setup the experiment, preparing all of its component to execution. This must be called before conduct method.
 
+        If an already trained model checkpoint is given, the last checkpoint in the given path folder is used to further
+        train the model. The scope of the experiment and of the agent has to be the same across both models or a list
+        of scopes to restore has to be defined. Using that list, which is passed to the agent, it is possible to decide
+        which variables to restore using the appropriate agent's property.
+
         :param summary_path: the string path of the tensorboard summary directory to save during model training, set to None if the model is not being trained
         :param metagraph_path: the string path of the metagraph agent directory to save at the end of each train volley, set to None if the model is not being trained
         :param logger: the logger used to print the experiment information, warnings and errors
+        :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model, default to None
+        :param scopes_to_restore: the scopes of the checkpoint path to restore into the model, it can be used to define what part of the model should be restored
         :param iteration: number to append to the experiment name in all scopes and print statements (if not less than zero)
         :return: a boolean equals to True if the setup of the experiment is successful, False otherwise
         """
@@ -101,7 +110,7 @@ class Experiment:
         if not self._agent.setup(logger,
                                  self._interface.observation_space_type, self._interface.observation_space_shape,
                                  self._interface.agent_action_space_type, self._interface.agent_action_space_shape,
-                                 self._current_id, summary_path):
+                                 self._current_id, summary_path, checkpoint_path, scopes_to_restore):
             logger.info("Agent setup failed. Cannot setup the experiment!")
             return False
         logger.info("Agent setup is successful!")
@@ -111,6 +120,7 @@ class Experiment:
         self._trained_steps: int = 0
         self._trained_episodes: int = 0
         # Initialize the agent internal model saver
+        self._checkpoint_path = checkpoint_path
         self._agent_saver = tensorflow.train.Saver(self._agent.trainable_variables)
         if self._metagraph_path is not None:
             logger.info("Agent internal model will be saved after each train volley")
@@ -324,7 +334,6 @@ class Experiment:
                 test_episodes_per_cycle: int, test_cycles: int,
                 logger: logging.Logger,
                 render_during_training: bool = False, render_during_validation: bool = False, render_during_test: bool = False,
-                checkpoint_path: str = None,
                 plot_sample_density_training: int = 1, plot_sample_density_validation: int = 1):
         """
         Conduct the experiment of the given number of training (up to the given maximum) and validation episodes
@@ -338,9 +347,6 @@ class Experiment:
         Conducting an experiment will generate a tensorflow session for that experiment. It is required that the experiment
         is ready to be conducted by checking the result of the setup method before attempting at conducting it.
 
-        If an already trained model checkpoint is given, the last checkpoint in the given path folder is used to further
-        train the model. The scope of the experiment and of the agent has to be the same across both models.
-
         :param training_episodes_per_volley: the number of training episodes per volley before trying to validate the agent
         :param validation_episodes_per_volley: the number of validation episodes per volley after the training in such interval
         :param training_episodes_max: the maximum number of training episodes allowed at all
@@ -351,7 +357,6 @@ class Experiment:
         :param render_during_training: boolean flag to render the environment during training, default to False
         :param render_during_validation: boolean flag to render the environment during validation, default to False
         :param render_during_test: boolean flag to render the environment during test, default to False
-        :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model, default to None
         :param plot_sample_density_training: the optional number represent after how many episodes a sample for the episode-related training plots is sampled (default to 1, i.e. each episode)
         :param plot_sample_density_validation: the optional number represent after how many episodes a sample for the episode-related validation plots is sampled (default to 1, i.e. each episode)
         :return: the average and the max of the total average reward, the average and the max of the average average reward with respect to all test cycles, the training episodes required to validate, a success flag and the location in which the saved metagraph is stored
@@ -387,15 +392,15 @@ class Experiment:
             self._environment.initialize(logger, session)
             self._agent.initialize(logger, session)
             self._environment.post_initialize(logger, session)
-            # Load the pre-trained model if required
-            if checkpoint_path is not None:
-                checkpoint = tensorflow.train.get_checkpoint_state(checkpoint_path)
+            # Load the pre-trained model if checkpoint path is given in setup
+            if self._checkpoint_path is not None:
+                checkpoint = tensorflow.train.get_checkpoint_state(self._checkpoint_path)
                 # If checkpoint exists restore from checkpoint
                 if checkpoint and checkpoint.model_checkpoint_path:
-                    self._agent_saver.restore(session, tensorflow.train.latest_checkpoint(checkpoint_path))
-                    logger.info("Model graph stored at " + checkpoint_path + " loaded successfully!")
+                    self._agent_saver.restore(session, tensorflow.train.latest_checkpoint(self._checkpoint_path))
+                    logger.info("Model graph stored at " + self._checkpoint_path + " loaded successfully!")
                 else:
-                    logger.error("Checkpoint path specified is wrong: no model can be accessed at " + checkpoint_path)
+                    logger.error("Checkpoint path specified is wrong: no model can be accessed at " + self._checkpoint_path)
             # Execute pre-training if the agent requires pre-training
             if self._agent.warmup_steps > 0:
                 logger.info("Warming-up for " + str(self._agent.warmup_steps) + " steps...")
@@ -695,19 +700,15 @@ class Experiment:
               episode_length_max: int,
               test_episodes_per_cycle: int, test_cycles: int,
               logger: logging.Logger,
-              checkpoint_path: str,
               render: bool = True):
         """
-        Watch an experiment with an already trained agent given by the checkpoint path. The experiment needs to be
-        setup and also trained somehow to access a proper checkpoint.
-
+        Watch an experiment with an already trained agent given by the checkpoint path defined during setup.
         Use this method to see how a saved agent model performs.
 
         :param episode_length_max: the max length in steps of each episode
         :param test_episodes_per_cycle: the number of episodes to play for each test cycle
         :param test_cycles: the number of test cycles to execute
         :param logger: the logger used to print the experiment information, warnings and errors
-        :param checkpoint_path: the optional checkpoint path to load the pre-trained model from, it should be a valid model
         :param render: boolean flag to render the environment, default to True
         """
         logger.info("Watching experiment " + self._current_id + "...")
@@ -716,18 +717,18 @@ class Experiment:
             # Initialize the environment and the agent
             self._environment.initialize(logger, session)
             self._agent.initialize(logger, session)
-            # Load the pre-trained model if required
-            if checkpoint_path is None:
+            # Load the pre-trained model at the checkpoint path given in setup
+            if self._checkpoint_path is None:
                 logger.error("Need to specify a checkpoint path to watch the experiment!")
                 return
             else:
-                checkpoint = tensorflow.train.get_checkpoint_state(checkpoint_path)
+                checkpoint = tensorflow.train.get_checkpoint_state(self._checkpoint_path)
                 # If checkpoint exists restore from checkpoint
                 if checkpoint and checkpoint.model_checkpoint_path:
-                    self._agent_saver.restore(session, tensorflow.train.latest_checkpoint(checkpoint_path))
-                    logger.info("Model graph stored at " + checkpoint_path + " loaded successfully!")
+                    self._agent_saver.restore(session, tensorflow.train.latest_checkpoint(self._checkpoint_path))
+                    logger.info("Model graph stored at " + self._checkpoint_path + " loaded successfully!")
                 else:
-                    logger.error("Checkpoint path specified is wrong: no model can be accessed at " + checkpoint_path)
+                    logger.error("Checkpoint path specified is wrong: no model can be accessed at " + self._checkpoint_path)
                     return
                 # Test the model and get all cycles total, scaled rewards and all rewards and all episode lengths
                 test_average_total_rewards: numpy.ndarray = numpy.zeros(test_cycles, dtype=float)

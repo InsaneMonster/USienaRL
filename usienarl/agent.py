@@ -45,6 +45,8 @@ class Agent:
         # Define empty agent attributes
         self._scope: str = None
         self._summary_writer = None
+        self._checkpoint_path: str = None
+        self._scopes_to_restore: [] = None
         self._observation_space_type: SpaceType = None
         self._observation_space_shape = None
         self._agent_action_space_type: SpaceType = None
@@ -54,7 +56,8 @@ class Agent:
               logger: logging.Logger,
               observation_space_type: SpaceType, observation_space_shape,
               agent_action_space_type: SpaceType, agent_action_space_shape,
-              scope: str, summary_path: str) -> bool:
+              scope: str, summary_path: str,
+              checkpoint_path: str, scopes_to_restore: []) -> bool:
         """
         Setup the agent.
         It is called before the tensorflow session generation, if any.
@@ -66,12 +69,16 @@ class Agent:
         :param agent_action_space_type: the space type of the agent action space
         :param agent_action_space_shape: the shape of the agent action space
         :param scope: the experiment scope encompassing the agent _scope, if any
+        :param checkpoint_path: the path of the checkpoint to restore, if any
+        :param scopes_to_restore: the list of scopes to restore with the checkpoint, if any
         :param summary_path: the path of the summary writer of the agent
         :return a boolean flag True if setup is successful, False otherwise
         """
         logger.info("Setup of agent " + self._name + " with scope " + scope + "...")
         # Reset agent attributes
         self._scope = scope
+        self._checkpoint_path = checkpoint_path
+        self._scopes_to_restore = scopes_to_restore
         self._observation_space_type: SpaceType = observation_space_type
         self._observation_space_shape = observation_space_shape
         self._agent_action_space_type: SpaceType = agent_action_space_type

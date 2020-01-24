@@ -123,6 +123,26 @@ class Model:
         # Get the training variables of the model under its scope: usually, the training variables of the tensorflow graph
         return tensorflow.trainable_variables(self._scope + "/" + self._name + "/")
 
+    @property
+    def name(self) -> str:
+        """
+        The name of the model.
+
+        :return: the string name of the model.
+
+        :return:
+        """
+        return self._name
+
+    @property
+    def scope(self) -> str:
+        """
+        The scope of the model.
+
+        :return: the string scope of the model.
+        """
+        return self._scope
+
     def _define_graph(self):
         """
         Define the tensorflow graph of the model.

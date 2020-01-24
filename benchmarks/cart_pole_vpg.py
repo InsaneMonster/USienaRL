@@ -105,7 +105,7 @@ def run(workspace: str,
                    testing_episodes, test_cycles,
                    render_training, render_validation, render_test,
                    workspace, __file__,
-                   logger, None, experiment_iterations,
+                   logger, None, None, experiment_iterations,
                    None,
                    plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
     run_experiment(experiment_explore,
@@ -115,7 +115,7 @@ def run(workspace: str,
                    testing_episodes, test_cycles,
                    render_training, render_validation, render_test,
                    workspace, __file__,
-                   logger, None, experiment_iterations,
+                   logger, None, None, experiment_iterations,
                    None,
                    plot_sample_density_training_episodes, plot_sample_density_validation_episodes)
 
