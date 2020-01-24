@@ -122,7 +122,7 @@ def run(workspace: str,
     experiment_boltzmann_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_boltzmann", success_threshold_refactored,
                                                                                environment_refactored,
                                                                                tql_agent_boltzmann)
-    experiment_dirichlet_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_dirichlet", success_threshold_refactored,
+    experiment_dirichlet_refactored: BenchmarkExperiment = BenchmarkExperiment("experiment_refactored_dirichlet", success_threshold_refactored,
                                                                                environment_refactored,
                                                                                tql_agent_dirichlet)
     # Define experiments data
