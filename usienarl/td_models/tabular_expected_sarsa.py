@@ -44,6 +44,15 @@ class Buffer:
 
     def store(self,
               observation_current, action, reward: float, observation_next, last_step: bool):
+        """
+        Store the time-step in the buffer.
+
+        :param observation_current: the current observation to store in the buffer
+        :param action: the last action to store in the buffer
+        :param reward: the reward obtained from the action at the current state to store in the buffer
+        :param observation_next: the next observation to store in the buffer
+        :param last_step: whether or not this time-step was the last of the episode
+        """
         # Find the current max priority on the tree leafs
         max_priority: float = numpy.max(self._sum_tree.leafs)
         # If the max priority is zero set it to the minimum defined
@@ -55,6 +64,12 @@ class Buffer:
 
     def get(self,
             amount: int = 0):
+        """
+            Get a batch of data from the buffer of the given size. If size is not given all the buffer is used.
+
+            :param amount: the batch size of data to get
+            :return a list containing the ndarrays of: current observations, actions, rewards, next observations and last step flags
+            """
         # Adjust amount with respect to the size of the sum-tree
         if amount <= 0 or amount > self._sum_tree.size:
             amount = self._sum_tree.size
@@ -107,6 +122,11 @@ class Buffer:
 
     def update(self,
                absolute_errors: []):
+        """
+        Update the buffer using the given absolute errors.
+
+        :param absolute_errors: the absolute errors on the values predictions
+        """
         # If no last sampled indexes are found, stop here
         if self._sum_tree_last_sampled_indexes is None:
             return

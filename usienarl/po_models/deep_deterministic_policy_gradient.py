@@ -15,35 +15,56 @@ class Buffer:
     A buffer for storing trajectories experienced by a DDPG agent interacting with the environment, it is a simple FIFO
     experience replay buffer.
     """
-
-    # TODO THIS
     def __init__(self,
                  capacity: int,
                  observation_space_shape,
                  action_space_shape):
-        self._current_observations = np.zeros([size, obs_dim], dtype=np.float32)
-        self._next_observations = np.zeros([size, obs_dim], dtype=np.float32)
-        self._actions = np.zeros([size, act_dim], dtype=np.float32)
-        self._rewards = np.zeros(size, dtype=np.float32)
-        self._last_steps = np.zeros(size, dtype=np.float32)
-        self.ptr, self.size, self.max_size = 0, 0, size
+        # Define buffer attributes
+        self._capacity = capacity
+        # Define buffer empty attributes
+        self._pointer = 0
+        self._size = 0
+        self._observations_current: numpy.ndarray = numpy.zeros([self._capacity, observation_space_shape], dtype=float)
+        self._observations_next: numpy.ndarray = numpy.zeros([self._capacity, observation_space_shape], dtype=float)
+        self._actions: numpy.ndarray = numpy.zeros([self._capacity, action_space_shape], dtype=float)
+        self._rewards: numpy.ndarray = numpy.zeros(self._capacity, dtype=float)
+        self._last_steps: numpy.ndarray = numpy.zeros(self._capacity, dtype=float)
 
-    def store(self, obs, act, rew, next_obs, done):
-        self._current_observations[self.ptr] = obs
-        self._next_observations[self.ptr] = next_obs
-        self._actions[self.ptr] = act
-        self._rewards[self.ptr] = rew
-        self._last_steps[self.ptr] = done
-        self.ptr = (self.ptr+1) % self.max_size
-        self.size = min(self.size+1, self.max_size)
+    def store(self, observation_current, action, reward: float, observation_next, last_step: bool):
+        """
+        Store the time-step in the buffer.
 
-    def sample_batch(self, batch_size=32):
-        idxs = np.random.randint(0, self.size, size=batch_size)
-        return dict(obs1=self._current_observations[idxs],
-                    obs2=self._next_observations[idxs],
-                    acts=self._actions[idxs],
-                    rews=self._rewards[idxs],
-                    done=self._last_steps[idxs])
+        :param observation_current: the current observation to store in the buffer
+        :param action: the last action to store in the buffer
+        :param reward: the reward obtained from the action at the current state to store in the buffer
+        :param observation_next: the next observation to store in the buffer
+        :param last_step: whether or not this time-step was the last of the episode
+        """
+        # Store data at the index targeted by the pointer
+        self._observations_current[self._pointer] = observation_current
+        self._observations_next[self._pointer] = observation_next
+        self._actions[self._pointer] = action
+        self._rewards[self._pointer] = reward
+        self._last_steps[self._pointer] = last_step
+        # Update the pointer (make sure the first inserted elements are removed first when capacity is exceeded)
+        self._pointer = (self._pointer + 1) % self._capacity
+        # Update the size with respect to capacity
+        self._size = min(self._size + 1, self._capacity)
+
+    def get(self,
+            amount: int = 32) -> []:
+        """
+        Get a batch of data from the buffer of the given size. If size is not given all the buffer is used.
+
+        :param amount: the batch size of data to get
+        :return a list containing the ndarrays of: current observations, actions, rewards, next observations and last step flags
+        """
+        # Adjust the amount with respect to the buffer current size
+        if amount <= 0:
+            amount = self._size
+        # Return a set of random samples of as large as the given amount
+        random_indexes: numpy.ndarray = numpy.random.randint(0, self._size, size=amount)
+        return [self._observations_current[random_indexes], self._actions[random_indexes], self._rewards[random_indexes], self._observations_next[random_indexes], self._last_steps[random_indexes]]
 
 
 class ProximalPolicyOptimization(Model):

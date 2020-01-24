@@ -108,6 +108,15 @@ class Buffer:
         self._rewards_to_go[path_slice] = (self._discount_cumulative_sum(rewards, self._discount_factor)[:-1]).tolist()
         self._path_start_index = self._pointer
 
+    @property
+    def size(self) -> int:
+        """
+        The current size of the buffer (the number of samples in it).
+
+        :return: the integer current size of the buffer.
+        """
+        return self._pointer
+
     @staticmethod
     def _discount_cumulative_sum(vector: numpy.ndarray, discount: float) -> numpy.ndarray:
         """
