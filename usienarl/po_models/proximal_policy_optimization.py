@@ -3,6 +3,7 @@
 import tensorflow
 import numpy
 import scipy.signal
+import random
 
 # Import required src
 
@@ -125,6 +126,15 @@ class Buffer:
         """
         return scipy.signal.lfilter([1], [1, float(-discount)], vector[::-1], axis=0)[::-1]
 
+    @property
+    def size(self) -> int:
+        """
+        The size of the buffer at the current time (it is dynamic).
+
+        :return: the integer size of the buffer.
+        """
+        return self._pointer
+
 
 class ProximalPolicyOptimization(Model):
     """
@@ -158,6 +168,7 @@ class ProximalPolicyOptimization(Model):
                  discount_factor: float,
                  learning_rate_policy: float, learning_rate_value: float,
                  value_steps_for_update: int, policy_steps_for_update: int,
+                 minibatch_size: int,
                  hidden_layers_config: Config,
                  lambda_parameter: float,
                  clip_ratio: float,
@@ -170,6 +181,7 @@ class ProximalPolicyOptimization(Model):
         self._hidden_layers_config: Config = hidden_layers_config
         self._value_steps_for_update: int = value_steps_for_update
         self._policy_steps_for_update: int = policy_steps_for_update
+        self._minibatch_size: int = minibatch_size
         self._lambda_parameter: float = lambda_parameter
         self._clip_ratio: float = clip_ratio
         self._target_kl_divergence: float = target_kl_divergence
@@ -477,7 +489,7 @@ class ProximalPolicyOptimization(Model):
     def update(self,
                session,
                batch: []):
-        # Unpack the batch
+        # Unpack the batch to feed the minibatches
         observations, actions, advantages, rewards, previous_log_likelihoods = batch[0], batch[1], batch[2], batch[3], batch[4]
         # Generate a one-hot encoded version of the observations if observation space type is discrete
         if self._observation_space_type == SpaceType.discrete:
@@ -487,39 +499,95 @@ class ProximalPolicyOptimization(Model):
             actions: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(actions).reshape(-1)]
         # Run the policy optimizer of the model in training mode for the required amount of steps
         for _ in range(self._policy_steps_for_update):
-            _, approximated_kl_divergence = session.run([self._policy_stream_optimizer, self._approximated_kl_divergence],
-                                                        feed_dict={
-                                                                    self._inputs: observations,
-                                                                    self._targets: actions,
-                                                                    self._advantages: advantages,
-                                                                    self._previous_log_likelihoods: previous_log_likelihoods
-                                                                  })
-            # If approximated KL divergence is above a certain threshold stop updating the policy for now (early stop)
-            if approximated_kl_divergence > 1.5 * self._target_kl_divergence:
+            total_approximated_kl_divergence: float = 0
+            approximated_kl_divergence_iterations: int = 0
+            for minibatch in self._get_minibatch(observations, actions, advantages, rewards, previous_log_likelihoods, self._minibatch_size):
+                # Unpack the minibatch
+                minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = minibatch
+                # Update the policy and compute KL-divergence
+                _, approximated_kl_divergence = session.run([self._policy_stream_optimizer, self._approximated_kl_divergence],
+                                                            feed_dict={
+                                                                self._inputs: minibatch_observations,
+                                                                self._targets: minibatch_actions,
+                                                                self._advantages: minibatch_advantages,
+                                                                self._previous_log_likelihoods: minibatch_previous_log_likelihoods
+                                                            })
+                # Update average count of KL-divergence
+                total_approximated_kl_divergence += approximated_kl_divergence
+                approximated_kl_divergence_iterations += 1
+            # If average approximated KL divergence is above a certain threshold stop updating the policy for now (early stop)
+            if (total_approximated_kl_divergence / approximated_kl_divergence_iterations) > 1.5 * self._target_kl_divergence:
                 break
         # Run the value optimizer of the model in training mode for the required amount of steps
         for _ in range(self._value_steps_for_update):
-            session.run(self._value_stream_optimizer,
-                        feed_dict={
-                                    self._inputs: observations,
-                                    self._advantages: advantages,
-                                    self._rewards: rewards
-                                  })
+            for minibatch in self._get_minibatch(observations, actions, advantages, rewards, previous_log_likelihoods, self._minibatch_size):
+                # Unpack the minibatch
+                minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = minibatch
+                # Update the value
+                session.run(self._value_stream_optimizer,
+                            feed_dict={
+                                self._inputs: minibatch_observations,
+                                self._advantages: minibatch_advantages,
+                                self._rewards: minibatch_rewards
+                            })
         # Compute the policy loss and value loss of the model after this sequence of training and also compute the summary
-        policy_loss, value_loss, summary = session.run([self._policy_stream_loss, self._value_stream_loss, self.summary],
-                                                       feed_dict={
-                                                                   self._inputs: observations,
-                                                                   self._targets: actions,
-                                                                   self._rewards: rewards,
-                                                                   self._advantages: advantages,
-                                                                   self._previous_log_likelihoods: previous_log_likelihoods
-                                                                 })
+        total_policy_loss: float = 0
+        total_value_loss: float = 0
+        summaries: [] = []
+        number_iterations: int = 0
+        for minibatch in self._get_minibatch(observations, actions, advantages, rewards, previous_log_likelihoods, self._minibatch_size):
+            # Unpack the minibatch
+            minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = minibatch
+            # Execute the computations
+            policy_loss, value_loss, summary = session.run(
+                [self._policy_stream_loss, self._value_stream_loss, self.summary],
+                feed_dict={
+                    self._inputs: minibatch_observations,
+                    self._targets: minibatch_actions,
+                    self._rewards: minibatch_rewards,
+                    self._advantages: minibatch_advantages,
+                    self._previous_log_likelihoods: minibatch_previous_log_likelihoods
+                })
+            # Update all average counts
+            total_policy_loss += policy_loss
+            total_value_loss += value_loss
+            summaries.append(summary)
+            number_iterations += 1
         # Return both losses and summary for the update sequence
-        return summary, policy_loss, value_loss
+        return numpy.mean(summaries, axis=0), total_policy_loss / number_iterations, total_value_loss / number_iterations
 
     @property
     def warmup_steps(self) -> int:
         return 0
+
+    @staticmethod
+    def _get_minibatch(observations: [], actions: [], advantages: [], rewards: [], previous_log_likelihoods: [],
+                       minibatch_size: int):
+        """
+
+        :param observations:
+        :param actions:
+        :param advantages:
+        :param rewards:
+        :param previous_log_likelihoods:
+        :param minibatch_size:
+        :return:
+        """
+        # Get a list of random ids of the batch
+        batch_random_ids = random.sample(range(len(observations)), len(observations))
+        # Generate the minibatches by shuffling the batch
+        minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = [], [], [], [], []
+        for random_id in batch_random_ids:
+            minibatch_observations.append(observations[random_id])
+            minibatch_actions.append(actions[random_id])
+            minibatch_advantages.append(advantages[random_id])
+            minibatch_rewards.append(rewards[random_id])
+            minibatch_previous_log_likelihoods.append(previous_log_likelihoods[random_id])
+            # Return the minibatch
+            if len(minibatch_observations) % minibatch_size == 0:
+                yield minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards,  minibatch_previous_log_likelihoods
+                # Clear the minibatch
+                minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = [], [], [], [], []
 
     @staticmethod
     def get_categorical_log_likelihood(actions_mask, logits):
