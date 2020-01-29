@@ -210,10 +210,6 @@ class TabularSARSA(Model):
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
 
-    def _define_summary(self):
-        with tensorflow.variable_scope(self._scope + "/" + self._name):
-            self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
-
     def get_all_action_values(self,
                               session,
                               observation_current,
@@ -293,13 +289,16 @@ class TabularSARSA(Model):
             else:
                 q_values_current[sample_index, action_current] = reward + self.discount_factor * q_values_next[sample_index, action_next]
         # Train the model and save the value of the loss and of the absolute error as well as the summary
-        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
-                                                       feed_dict={
-                                                                   self._inputs: observations_current_one_hot,
-                                                                   self._targets: q_values_current,
-                                                                   self._loss_weights: weights,
-                                                                   self._mask: masks
-                                                                  })
+        _, loss, absolute_error = session.run([self._optimizer, self._loss, self._absolute_error],
+                                              feed_dict={
+                                                           self._inputs: observations_current_one_hot,
+                                                           self._targets: q_values_current,
+                                                           self._loss_weights: weights,
+                                                           self._mask: masks
+                                                        })
+        # Generate the tensorflow summary
+        summary = tensorflow.Summary()
+        summary.value.add(tag="loss", simple_value=loss)
         # Return the loss, the absolute error and relative summary
         return summary, loss, absolute_error
 

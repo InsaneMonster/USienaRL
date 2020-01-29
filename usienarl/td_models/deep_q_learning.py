@@ -271,10 +271,6 @@ class DeepQLearning(Model):
             copy_operation = target_network_parameter.assign(main_network_parameter)
             self._weight_copier.append(copy_operation)
 
-    def _define_summary(self):
-        with tensorflow.variable_scope(self._scope + "/" + self._name):
-            self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("loss", self._loss)])
-
     def get_all_action_values(self,
                               session,
                               observation_current,
@@ -375,13 +371,16 @@ class DeepQLearning(Model):
             else:
                 q_values_current[sample_index, action] = reward + self.discount_factor * numpy.max(q_values_next[sample_index])
         # Train the model and save the value of the loss and of the absolute error as well as the summary
-        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
-                                                       feed_dict={
-                                                            self._main_network_inputs: observations_current_input,
-                                                            self._targets: q_values_current,
-                                                            self._loss_weights: weights,
-                                                            self._main_network_mask: masks
-                                                       })
+        _, loss, absolute_error = session.run([self._optimizer, self._loss, self._absolute_error],
+                                              feed_dict={
+                                                    self._main_network_inputs: observations_current_input,
+                                                    self._targets: q_values_current,
+                                                    self._loss_weights: weights,
+                                                    self._main_network_mask: masks
+                                               })
+        # Generate the tensorflow summary
+        summary = tensorflow.Summary()
+        summary.value.add(tag="loss", simple_value=loss)
         # Return the loss, the absolute error and relative summary
         return summary, loss, absolute_error
 

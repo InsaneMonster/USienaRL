@@ -115,6 +115,15 @@ class Buffer:
         self._rewards_to_go[path_slice] = (self._discount_cumulative_sum(rewards, self._discount_factor)[:-1]).tolist()
         self._path_start_index = self._pointer
 
+    @property
+    def size(self) -> int:
+        """
+        The size of the buffer at the current time (it is dynamic).
+
+        :return: the integer size of the buffer.
+        """
+        return self._pointer
+
     @staticmethod
     def _discount_cumulative_sum(vector: numpy.ndarray, discount: float) -> numpy.ndarray:
         """
@@ -125,15 +134,6 @@ class Buffer:
         :return the discounted cumulative sum (e.g. [x0 + discount * x1 + discount^2 * x2, x1 + discount * x2, x3])
         """
         return scipy.signal.lfilter([1], [1, float(-discount)], vector[::-1], axis=0)[::-1]
-
-    @property
-    def size(self) -> int:
-        """
-        The size of the buffer at the current time (it is dynamic).
-
-        :return: the integer size of the buffer.
-        """
-        return self._pointer
 
 
 class ProximalPolicyOptimization(Model):
@@ -287,15 +287,6 @@ class ProximalPolicyOptimization(Model):
             self._clip_fraction = tensorflow.reduce_mean(tensorflow.cast(tensorflow.logical_or(self._ratio > (1 + self._clip_ratio), self._ratio < (1 - self._clip_ratio)), tensorflow.float32), name="clip_fraction")
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
-
-    def _define_summary(self):
-        with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define the _summary operation for this graph with losses and approximated KL and entropy summaries
-            self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
-                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss),
-                                                     tensorflow.summary.scalar("approximated_kl_divergence", self._approximated_kl_divergence),
-                                                     tensorflow.summary.scalar("approximated_entropy", self._approximated_entropy),
-                                                     tensorflow.summary.scalar("clip_fraction", self._clip_fraction)])
 
     def sample_action(self,
                       session,
@@ -511,7 +502,7 @@ class ProximalPolicyOptimization(Model):
             for minibatch in self._get_minibatch(observations, actions, advantages, rewards, previous_log_likelihoods, self._minibatch_size):
                 # Unpack the minibatch
                 minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = minibatch
-                # Update the policy and compute KL-divergence
+                # Update the policy
                 _, policy_stream_loss, approximated_kl_divergence, approximated_entropy, clip_fraction = session.run([self._policy_stream_optimizer, self._policy_stream_loss, self._approximated_kl_divergence, self._approximated_entropy, self._clip_fraction],
                                                                                                                      feed_dict={
                                                                                                                          self._inputs: minibatch_observations,
@@ -567,16 +558,17 @@ class ProximalPolicyOptimization(Model):
 
     @staticmethod
     def _get_minibatch(observations: [], actions: [], advantages: [], rewards: [], previous_log_likelihoods: [],
-                       minibatch_size: int):
+                       minibatch_size: int) -> ():
         """
+        Get a minibatch of the given minibatch size from the given batch (already unpacked).
 
-        :param observations:
-        :param actions:
-        :param advantages:
-        :param rewards:
-        :param previous_log_likelihoods:
-        :param minibatch_size:
-        :return:
+        :param observations: the observations buffer in the batch
+        :param actions: the actions buffer in the batch
+        :param advantages: the advantages buffer in the batch
+        :param rewards: the rewards buffer in the batch
+        :param previous_log_likelihoods: the previous log-likelihoods buffer in the batch
+        :param minibatch_size: the size of the minibatch
+        :return: a tuple minibatch of shuffled samples of the given size
         """
         # Get a list of random ids of the batch
         batch_random_ids = random.sample(range(len(observations)), len(observations))

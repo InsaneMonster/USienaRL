@@ -37,7 +37,6 @@ class Model:
         self._name: str = name
         # Define empty model attributes
         self._initializer = None
-        self._summary = None
         self._scope: str = None
         self._observation_space_type: SpaceType = None
         self._observation_space_shape = None
@@ -94,8 +93,6 @@ class Model:
         logger.info("Model generation successful")
         # Define the tensorflow model graph
         self._define_graph()
-        # Define the tensorflow summary for tensorboard
-        self._define_summary()
         # Returns True to state success
         return True
 
@@ -152,15 +149,6 @@ class Model:
         # Abstract method, definition should be implemented on a child class basis
         raise NotImplementedError()
 
-    def _define_summary(self):
-        """
-        Define the tensorboard summary of the model.
-
-        It uses as scope the format: experiment_name/agent_name/model_name
-        """
-        # Abstract method, definition should be implemented on a child class basis
-        raise NotImplementedError()
-
     def update(self,
                session,
                batch: []):
@@ -170,7 +158,7 @@ class Model:
 
         :param session: the session of tensorflow currently running
         :param batch: a batch of samples each one consisting of a tuple at least comprising observation current, action and reward all wrapped in numpy arrays
-        :return: the updated summary and a set of parameters (losses, errors, etc) depending on the model
+        :return: the summary and a set of parameters (losses, errors, etc) depending on the model
         """
         # Abstract method, definition should be implemented on a child class basis
         raise NotImplementedError()
