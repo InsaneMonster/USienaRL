@@ -118,6 +118,7 @@ A way to check if environments are compatible one another would be required too 
 
 **Changelog**
 
+- Version 0.6.7: Added minibatches to VPG and PPO to greatly improve training and reduce memory usage, changed summary to be defined inside the update method (it is more versatile this way)
 - Version 0.6.6: Hot-fixed scope in model not flagged as property
 - Version 0.6.5: Added name and shape properties for the abstract model class and exposed checkpoint path to the agent: now the checkpoint path along a list of scopes to restore is given during setup
 - Version 0.6.4: Added post-initialize method in environment to fix restore variable errors when initializing a tensorflow model inside the environment

@@ -40,6 +40,7 @@ def _define_ppo_model(config: Config) -> ProximalPolicyOptimization:
     discount_factor: float = 0.99
     value_steps_per_update: int = 80
     policy_steps_per_update: int = 80
+    minibatch_size: int = 32
     lambda_parameter: float = 0.97
     clip_ratio: float = 0.2
     target_kl_divergence: float = 0.01
@@ -47,6 +48,7 @@ def _define_ppo_model(config: Config) -> ProximalPolicyOptimization:
     return ProximalPolicyOptimization("model", discount_factor,
                                       learning_rate_policy, learning_rate_advantage,
                                       value_steps_per_update, policy_steps_per_update,
+                                      minibatch_size,
                                       config,
                                       lambda_parameter,
                                       clip_ratio,

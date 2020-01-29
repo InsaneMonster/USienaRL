@@ -3,6 +3,7 @@
 import tensorflow
 import numpy
 import scipy.signal
+import random
 
 # Import required src
 
@@ -108,6 +109,15 @@ class Buffer:
         self._rewards_to_go[path_slice] = (self._discount_cumulative_sum(rewards, self._discount_factor)[:-1]).tolist()
         self._path_start_index = self._pointer
 
+    @property
+    def size(self) -> int:
+        """
+        The size of the buffer at the current time (it is dynamic).
+
+        :return: the integer size of the buffer.
+        """
+        return self._pointer
+
     @staticmethod
     def _discount_cumulative_sum(vector: numpy.ndarray, discount: float) -> numpy.ndarray:
         """
@@ -151,6 +161,7 @@ class VanillaPolicyGradient(Model):
                  discount_factor: float,
                  learning_rate_policy: float, learning_rate_value: float,
                  value_steps_for_update: int,
+                 minibatch_size: int,
                  hidden_layers_config: Config,
                  lambda_parameter: float):
         # Define model attributes
@@ -160,6 +171,7 @@ class VanillaPolicyGradient(Model):
         # Define internal model attributes
         self._hidden_layers_config: Config = hidden_layers_config
         self._value_steps_for_update: int = value_steps_for_update
+        self._minibatch_size: int = minibatch_size
         self._lambda_parameter: float = lambda_parameter
         # Define vanilla policy gradient empty attributes
         self.buffer: Buffer = None
@@ -249,13 +261,6 @@ class VanillaPolicyGradient(Model):
             self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_targets, name="approximated_entropy")
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
-
-    def _define_summary(self):
-        with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define the _summary operation for this graph with losses and approximated entropy summaries
-            self.summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss),
-                                                     tensorflow.summary.scalar("value_stream_loss", self._value_stream_loss),
-                                                     tensorflow.summary.scalar("approximated_entropy", self._approximated_entropy)])
 
     def sample_action(self,
                       session,
@@ -458,35 +463,85 @@ class VanillaPolicyGradient(Model):
         # Generate a one-hot encoded version of the actions if action space type is discrete
         if self._agent_action_space_type == SpaceType.discrete:
             actions: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(actions).reshape(-1)]
-        # Run the policy optimizer of the model in training mode
-        session.run(self._policy_stream_optimizer,
-                    feed_dict={
-                                self._inputs: observations,
-                                self._targets: actions,
-                                self._advantages: advantages
-                              })
-        # Run the value optimizer of the model in training mode for the required amount of steps
+        # Run the policy optimizer of the model in training mode, also compute policy stream loss and approximated entropy
+        policy_stream_loss_average: float = 0.0
+        approximated_entropy_average: float = 0.0
+        policy_update_minibatch_iterations: int = 0
+        policy_stream_loss_total: float = 0.0
+        approximated_entropy_total: float = 0.0
+        for minibatch in self._get_minibatch(observations, actions, advantages, rewards, self._minibatch_size):
+            # Unpack the minibatch
+            minibatch_observations, minibatch_actions, minibatch_advantages, _ = minibatch
+            # Update the policy
+            _, policy_stream_loss, approximated_entropy = session.run([self._policy_stream_optimizer, self._policy_stream_loss,self._approximated_entropy],
+                                                                      feed_dict={
+                                                                            self._inputs: minibatch_observations,
+                                                                            self._targets: minibatch_actions,
+                                                                            self._advantages: minibatch_advantages,
+                                                                      })
+            policy_update_minibatch_iterations += 1
+            policy_stream_loss_total += policy_stream_loss
+            approximated_entropy_total += approximated_entropy
+        policy_stream_loss_average = policy_stream_loss_total / policy_update_minibatch_iterations
+        approximated_entropy_average = approximated_entropy_total / policy_update_minibatch_iterations
+        # Run the value optimizer of the model in training mode for the required amount of steps, also compute average value stream loss
+        value_stream_loss_average: float = 0.0
         for _ in range(self._value_steps_for_update):
-            session.run(self._value_stream_optimizer,
-                        feed_dict={
-                                    self._inputs: observations,
-                                    self._advantages: advantages,
-                                    self._rewards: rewards
-                                  })
-        # Compute the policy loss and value loss of the model after this sequence of training and also compute the summary
-        policy_loss, value_loss, summary = session.run([self._policy_stream_loss, self._value_stream_loss, self.summary],
-                                                       feed_dict={
-                                                                   self._inputs: observations,
-                                                                   self._targets: actions,
-                                                                   self._rewards: rewards,
-                                                                   self._advantages: advantages
-                                                                 })
+            value_update_minibatch_iterations: int = 0
+            value_stream_loss_total: float = 0.0
+            for minibatch in self._get_minibatch(observations, actions, advantages, rewards, self._minibatch_size):
+                # Unpack the minibatch
+                minibatch_observations, _, minibatch_advantages, minibatch_rewards = minibatch
+                # Update the value
+                _, value_stream_loss = session.run([self._value_stream_optimizer, self._value_stream_loss],
+                                                   feed_dict={
+                                                       self._inputs: minibatch_observations,
+                                                       self._advantages: minibatch_advantages,
+                                                       self._rewards: minibatch_rewards
+                                                   })
+                value_update_minibatch_iterations += 1
+                value_stream_loss_total += value_stream_loss
+            # The average is only really saved on the last value update to know it at the end of all the update steps
+            value_stream_loss_average = value_stream_loss_total / value_update_minibatch_iterations
+        # Generate the tensorflow summary
+        summary = tensorflow.Summary()
+        summary.value.add(tag="policy_stream_loss", simple_value=policy_stream_loss_average)
+        summary.value.add(tag="value_stream_loss", simple_value=value_stream_loss_average)
+        summary.value.add(tag="approximated_entropy", simple_value=approximated_entropy_average)
         # Return both losses and summary for the update sequence
-        return summary, policy_loss, value_loss
+        return summary, policy_stream_loss_average, value_stream_loss_average
 
     @property
     def warmup_steps(self) -> int:
         return 0
+
+    @staticmethod
+    def _get_minibatch(observations: [], actions: [], advantages: [], rewards: [],
+                       minibatch_size: int) -> ():
+        """
+        Get a minibatch of the given minibatch size from the given batch (already unpacked).
+
+        :param observations: the observations buffer in the batch
+        :param actions: the actions buffer in the batch
+        :param advantages: the advantages buffer in the batch
+        :param rewards: the rewards buffer in the batch
+        :param minibatch_size: the size of the minibatch
+        :return: a tuple minibatch of shuffled samples of the given size
+        """
+        # Get a list of random ids of the batch
+        batch_random_ids = random.sample(range(len(observations)), len(observations))
+        # Generate the minibatches by shuffling the batch
+        minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards = [], [], [], []
+        for random_id in batch_random_ids:
+            minibatch_observations.append(observations[random_id])
+            minibatch_actions.append(actions[random_id])
+            minibatch_advantages.append(advantages[random_id])
+            minibatch_rewards.append(rewards[random_id])
+            # Return the minibatch
+            if len(minibatch_observations) % minibatch_size == 0:
+                yield minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards
+                # Clear the minibatch
+                minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards = [], [], [], []
 
     @staticmethod
     def get_categorical_log_likelihood(actions_mask, logits):
