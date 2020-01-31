@@ -169,6 +169,7 @@ class DeepDeterministicPolicyGradient(Model):
         # Generate the base model
         super(DeepDeterministicPolicyGradient, self).__init__(name)
         # Define the types of allowed observation and action spaces
+        self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_observation_space_types.append(SpaceType.continuous)
         self._supported_action_space_types.append(SpaceType.continuous)
 
@@ -185,12 +186,12 @@ class DeepDeterministicPolicyGradient(Model):
         # Assign main and target networks to the model attributes
         self._main_network_observations = self._main_network.observations
         self._main_network_actions = self._main_network.actions
-        self._main_network_q_values_predictions = self._main_network.actions_predicted
-        self._main_network_q_values_actions = self._main_network.actions
-        self._target_network_observations = self._main_network.observations
-        self._target_network_actions = self._main_network.actions
+        self._main_network_q_values_predictions = self._main_network.q_values_predictions
+        self._main_network_q_values_actions = self._main_network.q_values_actions
+        self._target_network_observations = self._target_network.observations
+        self._target_network_actions = self._target_network.actions
         self._target_network_q_values_predictions = self._target_network.q_values_predictions
-        self._target_network_q_values_actions = self._main_network.actions
+        self._target_network_q_values_actions = self._target_network.q_values_actions
         # Define the shared part of the model
         with tensorflow.variable_scope(self._scope):
             # Define rewards and done flag placeholders as adaptable arrays with shape N where N is the number of examples
@@ -247,7 +248,7 @@ class DeepDeterministicPolicyGradient(Model):
         if self._observation_space_type == SpaceType.discrete:
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             observation_current_input = observation_current_one_hot
-        # Return all the predicted q-values given the current observationar
+        # Return all the predicted q-values given the current observation
         return session.run(self._main_network_outputs, feed_dict={self._main_network_observations: [observation_current_input], self._main_network_mask: [mask]})
 
     def get_best_action(self,
@@ -306,10 +307,8 @@ class DeepDeterministicPolicyGradient(Model):
     def update(self,
                session,
                batch: []):
-        # Generate a full pass-through mask for each example in the batch
-        masks: numpy.ndarray = numpy.zeros((len(batch[0]), *self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
-        observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
+        observations_current, actions, rewards, observations_next, episode_done_flags, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
         # Define the input observations to the model (to support both space types)
         observations_current_input = observations_current
         observations_next_input = observations_next
@@ -320,31 +319,26 @@ class DeepDeterministicPolicyGradient(Model):
             # Set the model input to the one-hot encoded representation
             observations_current_input = observations_current_one_hot
             observations_next_input = observations_next_one_hot
-        # Get the q-values from the model at both current observations and next observations
-        # Next observation is estimated by the target network
-        q_values_current: numpy.ndarray = session.run(self._main_network_outputs, feed_dict={self._main_network_observations: observations_current_input, self._main_network_mask: masks})
-        q_values_next: numpy.ndarray = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: observations_next_input, self._target_network_mask: masks})
-        # Apply Bellman equation with the Q-Learning update rule
-        for sample_index in range(len(actions)):
-            # Extract current sample values
-            action = actions[sample_index]
-            reward: float = rewards[sample_index]
-            last_step: bool = last_steps[sample_index]
-            # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if last_step:
-                q_values_current[sample_index, action] = reward
-            else:
-                q_values_current[sample_index, action] = reward + self.discount_factor * numpy.max(q_values_next[sample_index])
-        # Train the model and save the value of the loss and of the absolute error as well as the summary
-        _, loss, absolute_error, summary = session.run([self._optimizer, self._loss, self._absolute_error, self._summary],
-                                                       feed_dict={
-                                                            self._main_network_observations: observations_current_input,
-                                                            self._targets: q_values_current,
-                                                            self._loss_weights: weights,
-                                                            self._main_network_mask: masks
-                                                       })
-        # Return the loss, the absolute error and relative summary
-        return summary, loss, absolute_error
+        # Q-learning update
+        _, q_stream_loss = session.run([self._q_stream_optimizer, self._q_stream_loss],
+                                       feed_dict={
+                                            self._main_network_observations: observations_current_input,
+                                            self._target_network_observations: observations_next_input,
+                                            self._main_network_actions: actions,
+                                            self._rewards: rewards,
+                                            self._episode_done_flags: episode_done_flags,
+                                       })
+        # Policy stream update
+        _, policy_stream_loss = session.run([self._policy_stream_optimizer, self._policy_stream_loss],
+                                            feed_dict={
+                                                    self._main_network_observations: observations_current_input,
+                                                    self._target_network_observations: observations_next_input,
+                                                    self._main_network_actions: actions,
+                                                    self._rewards: rewards,
+                                                    self._episode_done_flags: episode_done_flags,
+                                            })
+        # Return both losses relative summary
+        return self._summary, q_stream_loss, policy_stream_loss
 
     @property
     def warmup_steps(self) -> int:
