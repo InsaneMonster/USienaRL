@@ -120,7 +120,7 @@ class Buffer:
         """
         The size of the buffer at the current time (it is dynamic).
 
-        :return: the integer size of the buffer.
+        :return: the integer size of the buffer
         """
         return self._pointer
 
@@ -138,21 +138,26 @@ class Buffer:
 
 class ProximalPolicyOptimization(Model):
     """
-    Proximal Policy Optimization with GAE (Generalized Advantage Estimation).
-    The algorithm is on-policy and executes updates every a certain number of episodes.
-    The model is constituted by two sub-models, or streams. The first stream computes and optimizes the policy loss,
-    and to drive the loss the advantages for each state in the batch is required to be estimated. The loss used an
-    approximation of the KL divergence. This stream is called policy stream.
-    The second stream computes the value on the current states and optimizes such estimation. To drive the loss of such
-    sub-model, the value estimated by the stream itself for each state in the batch is required to be estimated. This
-    stream is called value stream.
-    The advantage used to drive the policy stream loss is computed using GAE on the value estimated by the value stream
-    and such computation is carried on in the buffer.
+    Proximal Policy Optimization with GAE (Generalized Advantage Estimation) buffer.
+    The algorithm is on-policy and executes updates every a certain number of episodes. It is an actor-critic model.
+    The model is constituted by two streams, the policy stream (the actor part of the model) adn the value stream (the
+    critic part of the model).
+    The first stream computes and optimizes the policy loss. To drive the policy loss the advantages for each
+    observation in the batch is required to be estimated. They are estimated by the buffer using GAE. The loss uses an
+    approximation of the KL divergence. When updated, the KL divergence is used to early stop in case the new policy
+    differs too much from the previous one. Policy update is run for a certain number of epochs.
+    The second stream computes the values of the current observations of the states and optimizes such estimation.
+    To drive this loss, the value estimated by the stream itself for each state in the batch is required to be estimated.
+    This estimation is done using the rewards. This stream is what makes the reward differentiable. Value update is run
+    for a certain number of epochs.
+    The buffer stores all the trajectories up to the update point. Since each episode can contains different numbers of
+    steps, the buffer is dynamically resizable. When updated, the entire buffer is taken as batch and the buffer is
+    cleared. This is necessary since to update the policy only trajectories collected using the current policy can be
+    used. To stabilize learning and avoid overfitting, each update is done using minibatches.
 
-    The buffer stores all the trajectories up to the update point. Since each episode can contains different
-    numbers of steps, the buffer is dynamically resizable.
-    The algorithm is very likely to converge to local minima but guarantees to not decrease its policy quality according
-    to a minimum KL distance allowed between old and new policy.
+    This algorithm is very likely to converge to local minimum but guarantees to not decrease its policy quality
+    according to a minimum KL distance allowed between old and new policy. This property holds with respect to a correct
+    value assigned to that minimum KL distance.
 
     Supported observation spaces:
         - discrete
@@ -165,22 +170,22 @@ class ProximalPolicyOptimization(Model):
 
     def __init__(self,
                  name: str,
-                 discount_factor: float,
-                 learning_rate_policy: float, learning_rate_value: float,
-                 value_steps_for_update: int, policy_steps_for_update: int,
-                 minibatch_size: int,
                  hidden_layers_config: Config,
-                 lambda_parameter: float,
-                 clip_ratio: float,
-                 target_kl_divergence: float):
+                 discount_factor: float = 0.99,
+                 learning_rate_policy: float = 3e-4, learning_rate_value: float = 1e-3,
+                 value_update_epochs: int = 80, policy_update_epochs: int = 80,
+                 minibatch_size: int = 32,
+                 lambda_parameter: float = 0.97,
+                 clip_ratio: float = 0.2,
+                 target_kl_divergence: float = 1e-2):
         # Define model attributes
         self.learning_rate_policy: float = learning_rate_policy
         self.learning_rate_value: float = learning_rate_value
         self.discount_factor: float = discount_factor
         # Define internal model attributes
         self._hidden_layers_config: Config = hidden_layers_config
-        self._value_steps_for_update: int = value_steps_for_update
-        self._policy_steps_for_update: int = policy_steps_for_update
+        self._value_steps_for_update: int = value_update_epochs
+        self._policy_steps_for_update: int = policy_update_epochs
         self._minibatch_size: int = minibatch_size
         self._lambda_parameter: float = lambda_parameter
         self._clip_ratio: float = clip_ratio
@@ -188,9 +193,9 @@ class ProximalPolicyOptimization(Model):
         # Define proximal policy optimization empty attributes
         self.buffer: Buffer = None
         # Define internal proximal policy optimization empty attributes
-        self._inputs = None
+        self._observations = None
+        self._actions_predicted = None
         self._actions = None
-        self._targets = None
         self._advantages = None
         self._rewards = None
         self._mask = None
@@ -199,10 +204,10 @@ class ProximalPolicyOptimization(Model):
         self._expected_value = None
         self._std = None
         self._log_std = None
-        self._log_likelihood_targets = None
         self._log_likelihood_actions = None
+        self._log_likelihood_predictions = None
         self._previous_log_likelihoods = None
-        self._value = None
+        self._value_predicted = None
         self._ratio = None
         self._min_advantage = None
         self._value_stream_loss = None
@@ -225,65 +230,72 @@ class ProximalPolicyOptimization(Model):
         self.buffer: Buffer = Buffer(self.discount_factor, self._lambda_parameter)
         # Define the tensorflow model
         with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
-            self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
-            # Define the estimator network hidden layers from the config
-            hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
-            # Define the targets for learning with the same NxA adaptable size
-            self._targets = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="targets")
-            # Change the _model definition according to its action space type
-            if self._agent_action_space_type == SpaceType.discrete:
-                # Define the mask placeholder
-                self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="mask")
-                # Define the logits as outputs of the deep neural network with shape NxA where N is the number of inputs, A is the action size when its type is discrete
-                self._logits = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="logits")
-                # Compute the masked logits using the given mask
-                self._masked_logits = tensorflow.add(self._logits, self._mask)
-                # Define the actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution on the logits
-                self._actions = tensorflow.squeeze(tensorflow.multinomial(logits=self._masked_logits, num_samples=1), axis=1)
-                # Define the log likelihood according to the categorical distribution on targets and actions
-                self._log_likelihood_targets, _ = self.get_categorical_log_likelihood(self._targets, self._logits)
-                self._log_likelihood_actions, _ = self.get_categorical_log_likelihood(tensorflow.one_hot(self._actions, depth=self._agent_action_space_shape[0]), self._logits)
-            else:
-                # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape
-                self._expected_value = tensorflow.layers.dense(hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="expected_value")
-                # Define the log standard deviation
-                self._log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
-                # Define the standard deviation
-                self._std = tensorflow.exp(self._log_std, name="std")
-                # Define actions as the expected value summed up with a noise vector multiplied by the standard deviation
-                self._actions = self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std
-                # Define the log likelihood according to the gaussian distribution on targets and actions
-                self._log_likelihood_targets = self.get_gaussian_log_likelihood(self._targets, self._expected_value, self._log_std)
-                self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, self._log_std)
-            # Define the value estimator (a deep MLP)
-            value_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._inputs)
-            value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
-            # Define value by squeezing the output of the advantage stream MLP
-            self._value = tensorflow.squeeze(value_stream_output, axis=1, name="value")
-            # Define the rewards as an adaptable vector of floats (they are actually rewards-to-go computed with GAE)
-            self._rewards = tensorflow.placeholder(shape=(None, ), dtype=tensorflow.float32, name="rewards")
-            # Define advantage loss as the mean squared error of the difference between computed rewards to go and the advantage
-            self._value_stream_loss = tensorflow.reduce_mean((self._rewards - self._value) ** 2, name="value_loss")
-            # Define the optimizer for the value stream (actually the MLP optimizer)
-            self._value_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_value).minimize(self._value_stream_loss)
-            # Define the advantages placeholder as an adaptable vector of floats (they are stored in the buffer)
-            # Note: the model get the advantages from the buffer once computed using GAE on the values
-            self._advantages = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="advantages")
-            # Define the previous log-likelihood placeholder as an adaptable vector or float (they are stored in the buffer)
-            # Note: the model get the previous log-likelihoods from the buffer
+            # Define observations placeholder as an adaptable vector with shape Nx(O) where N is the number of examples and (O) the shape of the observation space
+            # Note: it is the input of the model
+            self._observations = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="observations")
+            # Define the actions placeholder as an adaptable vector with shape Nx(A) where N is the number of examples and (A) the shape of the action space
+            self._actions = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="actions")
+            # Define the rewards placeholder as an adaptable vector of floats (they are actually rewards-to-go computed in the buffer)
+            # Note: the model gets the rewards from the buffer
+            self._rewards = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="rewards")
+            # Define the previous log-likelihood placeholder as an adaptable vector of float (previous because previously predicted by the model itself)
+            # Note: the model gets the previous log-likelihoods from the buffer
             self._previous_log_likelihoods = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="previous_log_likelihood")
-            # Define the ratio between the current log-likelihood and the previous one (when using exponential, minus is a division)
-            self._ratio = tensorflow.exp(self._log_likelihood_targets - self._previous_log_likelihoods)
-            # Define the minimum advantages with respect to clip ratio
-            self._min_advantage = tensorflow.where(self._advantages > 0, (1 + self._clip_ratio) * self._advantages, (1 - self._clip_ratio) * self._advantages)
-            # Define the policy stream loss as the mean of minimum between the advantages multiplied the ratio and the minimum advantage
-            self._policy_stream_loss = -tensorflow.reduce_mean(tensorflow.minimum(self._ratio * self._advantages, self._min_advantage), name="policy_loss")
-            # Define the optimizer for the policy stream
-            self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
-            # Define approximated KL divergence (also used to early stop), approximated entropy and clip fraction for the logger
-            self._approximated_kl_divergence = tensorflow.reduce_mean(self._previous_log_likelihoods - self._log_likelihood_targets, name="approximated_kl_divergence")
-            self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_targets, name="approximated_entropy")
+            # Define the advantages placeholder as an adaptable vector of floats (computed with GAE in the buffer)
+            # Note: the model gets the advantages from the buffer once computed using GAE on the values
+            self._advantages = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="advantages")
+            # Define the policy stream
+            # Note: this define the actor part of the model and its proper output (the predicted actions)
+            with tensorflow.variable_scope("policy_stream"):
+                # Define the policy stream network hidden layers from the config
+                policy_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._observations)
+                # Change the model definition according to its action space type
+                if self._agent_action_space_type == SpaceType.discrete:
+                    # Define the mask placeholder
+                    self._mask = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="mask")
+                    # Define the logits as outputs with shape NxA where N is the size of the batch, A is the action size when its type is discrete
+                    self._logits = tensorflow.layers.dense(policy_stream_hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="logits")
+                    # Compute the masked logits using the given additive mask
+                    self._masked_logits = tensorflow.add(self._logits, self._mask)
+                    # Define the predicted actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution over the logits
+                    self._actions_predicted = tensorflow.squeeze(tensorflow.multinomial(logits=self._masked_logits, num_samples=1), axis=1)
+                    # Define the log likelihood according to the categorical distribution on actions given and actions predicted
+                    self._log_likelihood_actions, _ = self.get_categorical_log_likelihood(self._actions, self._logits)
+                    self._log_likelihood_predictions, _ = self.get_categorical_log_likelihood(tensorflow.one_hot(self._actions_predicted, depth=self._agent_action_space_shape[0]), self._logits)
+                else:
+                    # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape when its type is continuous
+                    self._expected_value = tensorflow.layers.dense(policy_stream_hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="expected_value")
+                    # Define the log standard deviation and the standard deviation itself
+                    self._log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
+                    self._std = tensorflow.exp(self._log_std, name="std")
+                    # Define actions as the expected value summed up with a random gaussian vector multiplied by the standard deviation
+                    self._actions_predicted = self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std
+                    # Define the log likelihood according to the gaussian distribution on actions given and actions predicted
+                    self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, self._log_std)
+                    self._log_likelihood_predictions = self.get_gaussian_log_likelihood(self._actions_predicted, self._expected_value, self._log_std)
+                # Define the ratio between the current log-likelihood and the previous one (when using exponential, minus is a division)
+                self._ratio = tensorflow.exp(self._log_likelihood_actions - self._previous_log_likelihoods)
+                # Define the minimum advantage with respect to clip ratio
+                self._min_advantage = tensorflow.where(self._advantages > 0, (1 + self._clip_ratio) * self._advantages, (1 - self._clip_ratio) * self._advantages)
+                # Define the policy stream loss as the mean of minimum between the advantages multiplied the ratio and the minimum advantage
+                self._policy_stream_loss = -tensorflow.reduce_mean(tensorflow.minimum(self._ratio * self._advantages, self._min_advantage), name="policy_stream_loss")
+                # Define the optimizer for the policy stream
+                self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
+            # Define the value stream
+            # Note: this is the critic part of the model and the system making the reward differentiable (the value computation)
+            with tensorflow.variable_scope("value_stream"):
+                # Define the value stream network hidden layers from the config and its output (a single float value)
+                value_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._observations)
+                value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
+                # Define value by squeezing the output of the value stream
+                self._value_predicted = tensorflow.squeeze(value_stream_output, axis=1, name="value_predicted")
+                # Define value steam loss as the mean squared error of the difference between rewards-to-go given and the predicted value
+                self._value_stream_loss = tensorflow.reduce_mean((self._rewards - self._value_predicted) ** 2, name="value_stream_loss")
+                # Define the optimizer for the value stream
+                self._value_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_value).minimize(self._value_stream_loss)
+            # Define approximated KL divergence (also used to early stop), approximated entropy and clip fraction for the summary
+            self._approximated_kl_divergence = tensorflow.reduce_mean(self._previous_log_likelihoods - self._log_likelihood_actions, name="approximated_kl_divergence")
+            self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_actions, name="approximated_entropy")
             self._clip_fraction = tensorflow.reduce_mean(tensorflow.cast(tensorflow.logical_or(self._ratio > (1 + self._clip_ratio), self._ratio < (1 - self._clip_ratio)), tensorflow.float32), name="clip_fraction")
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
@@ -308,18 +320,18 @@ class ProximalPolicyOptimization(Model):
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             if self._agent_action_space_type == SpaceType.discrete:
-                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
-                                                            feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+                action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
+                                                            feed_dict={self._observations: [observation_current_one_hot], self._mask: [mask]})
             else:
-                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
-                                                            feed_dict={self._inputs: [observation_current_one_hot]})
+                action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
+                                                            feed_dict={self._observations: [observation_current_one_hot]})
         else:
             if self._agent_action_space_type == SpaceType.discrete:
-                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
-                                                            feed_dict={self._inputs: [observation_current], self._mask: [mask]})
+                action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
+                                                            feed_dict={self._observations: [observation_current], self._mask: [mask]})
             else:
-                action, value, log_likelihood = session.run([self._actions, self._value, self._log_likelihood_actions],
-                                                            feed_dict={self._inputs: [observation_current]})
+                action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
+                                                            feed_dict={self._observations: [observation_current]})
         # Return the predicted action, the estimated value and the log-likelihood
         return action[0], value[0], log_likelihood[0]
 
@@ -348,24 +360,24 @@ class ProximalPolicyOptimization(Model):
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             if self._agent_action_space_type == SpaceType.discrete:
-                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
-                                                    feed_dict={self._inputs: [observation_current_one_hot],
+                value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
+                                                    feed_dict={self._observations: [observation_current_one_hot],
                                                                self._mask: [mask],
-                                                               self._targets: action})
+                                                               self._actions: action})
             else:
-                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
-                                                    feed_dict={self._inputs: [observation_current_one_hot],
-                                                               self._targets: action})
+                value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
+                                                    feed_dict={self._observations: [observation_current_one_hot],
+                                                               self._actions: action})
         else:
             if self._agent_action_space_type == SpaceType.discrete:
-                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
-                                                    feed_dict={self._inputs: [observation_current],
+                value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
+                                                    feed_dict={self._observations: [observation_current],
                                                                self._mask: [mask],
-                                                               self._targets: action})
+                                                               self._actions: action})
             else:
-                value, log_likelihood = session.run([self._value, self._log_likelihood_targets],
-                                                    feed_dict={self._inputs: [observation_current],
-                                                              self._targets: action})
+                value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
+                                                    feed_dict={self._observations: [observation_current],
+                                                               self._actions: action})
         # Return the estimated value and the log-likelihood
         return value[0], log_likelihood[0]
 
@@ -383,11 +395,11 @@ class ProximalPolicyOptimization(Model):
         if self._observation_space_type == SpaceType.discrete:
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-            value = session.run(self._value,
-                                feed_dict={self._inputs: [observation_current_one_hot]})
+            value = session.run(self._value_predicted,
+                                feed_dict={self._observations: [observation_current_one_hot]})
         else:
-            value = session.run(self._value,
-                                feed_dict={self._inputs: [observation_current]})
+            value = session.run(self._value_predicted,
+                                feed_dict={self._observations: [observation_current]})
         # Return the estimated value
         return value[0]
 
@@ -416,24 +428,24 @@ class ProximalPolicyOptimization(Model):
             # Generate a one-hot encoded version of the observation if observation space type is discrete
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             if self._agent_action_space_type == SpaceType.discrete:
-                log_likelihood = session.run(self._log_likelihood_targets,
-                                             feed_dict={self._inputs: [observation_current_one_hot],
+                log_likelihood = session.run(self._log_likelihood_actions,
+                                             feed_dict={self._observations: [observation_current_one_hot],
                                                         self._mask: [mask],
-                                                        self._targets: action})
+                                                        self._actions: action})
             else:
-                log_likelihood = session.run(self._log_likelihood_targets,
-                                             feed_dict={self._inputs: [observation_current_one_hot],
-                                                        self._targets: action})
+                log_likelihood = session.run(self._log_likelihood_actions,
+                                             feed_dict={self._observations: [observation_current_one_hot],
+                                                        self._actions: action})
         else:
             if self._agent_action_space_type == SpaceType.discrete:
-                log_likelihood = session.run(self._log_likelihood_targets,
-                                             feed_dict={self._inputs: [observation_current],
+                log_likelihood = session.run(self._log_likelihood_actions,
+                                             feed_dict={self._observations: [observation_current],
                                                         self._mask: [mask],
-                                                        self._targets: action})
+                                                        self._actions: action})
             else:
-                log_likelihood = session.run(self._log_likelihood_targets,
-                                             feed_dict={self._inputs: [observation_current],
-                                                        self._targets: action})
+                log_likelihood = session.run(self._log_likelihood_actions,
+                                             feed_dict={self._observations: [observation_current],
+                                                        self._actions: action})
         # Return the log-likelihood
         return log_likelihood[0]
 
@@ -442,40 +454,40 @@ class ProximalPolicyOptimization(Model):
                                  observation_current,
                                  mask: numpy.ndarray = None) -> []:
         """
-        Get all the action probabilities (softmax over masked logits if discrete, expected value if continuous) for the
+        Get all the action probabilities (softmax over masked logits if discrete, expected value and standard deviation if continuous) for the
         given current observation and an optional mask.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
         :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: the list of action probabilities (softmax over masked logits or expected values depending on the agent action space type)
+        :return: the list of action probabilities (softmax over masked logits or expected values and std wrapped in a list depending on the agent action space type)
         """
         if mask is None and self._agent_action_space_type == SpaceType.discrete:
             mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Get the logits or the expected value as the distribution of the action probabilities depending on the action space shape
+        # Get the logits or the expected value and std of the distribution to compute the action probabilities depending on the action space shape
         if self._agent_action_space_type == SpaceType.discrete:
             if self._observation_space_type == SpaceType.discrete:
                 observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
                 if self._agent_action_space_type == SpaceType.discrete:
                     logits = session.run([self._masked_logits],
-                                         feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+                                         feed_dict={self._observations: [observation_current_one_hot], self._mask: [mask]})
                 else:
                     logits = session.run([self._masked_logits],
-                                         feed_dict={self._inputs: [observation_current_one_hot]})
+                                         feed_dict={self._observations: [observation_current_one_hot]})
             else:
                 if self._agent_action_space_type == SpaceType.discrete:
                     logits = session.run([self._masked_logits],
-                                         feed_dict={self._inputs: [observation_current], self._mask: [mask]})
+                                         feed_dict={self._observations: [observation_current], self._mask: [mask]})
                 else:
                     logits = session.run([self._masked_logits],
-                                         feed_dict={self._inputs: [observation_current]})
+                                         feed_dict={self._observations: [observation_current]})
             # Return the softmax over the logits (probabilities of all actions)
             return softmax(logits[0]).flatten()
         else:
             expected_value, std = session.run([self._expected_value, self._std],
-                                              feed_dict={self._inputs: [observation_current]})
-            # Return the expected value
-            return expected_value
+                                              feed_dict={self._observations: [observation_current]})
+            # Return the expected value and the standard deviation wrapped in a list
+            return [expected_value, std]
 
     def update(self,
                session,
@@ -505,8 +517,8 @@ class ProximalPolicyOptimization(Model):
                 # Update the policy
                 _, policy_stream_loss, approximated_kl_divergence, approximated_entropy, clip_fraction = session.run([self._policy_stream_optimizer, self._policy_stream_loss, self._approximated_kl_divergence, self._approximated_entropy, self._clip_fraction],
                                                                                                                      feed_dict={
-                                                                                                                         self._inputs: minibatch_observations,
-                                                                                                                         self._targets: minibatch_actions,
+                                                                                                                         self._observations: minibatch_observations,
+                                                                                                                         self._actions: minibatch_actions,
                                                                                                                          self._advantages: minibatch_advantages,
                                                                                                                          self._previous_log_likelihoods: minibatch_previous_log_likelihoods
                                                                                                                      })
@@ -534,7 +546,7 @@ class ProximalPolicyOptimization(Model):
                 # Update the value
                 _, value_stream_loss = session.run([self._value_stream_optimizer, self._value_stream_loss],
                                                    feed_dict={
-                                                        self._inputs: minibatch_observations,
+                                                        self._observations: minibatch_observations,
                                                         self._advantages: minibatch_advantages,
                                                         self._rewards: minibatch_rewards
                                                     })
