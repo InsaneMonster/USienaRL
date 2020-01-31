@@ -119,8 +119,8 @@ class DeepDeterministicPolicyGradient(Model):
     copied from the main network to the target network.
 
 
-
     Supported observation spaces:
+        - discrete
         - continuous
 
     Supported action spaces:
@@ -150,10 +150,12 @@ class DeepDeterministicPolicyGradient(Model):
         self._main_network: Estimator = None
         self._main_network_observations = None
         self._main_network_actions = None
+        self._main_network_action_predicted = None
         self._main_network_q_values_predictions = None
         self._main_network_q_values_actions = None
         self._target_network_observations = None
         self._target_network_actions = None
+        self._target_network_action_predicted = None
         self._target_network_q_values_predictions = None
         self._target_network_q_values_actions = None
         self._rewards = None
@@ -186,10 +188,12 @@ class DeepDeterministicPolicyGradient(Model):
         # Assign main and target networks to the model attributes
         self._main_network_observations = self._main_network.observations
         self._main_network_actions = self._main_network.actions
+        self._main_network_action_predicted = self._main_network.actions_predicted
         self._main_network_q_values_predictions = self._main_network.q_values_predictions
         self._main_network_q_values_actions = self._main_network.q_values_actions
         self._target_network_observations = self._target_network.observations
         self._target_network_actions = self._target_network.actions
+        self._target_network_action_predicted = self._target_network.actions_predicted
         self._target_network_q_values_predictions = self._target_network.q_values_predictions
         self._target_network_q_values_actions = self._target_network.q_values_actions
         # Define the shared part of the model
@@ -227,62 +231,59 @@ class DeepDeterministicPolicyGradient(Model):
             self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss)],
                                                      [tensorflow.summary.scalar("q_stream_loss", self._q_stream_loss)])
 
-    def get_all_action_values(self,
-                              session,
-                              observation_current,
-                              mask: numpy.ndarray = None):
+    def get_predicted_action_values(self,
+                                    session,
+                                    observation_current):
         """
-        Get all the actions values according to the model at the given current observation.
+        Get the predicted actions values (q-values) according to the model q-stream at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: all action values predicted by the model
+        :return: the predicted action values (q-values) predicted by the model
         """
-        # If there is no mask generate a full pass-through mask
-        if mask is None:
-            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
         # Save by default the observation current input of the model to the given data
         observation_current_input = observation_current
         # Generate a one-hot encoded version of the observation if observation space is discrete
         if self._observation_space_type == SpaceType.discrete:
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             observation_current_input = observation_current_one_hot
-        # Return all the predicted q-values given the current observation
-        return session.run(self._main_network_outputs, feed_dict={self._main_network_observations: [observation_current_input], self._main_network_mask: [mask]})
+        # Return the predicted q-values given the current observation
+        return session.run(self._main_network_q_values_predictions,
+                           feed_dict={self._main_network_observations: [observation_current_input]})
 
     def get_best_action(self,
                         session,
-                        observation_current,
-                        mask: numpy.ndarray = None):
+                        observation_current):
         """
-        Get the best action predicted by the model at the given current observation.
+        Get the action predicted by the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
         :return: the action predicted by the model
         """
+        # Save by default the observation current input of the model to the given data
+        observation_current_input = observation_current
+        # Generate a one-hot encoded version of the observation if observation space is discrete
+        if self._observation_space_type == SpaceType.discrete:
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            observation_current_input = observation_current_one_hot
         # Return the predicted action given the current observation
-        return numpy.argmax(self.get_all_action_values(session, observation_current, mask))
+        return session.run(self._main_network_action_predicted,
+                           feed_dict={self._main_network_observations: [observation_current_input]})
 
-    def get_best_action_and_all_action_values(self,
-                                              session,
-                                              observation_current,
-                                              mask: numpy.ndarray = None):
+    def get_best_action_and_predicted_action_values(self,
+                                                    session,
+                                                    observation_current):
         """
-        Get the best action predicted by the model at the given current observation and all the action values according
-        to the model at the given current observation.
+        Get the best action predicted by the model at the given current observation and the predicted action values
+        (q-values) according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: the best action predicted by the model and all action values predicted by the model
+        :return: the best action predicted by the model and the action values (q-values) predicted by the model
         """
-        # Get all actions
-        all_actions = self.get_all_action_values(session, observation_current, mask)
-        # Return the best action and all the actions
-        return numpy.argmax(all_actions), all_actions
+        # Return the best action and all predicted actions values
+        return self.get_best_action(session, observation_current), self.get_predicted_action_values(session, observation_current)
 
     def copy_weight(self,
                     session):
@@ -319,7 +320,7 @@ class DeepDeterministicPolicyGradient(Model):
             # Set the model input to the one-hot encoded representation
             observations_current_input = observations_current_one_hot
             observations_next_input = observations_next_one_hot
-        # Q-learning update
+        # Q-stream update
         _, q_stream_loss = session.run([self._q_stream_optimizer, self._q_stream_loss],
                                        feed_dict={
                                             self._main_network_observations: observations_current_input,
@@ -337,8 +338,12 @@ class DeepDeterministicPolicyGradient(Model):
                                                     self._rewards: rewards,
                                                     self._episode_done_flags: episode_done_flags,
                                             })
+        # Generate the tensorflow summary
+        summary = tensorflow.Summary()
+        summary.value.add(tag="policy_stream_loss", simple_value=policy_stream_loss)
+        summary.value.add(tag="q_stream_loss", simple_value=q_stream_loss)
         # Return both losses relative summary
-        return self._summary, q_stream_loss, policy_stream_loss
+        return summary, q_stream_loss, policy_stream_loss
 
     @property
     def warmup_steps(self) -> int:
