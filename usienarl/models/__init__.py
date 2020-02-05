@@ -10,6 +10,10 @@
 
 # Import scripts
 
+from .vanilla_policy_gradient import VanillaPolicyGradient
+from .proximal_policy_optimization import ProximalPolicyOptimization
+from .deep_deterministic_policy_gradient import DeepDeterministicPolicyGradient
+
 from .tabular_q_learning import TabularQLearning
 from .deep_q_learning import DeepQLearning
 from .double_deep_q_learning import DoubleDeepQLearning

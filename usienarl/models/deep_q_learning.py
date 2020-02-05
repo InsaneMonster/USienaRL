@@ -5,7 +5,7 @@ import numpy
 
 # Import required src
 
-from usienarl import Model, SpaceType, Config
+from usienarl import SpaceType, Model, Config
 from usienarl.utils import SumTree
 
 
@@ -116,7 +116,7 @@ class Buffer:
             actions.append(leaf_data[1])
             rewards.append(leaf_data[2])
             observations_next.append(leaf_data[3])
-            last_steps.append((leaf_data[4]))
+            last_steps.append(leaf_data[4])
         # Return the sample (minibatch) with related weights
         return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), numpy.array(last_steps), importance_sampling_weights]
 
@@ -151,10 +151,11 @@ class Buffer:
 
 class Estimator:
     """
-    Estimator defining the real dueling model. It is used to define two identical models: target network and q-network.
+    Estimator defining the real Deep Q-Learning (DQN) model. It is used to define two identical models:
+    target network and main-network.
 
     It is generated given the size of the observation and action spaces and the hidden layer config defining the
-    hidden layers of the dueling deep neural network.
+    hidden layers of the network.
     """
 
     def __init__(self,
@@ -162,27 +163,22 @@ class Estimator:
                  observation_space_shape, agent_action_space_shape,
                  hidden_layers_config: Config,
                  error_clipping: bool = True):
-        self.scope = scope
+        self.scope: str = scope
         with tensorflow.variable_scope(self.scope):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self.inputs = tensorflow.placeholder(shape=[None, *observation_space_shape], dtype=tensorflow.float32, name="inputs")
             # Define the mask
             self.mask = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="mask")
-            # Define the estimator network hidden layers from the config with two equal streams for value and advantage
-            hidden_value_stream_output = hidden_layers_config.apply_hidden_layers(self.inputs)
-            hidden_advantage_stream_output = hidden_layers_config.apply_hidden_layers(self.inputs)
-            # Define the value and the advantage computation
-            self._value = tensorflow.layers.dense(hidden_value_stream_output, 1, None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
-            self._advantage = tensorflow.layers.dense(hidden_advantage_stream_output, *agent_action_space_shape, None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="advantage")
-            # Define outputs as an array of neurons of size Nx(A) where N is the number of examples and A the shape of the action space
-            # and whose value is given by the following equation:
-            # Q(s,a) = V(s) + (A(s,a) - 1/|A| * sum A(s,a')) aka the aggregation layer
-            self.outputs = tensorflow.add(self._value + tensorflow.subtract(self._advantage, tensorflow.reduce_mean(self._advantage, 1, True), name="outputs"), self.mask)
-            # Define the targets for learning with the same Nx(A) adaptable size where N is the number of examples and A the shape of the action space
+            # Define the estimator network hidden layers from the config
+            hidden_layers_output = hidden_layers_config.apply_hidden_layers(self.inputs)
+            # Define outputs as an array of neurons of size NxA and with linear activation functions
+            # Define the targets for learning with the same NxA adaptable size
+            # Note: N is the number of examples and A the size of the action space (deep-nn only supports discrete actions spaces)
+            self.outputs = tensorflow.add(tensorflow.layers.dense(hidden_layers_output, *agent_action_space_shape, name="outputs"), self.mask)
             self.targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self.loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
-            # Define the error and the absolute error
+            # Define the absolute error
             self.absolute_error = tensorflow.abs(self.targets - self.outputs, name="absolute_error")
             # Define the loss with error clipping (huber loss) if required
             if error_clipping:
@@ -192,15 +188,13 @@ class Estimator:
             else:
                 self.loss = tensorflow.reduce_mean(self.loss_weights * tensorflow.square(self.absolute_error), name="loss")
             # Define the estimator weight parameters
-            self.weight_parameters = [variable for variable
-                                      in tensorflow.trainable_variables()
-                                      if variable.name.startswith(self.scope)]
+            self.weight_parameters = [variable for variable in tensorflow.trainable_variables() if variable.name.startswith(self.scope)]
             self.weight_parameters = sorted(self.weight_parameters, key=lambda parameter: parameter.name)
 
 
-class DuelingDeepQLearning(Model):
+class DeepQLearning(Model):
     """
-    Dueling Double Deep Q-Learning (DDDQN) model with Q-Learning update rule.
+    Deep Q-Learning (DQN) model with Q-Learning update rule.
     The model is a deep neural network which hidden layers can be defined by a config parameter.
     It uses a target network and a main network to correctly evaluate the expected future reward in order
     to stabilize learning. It can also clips the error in the [-1, 1] range when computing the loss in order to further
@@ -211,13 +205,8 @@ class DuelingDeepQLearning(Model):
     copied from the main network to the target network.
 
     The update rule is the following (Bellman equation):
-    Q(s, a) = R + gamma * max_a(Q(s')) where the max q-value action is estimated by the main network
-    It uses the index of the max of the predicted q-value at the next state by the main network to compute an estimate
-    with the target network used to update predicted q-value at current state.
-
-    The DDDQN divide the output stream in advantage function and value function, making sure they are also identifiable
-    (to make backpropagation still possible), and summing up to compute the outputs by the aggregation layer:
-    Q(s,a) = V(s) + (A(s,a) - 1/|A| * sum A(s,a'))
+    Q(s, a) = R + gamma * max_a(Q(s'))
+    It uses the max of the predicted q-value at the next state to update predicted q-value at current state.
 
     Supported observation spaces:
         - discrete
@@ -264,7 +253,7 @@ class DuelingDeepQLearning(Model):
         self._optimizer = None
         self._weight_copier = None
         # Generate the base model
-        super(DuelingDeepQLearning, self).__init__(name)
+        super(DeepQLearning, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_observation_space_types.append(SpaceType.continuous)
@@ -298,8 +287,7 @@ class DuelingDeepQLearning(Model):
         self._initializer = tensorflow.global_variables_initializer()
         # Define the weight copy operation (to copy weights from main network to target network)
         self._weight_copier = []
-        for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters,
-                                                                    self._target_network.weight_parameters):
+        for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters, self._target_network.weight_parameters):
             copy_operation = target_network_parameter.assign(main_network_parameter)
             self._weight_copier.append(copy_operation)
 
@@ -389,12 +377,8 @@ class DuelingDeepQLearning(Model):
             observations_next_input = observations_next_one_hot
         # Get the q-values from the model at both current observations and next observations
         # Next observation is estimated by the target network
-        q_values_current: numpy.ndarray = session.run(self._main_network_outputs,
-                                                      feed_dict={self._main_network_inputs: observations_current_input, self._main_network_mask: masks})
-        q_values_next_main_network: numpy.ndarray = session.run(self._main_network_outputs,
-                                                                feed_dict={self._main_network_inputs: observations_next_input, self._main_network_mask: masks})
-        q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs,
-                                                                  feed_dict={self._target_network_inputs: observations_next_input, self._target_network_mask: masks})
+        q_values_current: numpy.ndarray = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: observations_current_input, self._main_network_mask: masks})
+        q_values_next: numpy.ndarray = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: observations_next_input, self._target_network_mask: masks})
         # Apply Bellman equation with the Q-Learning update rule
         for sample_index in range(len(actions)):
             # Extract current sample values
@@ -405,9 +389,7 @@ class DuelingDeepQLearning(Model):
             if last_step:
                 q_values_current[sample_index, action] = reward
             else:
-                # Predict the best action index with the main network and execute the update with the target network
-                best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index])
-                q_values_current[sample_index, action] = reward + self.discount_factor * q_values_next_target_network[sample_index, best_action_index]
+                q_values_current[sample_index, action] = reward + self.discount_factor * numpy.max(q_values_next[sample_index])
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error = session.run([self._optimizer, self._loss, self._absolute_error],
                                               feed_dict={
@@ -425,13 +407,3 @@ class DuelingDeepQLearning(Model):
     @property
     def warmup_steps(self) -> int:
         return self._buffer_capacity
-
-    @property
-    def inputs_name(self) -> str:
-        # Get the _name of the inputs of the tensorflow graph
-        return "MainNetwork/inputs"
-
-    @property
-    def outputs_name(self) -> str:
-        # Get the _name of the outputs of the tensorflow graph
-        return "MainNetwork/outputs"

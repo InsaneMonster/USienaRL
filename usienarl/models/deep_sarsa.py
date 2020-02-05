@@ -2,11 +2,10 @@
 
 import tensorflow
 import numpy
-import enum
 
 # Import required src
 
-from usienarl import Model, SpaceType, Config
+from usienarl import SpaceType, Model, Config
 from usienarl.utils import SumTree
 
 
@@ -44,14 +43,15 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
     def store(self,
-              observation_current, action, reward: float, observation_next, last_step: bool):
+              observation_current, action_current, reward: float, observation_next, action_next, last_step: bool):
         """
         Store the time-step in the buffer.
 
         :param observation_current: the current observation to store in the buffer
-        :param action: the last action to store in the buffer
+        :param action_current: the last current action to store in the buffer
         :param reward: the reward obtained from the action at the current state to store in the buffer
         :param observation_next: the next observation to store in the buffer
+        :param action_next: the last next action to store in the buffer
         :param last_step: whether or not this time-step was the last of the episode
         """
         # Find the current max priority on the tree leafs
@@ -61,7 +61,7 @@ class Buffer:
             max_priority = self._MINIMUM_ALLOWED_PRIORITY
         # Set the max priority as the default one for this new sample
         # Note: we set the max priority for each new sample and then improve on it iteratively during training
-        self._sum_tree.add((observation_current, action, reward, observation_next, last_step), max_priority)
+        self._sum_tree.add((observation_current, action_current, reward, observation_next, action_next, last_step), max_priority)
 
     def get(self,
             amount: int = 0):
@@ -76,9 +76,10 @@ class Buffer:
             amount = self._sum_tree.size
         # Define arrays of each sample components
         observations_current: [] = []
-        actions: [] = []
+        actions_current: [] = []
         rewards: [] = []
         observations_next: [] = []
+        actions_next: [] = []
         last_steps: [] = []
         # Define the returned arrays of indexes and weights
         self._sum_tree_last_sampled_indexes = numpy.empty((amount,), dtype=numpy.int32)
@@ -114,12 +115,13 @@ class Buffer:
             self._sum_tree_last_sampled_indexes[sample] = leaf_index
             # Generate the minibatch for this example
             observations_current.append(leaf_data[0])
-            actions.append(leaf_data[1])
+            actions_current.append(leaf_data[1])
             rewards.append(leaf_data[2])
             observations_next.append(leaf_data[3])
-            last_steps.append(leaf_data[4])
+            actions_next.append(leaf_data[4])
+            last_steps.append(leaf_data[5])
         # Return the sample (minibatch) with related weights
-        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), numpy.array(last_steps), importance_sampling_weights]
+        return [numpy.array(observations_current), numpy.array(actions_current), numpy.array(rewards), numpy.array(observations_next), numpy.array(actions_next), numpy.array(last_steps), importance_sampling_weights]
 
     def update(self,
                absolute_errors: []):
@@ -152,7 +154,7 @@ class Buffer:
 
 class Estimator:
     """
-    Estimator defining the real Double Deep Q-Learning (DDQN) model. It is used to define two identical models:
+    Estimator defining the real Deep SARSA model. It is used to define two identical models:
     target network and main-network.
 
     It is generated given the size of the observation and action spaces and the hidden layer config defining the
@@ -164,7 +166,7 @@ class Estimator:
                  observation_space_shape, agent_action_space_shape,
                  hidden_layers_config: Config,
                  error_clipping: bool = True):
-        self.scope = scope
+        self.scope: str = scope
         with tensorflow.variable_scope(self.scope):
             # Define inputs of the estimator as a float adaptable array with shape Nx(S) where N is the number of examples and (S) the shape of the state
             self.inputs = tensorflow.placeholder(shape=[None, *observation_space_shape], dtype=tensorflow.float32, name="inputs")
@@ -174,7 +176,7 @@ class Estimator:
             hidden_layers_output = hidden_layers_config.apply_hidden_layers(self.inputs)
             # Define outputs as an array of neurons of size NxA and with linear activation functions
             # Define the targets for learning with the same NxA adaptable size
-            # Note: N is the number of examples and A the size of the action space (double deep-nn only supports discrete actions spaces)
+            # Note: N is the number of examples and A the size of the action space (deep-nn only supports discrete actions spaces)
             self.outputs = tensorflow.add(tensorflow.layers.dense(hidden_layers_output, *agent_action_space_shape, name="outputs"), self.mask)
             self.targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
@@ -193,9 +195,9 @@ class Estimator:
             self.weight_parameters = sorted(self.weight_parameters, key=lambda parameter: parameter.name)
 
 
-class DoubleDeepQLearning(Model):
+class DeepSARSA(Model):
     """
-    Double Deep Q-Learning (DDQN) model with Q-Learning update rule.
+    Deep SARSA model with SARSA update rule.
     The model is a deep neural network which hidden layers can be defined by a config parameter.
     It uses a target network and a main network to correctly evaluate the expected future reward in order
     to stabilize learning. It can also clips the error in the [-1, 1] range when computing the loss in order to further
@@ -206,9 +208,9 @@ class DoubleDeepQLearning(Model):
     copied from the main network to the target network.
 
     The update rule is the following (Bellman equation):
-    Q(s, a) = R + gamma * max_a(Q(s')) where the max q-value action is estimated by the main network
-    It uses the index of the max of the predicted q-value at the next state by the main network to compute an estimate
-    with the target network used to update predicted q-value at current state.
+    Q(s, a) = R + gamma * Q(s', a')
+    It uses also the action predicted at the next observation according to the same policy to update the current
+    estimate of q-values.
 
     Supported observation spaces:
         - discrete
@@ -255,7 +257,7 @@ class DoubleDeepQLearning(Model):
         self._optimizer = None
         self._weight_copier = None
         # Generate the base model
-        super(DoubleDeepQLearning, self).__init__(name)
+        super(DeepSARSA, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_observation_space_types.append(SpaceType.continuous)
@@ -268,10 +270,12 @@ class DoubleDeepQLearning(Model):
         # Define two estimator, one for target network and one for main network, with identical structure
         self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
                                        self._observation_space_shape, self._agent_action_space_shape,
-                                       self._hidden_layers_config, self._error_clipping)
+                                       self._hidden_layers_config,
+                                       self._error_clipping)
         self._target_network = Estimator(self._scope + "/" + self._name + "/TargetNetwork",
                                          self._observation_space_shape, self._agent_action_space_shape,
-                                         self._hidden_layers_config, self._error_clipping)
+                                         self._hidden_layers_config,
+                                         self._error_clipping)
         # Assign main and target networks to the model attributes
         self._main_network_inputs = self._main_network.inputs
         self._main_network_outputs = self._main_network.outputs
@@ -289,8 +293,7 @@ class DoubleDeepQLearning(Model):
         self._initializer = tensorflow.global_variables_initializer()
         # Define the weight copy operation (to copy weights from main network to target network)
         self._weight_copier = []
-        for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters,
-                                                                    self._target_network.weight_parameters):
+        for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters, self._target_network.weight_parameters):
             copy_operation = target_network_parameter.assign(main_network_parameter)
             self._weight_copier.append(copy_operation)
 
@@ -315,8 +318,11 @@ class DoubleDeepQLearning(Model):
         if self._observation_space_type == SpaceType.discrete:
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             observation_current_input = observation_current_one_hot
-        # Return all the predicted q-values given the current observation
-        return session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_input], self._main_network_mask: [mask]})
+        # Compute the q-values predicted by main and target networks
+        main_network_values = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_input], self._main_network_mask: [mask]})
+        target_network_values = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: [observation_current_input], self._target_network_mask: [mask]})
+        # Return the average of the q-values
+        return (main_network_values + target_network_values) / 2
 
     def get_best_action(self,
                         session,
@@ -367,7 +373,7 @@ class DoubleDeepQLearning(Model):
         # Generate a full pass-through mask for each example in the batch
         masks: numpy.ndarray = numpy.zeros((len(batch[0]), *self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
-        observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
+        observations_current, actions_current, rewards, observations_next, actions_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5], batch[6]
         # Define the input observations to the model (to support both space types)
         observations_current_input = observations_current
         observations_next_input = observations_next
@@ -382,23 +388,20 @@ class DoubleDeepQLearning(Model):
         # Next observation is estimated by the target network
         q_values_current: numpy.ndarray = session.run(self._main_network_outputs,
                                                       feed_dict={self._main_network_inputs: observations_current_input, self._main_network_mask: masks})
-        q_values_next_main_network: numpy.ndarray = session.run(self._main_network_outputs,
-                                                                feed_dict={self._main_network_inputs: observations_next_input, self._main_network_mask: masks})
-        q_values_next_target_network: numpy.ndarray = session.run(self._target_network_outputs,
-                                                                  feed_dict={self._target_network_inputs: observations_next_input, self._target_network_mask: masks})
-        # Apply Bellman equation with the Q-Learning update rule
-        for sample_index in range(len(actions)):
+        q_values_next: numpy.ndarray = session.run(self._target_network_outputs,
+                                                   feed_dict={self._target_network_inputs: observations_next_input, self._target_network_mask: masks})
+        # Apply Bellman equation with the SARSA update rule
+        for sample_index in range(len(actions_current)):
             # Extract current sample values
-            action = actions[sample_index]
+            action_current = actions_current[sample_index]
+            action_next = actions_next[sample_index]
             reward: float = rewards[sample_index]
             last_step: bool = last_steps[sample_index]
             # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
             if last_step:
-                q_values_current[sample_index, action] = reward
+                q_values_current[sample_index, action_current] = reward
             else:
-                # Predict the best action index with the main network and execute the update with the target network
-                best_action_index: int = numpy.argmax(q_values_next_main_network[sample_index])
-                q_values_current[sample_index, action] = reward + self.discount_factor * q_values_next_target_network[sample_index, best_action_index]
+                q_values_current[sample_index, action_current] = reward + self.discount_factor * q_values_next[sample_index, action_next]
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error = session.run([self._optimizer, self._loss, self._absolute_error],
                                               feed_dict={
@@ -416,13 +419,3 @@ class DoubleDeepQLearning(Model):
     @property
     def warmup_steps(self) -> int:
         return self._buffer_capacity
-
-    @property
-    def inputs_name(self) -> str:
-        # Get the _name of the inputs of the tensorflow graph
-        return "MainNetwork/inputs"
-
-    @property
-    def outputs_name(self) -> str:
-        # Get the _name of the outputs of the tensorflow graph
-        return "MainNetwork/outputs"

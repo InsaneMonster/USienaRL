@@ -66,6 +66,24 @@ class Buffer:
         random_indexes: numpy.ndarray = numpy.random.randint(0, self._size, size=amount)
         return [self._observations_current[random_indexes], self._actions[random_indexes], self._rewards[random_indexes], self._observations_next[random_indexes], self._last_steps[random_indexes]]
 
+    @property
+    def capacity(self) -> int:
+        """
+        The capacity of the buffer..
+
+        :return: the integer capacity of the buffer.
+        """
+        return self._capacity
+
+    @property
+    def size(self) -> int:
+        """
+        The size of the buffer at the current time.
+
+        :return: the integer size of the buffer.
+        """
+        return self._size
+
 
 class Estimator:
     """
@@ -88,7 +106,7 @@ class Estimator:
             self.actions = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="actions")
             # Define the policy stream
             with tensorflow.variable_scope("policy_stream"):
-                # Define the estimator network hidden layers from the config
+                # Define the estimator network policy stream hidden layers from the config
                 hidden_layers_output = hidden_layers_config.apply_hidden_layers(self.observations)
                 # Define actions as an array of neurons with same adaptable size Nx(A) and with linear activation functions
                 self.actions_predicted = tensorflow.layers.dense(hidden_layers_output, *agent_action_space_shape, name="actions_predicted")
@@ -110,7 +128,7 @@ class Estimator:
 
 class DeepDeterministicPolicyGradient(Model):
     """
-    Deep Deterministic Policy Gradient Model (DDPG) with FIFO experience replay buffer.-
+    Deep Deterministic Policy Gradient Model (DDPG) with FIFO experience replay buffer.
     The model is a deep neural network which hidden layers can be defined by a config parameter.
     It uses a target network and a main network to correctly evaluate the expected future reward in order
     to stabilize learning.
@@ -133,7 +151,8 @@ class DeepDeterministicPolicyGradient(Model):
                  discount_factor: float, polyak_value: float,
                  buffer_capacity: int,
                  hidden_layers_config: Config,
-                 error_clipping: bool = True):
+                 error_clipping: bool = False,
+                 huber_delta: float = 1.0):
         # Define model attributes
         self.learning_rate_policy: float = learning_rate_policy
         self.learning_rate_q_values: float = learning_rate_q_values
@@ -143,6 +162,7 @@ class DeepDeterministicPolicyGradient(Model):
         self._buffer_capacity: int = buffer_capacity
         self._hidden_layers_config: Config = hidden_layers_config
         self._error_clipping: bool = error_clipping
+        self._huber_delta: float = huber_delta
         # Define model empty attributes
         self.buffer: Buffer = None
         # Define internal model empty attributes
@@ -207,9 +227,11 @@ class DeepDeterministicPolicyGradient(Model):
             self._policy_stream_loss = -tensorflow.reduce_mean(self._main_network_q_values_predictions, name="policy_stream_loss")
             # Define the absolute error over the q-stream loss
             self._q_stream_absolute_error = tensorflow.abs(self._main_network_q_values_actions - self._bellman_backup, name="q_stream_absolute_error")
-            # Define the q-stream loss with error clipping (huber loss) if required
+            # Define the q-stream loss with error clipping (huber loss) if required, otherwise mean square error loss
             if self._error_clipping:
-                self._q_stream_loss = tensorflow.reduce_mean(tensorflow.where(self._q_stream_absolute_error < 1.0, 0.5 * tensorflow.square(self._q_stream_absolute_error), self._q_stream_absolute_error - 0.5), name="q_stream_loss")
+                self._q_stream_loss = tensorflow.reduce_mean(tensorflow.where(self._q_stream_absolute_error < self._huber_delta,
+                                                                              0.5 * tensorflow.square(self._q_stream_absolute_error),
+                                                                              self._q_stream_absolute_error - 0.5), name="q_stream_loss")
             else:
                 self._q_stream_loss = tensorflow.reduce_mean(tensorflow.square(self._q_stream_absolute_error), name="q_stream_loss")
             # Define the optimizer
@@ -225,11 +247,6 @@ class DeepDeterministicPolicyGradient(Model):
             # Define the weight update operation (to update weight from main network to target network during training using Polyak averaging)
             self._weight_updater = tensorflow.group([tensorflow.assign(target_network_parameter, self.polyak_value * target_network_parameter + (1 - self.polyak_value) * main_network_parameter)
                                                     for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters, self._target_network.weight_parameters)])
-
-    def _define_summary(self):
-        with tensorflow.variable_scope(self._scope + "/" + self._name):
-            self._summary = tensorflow.summary.merge([tensorflow.summary.scalar("policy_stream_loss", self._policy_stream_loss)],
-                                                     [tensorflow.summary.scalar("q_stream_loss", self._q_stream_loss)])
 
     def get_predicted_action_values(self,
                                     session,
@@ -248,8 +265,7 @@ class DeepDeterministicPolicyGradient(Model):
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             observation_current_input = observation_current_one_hot
         # Return the predicted q-values given the current observation
-        return session.run(self._main_network_q_values_predictions,
-                           feed_dict={self._main_network_observations: [observation_current_input]})
+        return session.run(self._main_network_q_values_predictions, feed_dict={self._main_network_observations: [observation_current_input]})
 
     def get_best_action(self,
                         session,
@@ -268,8 +284,7 @@ class DeepDeterministicPolicyGradient(Model):
             observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
             observation_current_input = observation_current_one_hot
         # Return the predicted action given the current observation
-        return session.run(self._main_network_action_predicted,
-                           feed_dict={self._main_network_observations: [observation_current_input]})
+        return session.run(self._main_network_action_predicted, feed_dict={self._main_network_observations: [observation_current_input]})
 
     def get_best_action_and_predicted_action_values(self,
                                                     session,
@@ -348,13 +363,3 @@ class DeepDeterministicPolicyGradient(Model):
     @property
     def warmup_steps(self) -> int:
         return self._buffer_capacity
-
-    @property
-    def inputs_name(self) -> str:
-        # Get the name of the inputs of the tensorflow graph
-        return "MainNetwork/observations"
-
-    @property
-    def outputs_name(self) -> str:
-        # Get the name of the outputs of the tensorflow graph
-        return "MainNetwork/actions_predicted"

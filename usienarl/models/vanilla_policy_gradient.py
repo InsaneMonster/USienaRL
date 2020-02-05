@@ -8,21 +8,20 @@ import random
 # Import required src
 
 from usienarl import SpaceType, Config, Model
-from usienarl.utils.common import softmax
+from usienarl.utils import softmax
 
 
 class Buffer:
     """
-    A buffer for storing trajectories experienced by a PPO agent interacting with the environment,
+    A buffer for storing trajectories experienced by a VPG agent interacting with the environment,
     and using Generalized Advantage Estimation (GAE-Lambda) for calculating the advantages of state-action pairs.
 
     The buffer is dynamically resizable.
 
     The buffer contains list of states (or observations), actions (used as targets), values (computed by the value stream
     of the _model itself during prediction), advantages (computed by the buffer using GAE when a trajectory finishes and
-    fed back up in the policy stream to drive the loss), rewards (used to compute rewards-to-go), rewards-to-go
-    (computed inside the buffer itself and used as weight for the targets action when training the value stream) and
-    log-likelihoods (used to compute policy ratio).
+    fed back up in the policy stream to drive the loss), rewards (used to compute rewards-to-go) and rewards-to-go
+    (computed inside the buffer itself and used as weight for the targets action when training the value stream).
     """
 
     def __init__(self,
@@ -34,7 +33,6 @@ class Buffer:
         self._rewards: [] = []
         self._rewards_to_go: [] = []
         self._values: [] = []
-        self._log_likelihoods: [] = []
         # Define parameters
         self._discount_factor: float = discount_factor
         self._lambda_parameter: float = lambda_parameter
@@ -43,7 +41,7 @@ class Buffer:
         self._path_start_index: int = 0
 
     def store(self,
-              observation, action, reward: float, value: float, log_likelihood):
+              observation, action, reward: float, value: float):
         """
         Store the time-step in the buffer.
 
@@ -51,14 +49,12 @@ class Buffer:
         :param action: the last action to store in the buffer
         :param reward: the reward obtained from the action at the current state to store in the buffer
         :param value: the value of the state as estimated by the value stream of the model to store in the buffer
-        :param log_likelihood: the log likelihood of the action on the state as estimated by the model
         """
         # Append all data and increase the pointer
         self._observations.append(observation)
         self._actions.append(action)
         self._rewards.append(reward)
         self._values.append(value)
-        self._log_likelihoods.append(log_likelihood)
         self._pointer += 1
 
     def get(self) -> []:
@@ -66,7 +62,7 @@ class Buffer:
         Get all of the data from the buffer, with advantages appropriately normalized (shifted to have mean zero and
         standard deviation equals to one). Also reset pointers in the buffer and the lists composing the buffer.
 
-        :return a list containing the ndarrays of: states, actions, advantages, rewards-to-go, log-likelihoods
+        :return a list containing the ndarrays of: states, actions, advantages, rewards-to-go
         """
         # Get a numpy array on the advantage list
         advantages_array: numpy.ndarray = numpy.array(self._advantages)
@@ -82,7 +78,6 @@ class Buffer:
         states_array: numpy.ndarray = numpy.array(self._observations)
         actions_array: numpy.ndarray = numpy.array(self._actions)
         rewards_to_go_array: numpy.ndarray = numpy.array(self._rewards_to_go)
-        log_likelihoods_array: numpy.ndarray = numpy.array(self._log_likelihoods)
         # Reset the buffer and related pointers
         self._pointer = 0
         self._path_start_index = 0
@@ -92,9 +87,8 @@ class Buffer:
         self._rewards = []
         self._rewards_to_go = []
         self._values = []
-        self._log_likelihoods = []
         # Return all the buffer components
-        return [states_array, actions_array, advantages_array, rewards_to_go_array, log_likelihoods_array]
+        return [states_array, actions_array, advantages_array, rewards_to_go_array]
 
     def finish_path(self,
                     value: float = 0):
@@ -120,7 +114,7 @@ class Buffer:
         """
         The size of the buffer at the current time (it is dynamic).
 
-        :return: the integer size of the buffer
+        :return: the integer size of the buffer.
         """
         return self._pointer
 
@@ -136,16 +130,14 @@ class Buffer:
         return scipy.signal.lfilter([1], [1, float(-discount)], vector[::-1], axis=0)[::-1]
 
 
-class ProximalPolicyOptimization(Model):
+class VanillaPolicyGradient(Model):
     """
-    Proximal Policy Optimization with GAE (Generalized Advantage Estimation) buffer.
+    Vanilla Policy Gradient with GAE (Generalized Advantage Estimation) buffer.
     The algorithm is on-policy and executes updates every a certain number of episodes. It is an actor-critic model.
     The model is constituted by two streams, the policy stream (the actor part of the model) adn the value stream (the
     critic part of the model).
     The first stream computes and optimizes the policy loss. To drive the policy loss the advantages for each
-    observation in the batch is required to be estimated. They are estimated by the buffer using GAE. The loss uses an
-    approximation of the KL divergence. When updated, the KL divergence is used to early stop in case the new policy
-    differs too much from the previous one. Policy update is run for a certain number of epochs.
+    observation in the batch is required to be estimated. They are estimated by the buffer using GAE.
     The second stream computes the values of the current observations of the states and optimizes such estimation.
     To drive this loss, the value estimated by the stream itself for each state in the batch is required to be estimated.
     This estimation is done using the rewards. This stream is what makes the reward differentiable. Value update is run
@@ -155,9 +147,7 @@ class ProximalPolicyOptimization(Model):
     cleared. This is necessary since to update the policy only trajectories collected using the current policy can be
     used. To stabilize learning and avoid overfitting, each update is done using minibatches.
 
-    This algorithm is very likely to converge to local minimum but guarantees to not decrease its policy quality
-    according to a minimum KL distance allowed between old and new policy. This property holds with respect to a correct
-    value assigned to that minimum KL distance.
+    This algorithm is very likely to converge to local minimum.
 
     Supported observation spaces:
         - discrete
@@ -173,28 +163,23 @@ class ProximalPolicyOptimization(Model):
                  hidden_layers_config: Config,
                  discount_factor: float = 0.99,
                  learning_rate_policy: float = 3e-4, learning_rate_value: float = 1e-3,
-                 value_update_epochs: int = 80, policy_update_epochs: int = 80,
+                 value_update_epochs: int = 80,
                  minibatch_size: int = 32,
-                 lambda_parameter: float = 0.97,
-                 clip_ratio: float = 0.2,
-                 target_kl_divergence: float = 1e-2):
+                 lambda_parameter: float = 0.97):
         # Define model attributes
         self.learning_rate_policy: float = learning_rate_policy
         self.learning_rate_value: float = learning_rate_value
         self.discount_factor: float = discount_factor
         # Define internal model attributes
         self._hidden_layers_config: Config = hidden_layers_config
-        self._value_steps_for_update: int = value_update_epochs
-        self._policy_steps_for_update: int = policy_update_epochs
+        self._value_update_epochs: int = value_update_epochs
         self._minibatch_size: int = minibatch_size
         self._lambda_parameter: float = lambda_parameter
-        self._clip_ratio: float = clip_ratio
-        self._target_kl_divergence: float = target_kl_divergence
-        # Define proximal policy optimization empty attributes
+        # Define vanilla policy gradient empty attributes
         self.buffer: Buffer = None
-        # Define internal proximal policy optimization empty attributes
+        # Define internal vanilla policy gradient empty attributes
         self._observations = None
-        self._actions_predicted = None
+        self._actions = None
         self._actions = None
         self._advantages = None
         self._rewards = None
@@ -206,19 +191,14 @@ class ProximalPolicyOptimization(Model):
         self._log_std = None
         self._log_likelihood_actions = None
         self._log_likelihood_predictions = None
-        self._previous_log_likelihoods = None
         self._value_predicted = None
-        self._ratio = None
-        self._min_advantage = None
         self._value_stream_loss = None
         self._policy_stream_loss = None
         self._value_stream_optimizer = None
         self._policy_stream_optimizer = None
-        self._approximated_kl_divergence = None
         self._approximated_entropy = None
-        self._clip_fraction = None
         # Generate the base model
-        super(ProximalPolicyOptimization, self).__init__(name)
+        super(VanillaPolicyGradient, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_observation_space_types.append(SpaceType.continuous)
@@ -234,13 +214,10 @@ class ProximalPolicyOptimization(Model):
             # Note: it is the input of the model
             self._observations = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="observations")
             # Define the actions placeholder as an adaptable vector with shape Nx(A) where N is the number of examples and (A) the shape of the action space
-            self._actions = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="actions")
+            self._actions = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="targets")
             # Define the rewards placeholder as an adaptable vector of floats (they are actually rewards-to-go computed in the buffer)
             # Note: the model gets the rewards from the buffer
             self._rewards = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="rewards")
-            # Define the previous log-likelihood placeholder as an adaptable vector of float (previous because previously predicted by the model itself)
-            # Note: the model gets the previous log-likelihoods from the buffer
-            self._previous_log_likelihoods = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="previous_log_likelihood")
             # Define the advantages placeholder as an adaptable vector of floats (computed with GAE in the buffer)
             # Note: the model gets the advantages from the buffer once computed using GAE on the values
             self._advantages = tensorflow.placeholder(shape=(None,), dtype=tensorflow.float32, name="advantages")
@@ -260,8 +237,8 @@ class ProximalPolicyOptimization(Model):
                     # Define the predicted actions on the first shape dimension as a squeeze on the samples drawn from a categorical distribution over the logits
                     self._actions_predicted = tensorflow.squeeze(tensorflow.multinomial(logits=self._masked_logits, num_samples=1), axis=1)
                     # Define the log likelihood according to the categorical distribution on actions given and actions predicted
-                    self._log_likelihood_actions, _ = self.get_categorical_log_likelihood(self._actions, self._logits)
-                    self._log_likelihood_predictions, _ = self.get_categorical_log_likelihood(tensorflow.one_hot(self._actions_predicted, depth=self._agent_action_space_shape[0]), self._logits)
+                    self._log_likelihood_actions, _ = self.get_categorical_log_likelihood(self._actions, self._logits, name="log_likelihood_actions")
+                    self._log_likelihood_predictions, _ = self.get_categorical_log_likelihood(tensorflow.one_hot(self._actions_predicted, depth=self._agent_action_space_shape[0]), self._logits, name="log_likelihood_predictions")
                 else:
                     # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape when its type is continuous
                     self._expected_value = tensorflow.layers.dense(policy_stream_hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="expected_value")
@@ -271,14 +248,10 @@ class ProximalPolicyOptimization(Model):
                     # Define actions as the expected value summed up with a random gaussian vector multiplied by the standard deviation
                     self._actions_predicted = self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std
                     # Define the log likelihood according to the gaussian distribution on actions given and actions predicted
-                    self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, self._log_std)
-                    self._log_likelihood_predictions = self.get_gaussian_log_likelihood(self._actions_predicted, self._expected_value, self._log_std)
-                # Define the ratio between the current log-likelihood and the previous one (when using exponential, minus is a division)
-                self._ratio = tensorflow.exp(self._log_likelihood_actions - self._previous_log_likelihoods)
-                # Define the minimum advantage with respect to clip ratio
-                self._min_advantage = tensorflow.where(self._advantages > 0, (1 + self._clip_ratio) * self._advantages, (1 - self._clip_ratio) * self._advantages)
-                # Define the policy stream loss as the mean of minimum between the advantages multiplied the ratio and the minimum advantage
-                self._policy_stream_loss = -tensorflow.reduce_mean(tensorflow.minimum(self._ratio * self._advantages, self._min_advantage), name="policy_stream_loss")
+                    self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, self._log_std, name="log_likelihood_actions")
+                    self._log_likelihood_predictions = self.get_gaussian_log_likelihood(self._actions_predicted, self._expected_value, self._log_std, name="log_likelihood_predictions")
+                # Define the policy stream loss as the mean of the advantages multiplied the log likelihood
+                self._policy_stream_loss = -tensorflow.reduce_mean(self._advantages * self._log_likelihood_actions, name="policy_stream_loss")
                 # Define the optimizer for the policy stream
                 self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
             # Define the value stream
@@ -289,14 +262,12 @@ class ProximalPolicyOptimization(Model):
                 value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
                 # Define value by squeezing the output of the value stream
                 self._value_predicted = tensorflow.squeeze(value_stream_output, axis=1, name="value_predicted")
-                # Define value steam loss as the mean squared error of the difference between rewards-to-go given and the predicted value
+                # Define value stream loss as the mean squared error of the difference between rewards-to-go given and the predicted value
                 self._value_stream_loss = tensorflow.reduce_mean((self._rewards - self._value_predicted) ** 2, name="value_stream_loss")
                 # Define the optimizer for the value stream
                 self._value_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_value).minimize(self._value_stream_loss)
-            # Define approximated KL divergence (also used to early stop), approximated entropy and clip fraction for the summary
-            self._approximated_kl_divergence = tensorflow.reduce_mean(self._previous_log_likelihoods - self._log_likelihood_actions, name="approximated_kl_divergence")
+            # Define approximated entropy for the logger
             self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_actions, name="approximated_entropy")
-            self._clip_fraction = tensorflow.reduce_mean(tensorflow.cast(tensorflow.logical_or(self._ratio > (1 + self._clip_ratio), self._ratio < (1 - self._clip_ratio)), tensorflow.float32), name="clip_fraction")
             # Define the initializer
             self._initializer = tensorflow.global_variables_initializer()
 
@@ -464,13 +435,15 @@ class ProximalPolicyOptimization(Model):
         """
         if mask is None and self._agent_action_space_type == SpaceType.discrete:
             mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Get the logits or the expected value and std of the distribution to compute the action probabilities depending on the action space shape
+        # Get the logits or the expected value as the distribution of the action probabilities depending on the action space shape
         if self._agent_action_space_type == SpaceType.discrete:
             if self._observation_space_type == SpaceType.discrete:
-                observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+                observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[
+                    observation_current]
                 if self._agent_action_space_type == SpaceType.discrete:
                     logits = session.run([self._masked_logits],
-                                         feed_dict={self._observations: [observation_current_one_hot], self._mask: [mask]})
+                                         feed_dict={self._observations: [observation_current_one_hot],
+                                                    self._mask: [mask]})
                 else:
                     logits = session.run([self._masked_logits],
                                          feed_dict={self._observations: [observation_current_one_hot]})
@@ -484,72 +457,55 @@ class ProximalPolicyOptimization(Model):
             # Return the softmax over the logits (probabilities of all actions)
             return softmax(logits[0]).flatten()
         else:
-            expected_value, std = session.run([self._expected_value, self._std],
-                                              feed_dict={self._observations: [observation_current]})
+            expected_value, std = session.run([self._expected_value, self._std], feed_dict={self._observations: [observation_current]})
             # Return the expected value and the standard deviation wrapped in a list
             return [expected_value, std]
 
     def update(self,
                session,
                batch: []):
-        # Unpack the batch to feed the minibatches
-        observations, actions, advantages, rewards, previous_log_likelihoods = batch[0], batch[1], batch[2], batch[3], batch[4]
+        # Unpack the batch
+        observations, actions, advantages, rewards = batch[0], batch[1], batch[2], batch[3]
         # Generate a one-hot encoded version of the observations if observation space type is discrete
         if self._observation_space_type == SpaceType.discrete:
             observations: numpy.ndarray = numpy.eye(*self._observation_space_shape)[numpy.array(observations).reshape(-1)]
         # Generate a one-hot encoded version of the actions if action space type is discrete
         if self._agent_action_space_type == SpaceType.discrete:
             actions: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(actions).reshape(-1)]
-        # Run the policy optimizer of the model in training mode for the required amount of steps, also compute policy stream loss, approximated kl divergence, approximated entropy and clip fraction
-        policy_stream_loss_average: float = 0.0
-        approximated_kl_divergence_average: float = 0.0
-        approximated_entropy_average: float = 0.0
-        clip_fraction_average: float = 0.0
-        for _ in range(self._policy_steps_for_update):
-            policy_update_minibatch_iterations: int = 0
-            policy_stream_loss_total: float = 0.0
-            approximated_kl_divergence_total: float = 0.0
-            approximated_entropy_total: float = 0.0
-            clip_fraction_total: float = 0.0
-            for minibatch in self._get_minibatch(observations, actions, advantages, rewards, previous_log_likelihoods, self._minibatch_size):
-                # Unpack the minibatch
-                minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = minibatch
-                # Update the policy
-                _, policy_stream_loss, approximated_kl_divergence, approximated_entropy, clip_fraction = session.run([self._policy_stream_optimizer, self._policy_stream_loss, self._approximated_kl_divergence, self._approximated_entropy, self._clip_fraction],
-                                                                                                                     feed_dict={
-                                                                                                                         self._observations: minibatch_observations,
-                                                                                                                         self._actions: minibatch_actions,
-                                                                                                                         self._advantages: minibatch_advantages,
-                                                                                                                         self._previous_log_likelihoods: minibatch_previous_log_likelihoods
-                                                                                                                     })
-                policy_update_minibatch_iterations += 1
-                policy_stream_loss_total += policy_stream_loss
-                approximated_kl_divergence_total += approximated_kl_divergence
-                approximated_entropy_total += approximated_entropy
-                clip_fraction_total += clip_fraction
-            # The average is only really saved on the last value update to know it at the end of all the update steps
-            policy_stream_loss_average = policy_stream_loss_total / policy_update_minibatch_iterations
-            approximated_kl_divergence_average = approximated_kl_divergence_total / policy_update_minibatch_iterations
-            approximated_entropy_average = approximated_entropy_total / policy_update_minibatch_iterations
-            clip_fraction_average = clip_fraction_total / policy_update_minibatch_iterations
-            # If average approximated KL divergence over last policy update step (all minibatches) is above a certain threshold stop updating the policy for now (early stop)
-            if approximated_kl_divergence_average > 1.5 * self._target_kl_divergence:
-                break
+        # Run the policy optimizer of the model in training mode, also compute policy stream loss and approximated entropy
+        policy_update_minibatch_iterations: int = 0
+        policy_stream_loss_total: float = 0.0
+        approximated_entropy_total: float = 0.0
+        for minibatch in self._get_minibatch(observations, actions, advantages, rewards, self._minibatch_size):
+            # Unpack the minibatch
+            minibatch_observations, minibatch_actions, minibatch_advantages, _ = minibatch
+            # Update the policy
+            _, policy_stream_loss, approximated_entropy = session.run([self._policy_stream_optimizer, self._policy_stream_loss,self._approximated_entropy],
+                                                                      feed_dict={
+                                                                            self._observations: minibatch_observations,
+                                                                            self._actions: minibatch_actions,
+                                                                            self._advantages: minibatch_advantages,
+                                                                      })
+            policy_update_minibatch_iterations += 1
+            policy_stream_loss_total += policy_stream_loss
+            approximated_entropy_total += approximated_entropy
+        policy_stream_loss_average: float = policy_stream_loss_total / policy_update_minibatch_iterations
+        approximated_entropy_average: float = approximated_entropy_total / policy_update_minibatch_iterations
         # Run the value optimizer of the model in training mode for the required amount of steps, also compute average value stream loss
         value_stream_loss_average: float = 0.0
-        for _ in range(self._value_steps_for_update):
+        for _ in range(self._value_update_epochs):
             value_update_minibatch_iterations: int = 0
             value_stream_loss_total: float = 0.0
-            for minibatch in self._get_minibatch(observations, actions, advantages, rewards, previous_log_likelihoods, self._minibatch_size):
+            for minibatch in self._get_minibatch(observations, actions, advantages, rewards, self._minibatch_size):
                 # Unpack the minibatch
-                minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = minibatch
+                minibatch_observations, _, minibatch_advantages, minibatch_rewards = minibatch
                 # Update the value
                 _, value_stream_loss = session.run([self._value_stream_optimizer, self._value_stream_loss],
                                                    feed_dict={
-                                                        self._observations: minibatch_observations,
-                                                        self._advantages: minibatch_advantages,
-                                                        self._rewards: minibatch_rewards
-                                                    })
+                                                       self._observations: minibatch_observations,
+                                                       self._advantages: minibatch_advantages,
+                                                       self._rewards: minibatch_rewards
+                                                   })
                 value_update_minibatch_iterations += 1
                 value_stream_loss_total += value_stream_loss
             # The average is only really saved on the last value update to know it at the end of all the update steps
@@ -558,9 +514,7 @@ class ProximalPolicyOptimization(Model):
         summary = tensorflow.Summary()
         summary.value.add(tag="policy_stream_loss", simple_value=policy_stream_loss_average)
         summary.value.add(tag="value_stream_loss", simple_value=value_stream_loss_average)
-        summary.value.add(tag="approximated_kl_divergence", simple_value=approximated_kl_divergence_average)
         summary.value.add(tag="approximated_entropy", simple_value=approximated_entropy_average)
-        summary.value.add(tag="clip_fraction", simple_value=clip_fraction_average)
         # Return both losses and summary for the update sequence
         return summary, policy_stream_loss_average, value_stream_loss_average
 
@@ -569,7 +523,7 @@ class ProximalPolicyOptimization(Model):
         return 0
 
     @staticmethod
-    def _get_minibatch(observations: [], actions: [], advantages: [], rewards: [], previous_log_likelihoods: [],
+    def _get_minibatch(observations: [], actions: [], advantages: [], rewards: [],
                        minibatch_size: int) -> ():
         """
         Get a minibatch of the given minibatch size from the given batch (already unpacked).
@@ -578,45 +532,44 @@ class ProximalPolicyOptimization(Model):
         :param actions: the actions buffer in the batch
         :param advantages: the advantages buffer in the batch
         :param rewards: the rewards buffer in the batch
-        :param previous_log_likelihoods: the previous log-likelihoods buffer in the batch
         :param minibatch_size: the size of the minibatch
         :return: a tuple minibatch of shuffled samples of the given size
         """
         # Get a list of random ids of the batch
         batch_random_ids = random.sample(range(len(observations)), len(observations))
         # Generate the minibatches by shuffling the batch
-        minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = [], [], [], [], []
+        minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards = [], [], [], []
         for random_id in batch_random_ids:
             minibatch_observations.append(observations[random_id])
             minibatch_actions.append(actions[random_id])
             minibatch_advantages.append(advantages[random_id])
             minibatch_rewards.append(rewards[random_id])
-            minibatch_previous_log_likelihoods.append(previous_log_likelihoods[random_id])
             # Return the minibatch
             if len(minibatch_observations) % minibatch_size == 0:
-                yield minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards,  minibatch_previous_log_likelihoods
+                yield minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards
                 # Clear the minibatch
-                minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards, minibatch_previous_log_likelihoods = [], [], [], [], []
+                minibatch_observations, minibatch_actions, minibatch_advantages, minibatch_rewards = [], [], [], []
 
     @staticmethod
-    def get_categorical_log_likelihood(actions_mask, logits):
+    def get_categorical_log_likelihood(actions_mask, logits, name: str):
         """
         Get log-likelihood for discrete action spaces (using a categorical distribution) on the given logits and with
-        the action mask.
+        the actions mask.
         It uses tensorflow and as such should only be called in the define method.
 
         :param actions_mask: the actions used to mask the log-likelihood on the logits
         :param logits: the logits of the neural network
+        :param name: the name of the tensorflow operation
         :return: the log-likelihood according to categorical distribution
         """
         # Define the unmasked likelihood as the log-softmax of the logits
         log_likelihood_unmasked = tensorflow.nn.log_softmax(logits)
-        # Return the categorical log-likelihood by summing over the first axis of the actions mask multiplied
+        # Return the categorical log-likelihood by summing over the first axis of the target action mask multiplied
         # by the log-likelihood on the logits (unmasked, this is the masking operation) and the unmasked likelihood
-        return tensorflow.reduce_sum(actions_mask * log_likelihood_unmasked, axis=1, name="log_likelihood"), log_likelihood_unmasked
+        return tensorflow.reduce_sum(actions_mask * log_likelihood_unmasked, axis=1, name=name), log_likelihood_unmasked
 
     @staticmethod
-    def get_gaussian_log_likelihood(actions, expected_value, log_std):
+    def get_gaussian_log_likelihood(actions, expected_value, log_std, name: str):
         """
         Get log-likelihood for continuous action spaces (using a gaussian distribution) on the given expected value and
         log-std and with the actions.
@@ -625,9 +578,10 @@ class ProximalPolicyOptimization(Model):
         :param actions: the actions used to compute the log-likelihood tensor
         :param expected_value: the expected value of the gaussian distribution
         :param log_std: the log-std of the gaussian distribution
+        :param name: the name of the tensorflow operation
         :return: the log-likelihood according to gaussian distribution
         """
-        # Define the log-likelihood tensor for the gaussian distribution on the given actions
+        # Define the log-likelihood tensor for the gaussian distribution on the given target actions
         log_likelihood_tensor = -0.5 * (((actions - expected_value) / (tensorflow.exp(log_std) + 1e-8)) ** 2 + 2 * log_std + numpy.log(2 * numpy.pi))
         # Return the gaussian log-likelihood by summing over all the elements in the log-likelihood tensor defined above
-        return tensorflow.reduce_sum(log_likelihood_tensor, axis=1, name="log_likelihood")
+        return tensorflow.reduce_sum(log_likelihood_tensor, axis=1, name=name)

@@ -43,14 +43,15 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
     def store(self,
-              observation_current, action, reward: float, observation_next, last_step: bool):
+              observation_current, action_current, reward: float, observation_next, action_next, last_step: bool):
         """
         Store the time-step in the buffer.
 
         :param observation_current: the current observation to store in the buffer
-        :param action: the last action to store in the buffer
+        :param action_current: the last current action to store in the buffer
         :param reward: the reward obtained from the action at the current state to store in the buffer
         :param observation_next: the next observation to store in the buffer
+        :param action_next: the last next action to store in the buffer
         :param last_step: whether or not this time-step was the last of the episode
         """
         # Find the current max priority on the tree leafs
@@ -60,24 +61,25 @@ class Buffer:
             max_priority = self._MINIMUM_ALLOWED_PRIORITY
         # Set the max priority as the default one for this new sample
         # Note: we set the max priority for each new sample and then improve on it iteratively during training
-        self._sum_tree.add((observation_current, action, reward, observation_next, last_step), max_priority)
+        self._sum_tree.add((observation_current, action_current, reward, observation_next, action_next, last_step), max_priority)
 
     def get(self,
             amount: int = 0):
         """
-            Get a batch of data from the buffer of the given size. If size is not given all the buffer is used.
+        Get a batch of data from the buffer of the given size. If size is not given all the buffer is used.
 
-            :param amount: the batch size of data to get
-            :return a list containing the ndarrays of: current observations, actions, rewards, next observations and last step flags
-            """
+        :param amount: the batch size of data to get
+        :return a list containing the ndarrays of: current observations, actions, rewards, next observations and last step flags
+        """
         # Adjust amount with respect to the size of the sum-tree
         if amount <= 0 or amount > self._sum_tree.size:
             amount = self._sum_tree.size
         # Define arrays of each sample components
         observations_current: [] = []
-        actions: [] = []
+        actions_current: [] = []
         rewards: [] = []
         observations_next: [] = []
+        actions_next: [] = []
         last_steps: [] = []
         # Define the returned arrays of indexes and weights
         self._sum_tree_last_sampled_indexes = numpy.empty((amount,), dtype=numpy.int32)
@@ -113,12 +115,13 @@ class Buffer:
             self._sum_tree_last_sampled_indexes[sample] = leaf_index
             # Generate the minibatch for this example
             observations_current.append(leaf_data[0])
-            actions.append(leaf_data[1])
+            actions_current.append(leaf_data[1])
             rewards.append(leaf_data[2])
             observations_next.append(leaf_data[3])
-            last_steps.append(leaf_data[4])
+            actions_next.append(leaf_data[4])
+            last_steps.append(leaf_data[5])
         # Return the sample (minibatch) with related weights
-        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), numpy.array(last_steps), importance_sampling_weights]
+        return [numpy.array(observations_current), numpy.array(actions_current), numpy.array(rewards), numpy.array(observations_next), numpy.array(actions_next), numpy.array(last_steps), importance_sampling_weights]
 
     def update(self,
                absolute_errors: []):
@@ -149,19 +152,16 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
 
-# Define update rules for the model
-
-
-class TabularExpectedSARSA(Model):
+class TabularSARSA(Model):
     """
     Tabular temporal difference model with Expected SARSA update rule.
     The weights of the model are the entries of the table and the outputs are computed by multiplication of this
     matrix elements by the inputs.
 
     The update rule is the following (Bellman equation):
-    Q(s, a) = R + gamma * mean_a(Q(s'))
-    It uses the mean of the q-values estimated at the next state to update the estimate of the q-values at the current
-    state.
+    Q(s, a) = R + gamma * Q(s', a')
+    It uses also the action predicted at the next observation according to the same policy to update the current
+    estimate of q-values.
 
     Supported observation spaces:
         - discrete
@@ -179,7 +179,7 @@ class TabularExpectedSARSA(Model):
         # Define model attributes
         self.learning_rate: float = learning_rate
         self.discount_factor: float = discount_factor
-        # Define internal model attributes
+        # Define tabular model attributes
         self._buffer_capacity: int = buffer_capacity
         self._minimum_sample_probability: float = minimum_sample_probability
         self._random_sample_trade_off: float = random_sample_trade_off
@@ -198,7 +198,7 @@ class TabularExpectedSARSA(Model):
         self._loss = None
         self._optimizer = None
         # Generate the base model
-        super(TabularExpectedSARSA, self).__init__(name)
+        super(TabularSARSA, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
         self._supported_action_space_types.append(SpaceType.discrete)
@@ -290,24 +290,25 @@ class TabularExpectedSARSA(Model):
         # Generate a full pass-through mask for each example in the batch
         masks: numpy.ndarray = numpy.zeros((len(batch[0]), *self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
-        observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
+        observations_current, actions_current, rewards, observations_next, actions_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5], batch[6]
         # Generate a one-hot encoded version of the observations
         observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
         observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
         # Get the q-values from the model at both current observations and next observations
         q_values_current: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_current_one_hot, self._mask: masks})
         q_values_next: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_next_one_hot, self._mask: masks})
-        # Apply Bellman equation with the Expected SARSA update rule
-        for sample_index in range(len(actions)):
+        # Apply Bellman equation with the SARSA update rule
+        for sample_index in range(len(actions_current)):
             # Extract current sample values
-            action = actions[sample_index]
+            action_current = actions_current[sample_index]
+            action_next = actions_next[sample_index]
             reward: float = rewards[sample_index]
             last_step: bool = last_steps[sample_index]
             # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
             if last_step:
-                q_values_current[sample_index, action] = reward
+                q_values_current[sample_index, action_current] = reward
             else:
-                q_values_current[sample_index, action] = reward + self.discount_factor * numpy.average(q_values_next[sample_index])
+                q_values_current[sample_index, action_current] = reward + self.discount_factor * q_values_next[sample_index, action_next]
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error = session.run([self._optimizer, self._loss, self._absolute_error],
                                               feed_dict={
@@ -325,13 +326,3 @@ class TabularExpectedSARSA(Model):
     @property
     def warmup_steps(self) -> int:
         return self._buffer_capacity
-
-    @property
-    def inputs_name(self) -> str:
-        # Get the _name of the inputs of the tensorflow graph
-        return "inputs"
-
-    @property
-    def outputs_name(self) -> str:
-        # Get the _name of the outputs of the tensorflow graph
-        return "outputs"

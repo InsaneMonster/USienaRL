@@ -5,7 +5,7 @@ import numpy
 
 # Import required src
 
-from usienarl import SpaceType, Model
+from usienarl import SpaceType, Model, Config
 from usienarl.utils import SumTree
 
 
@@ -43,15 +43,14 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
     def store(self,
-              observation_current, action_current, reward: float, observation_next, action_next, last_step: bool):
+              observation_current, action, reward: float, observation_next, last_step: bool):
         """
         Store the time-step in the buffer.
 
         :param observation_current: the current observation to store in the buffer
-        :param action_current: the last current action to store in the buffer
+        :param action: the last action to store in the buffer
         :param reward: the reward obtained from the action at the current state to store in the buffer
         :param observation_next: the next observation to store in the buffer
-        :param action_next: the last next action to store in the buffer
         :param last_step: whether or not this time-step was the last of the episode
         """
         # Find the current max priority on the tree leafs
@@ -61,7 +60,7 @@ class Buffer:
             max_priority = self._MINIMUM_ALLOWED_PRIORITY
         # Set the max priority as the default one for this new sample
         # Note: we set the max priority for each new sample and then improve on it iteratively during training
-        self._sum_tree.add((observation_current, action_current, reward, observation_next, action_next, last_step), max_priority)
+        self._sum_tree.add((observation_current, action, reward, observation_next, last_step), max_priority)
 
     def get(self,
             amount: int = 0):
@@ -76,10 +75,9 @@ class Buffer:
             amount = self._sum_tree.size
         # Define arrays of each sample components
         observations_current: [] = []
-        actions_current: [] = []
+        actions: [] = []
         rewards: [] = []
         observations_next: [] = []
-        actions_next: [] = []
         last_steps: [] = []
         # Define the returned arrays of indexes and weights
         self._sum_tree_last_sampled_indexes = numpy.empty((amount,), dtype=numpy.int32)
@@ -115,13 +113,12 @@ class Buffer:
             self._sum_tree_last_sampled_indexes[sample] = leaf_index
             # Generate the minibatch for this example
             observations_current.append(leaf_data[0])
-            actions_current.append(leaf_data[1])
+            actions.append(leaf_data[1])
             rewards.append(leaf_data[2])
             observations_next.append(leaf_data[3])
-            actions_next.append(leaf_data[4])
-            last_steps.append(leaf_data[5])
+            last_steps.append(leaf_data[4])
         # Return the sample (minibatch) with related weights
-        return [numpy.array(observations_current), numpy.array(actions_current), numpy.array(rewards), numpy.array(observations_next), numpy.array(actions_next), numpy.array(last_steps), importance_sampling_weights]
+        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), numpy.array(last_steps), importance_sampling_weights]
 
     def update(self,
                absolute_errors: []):
@@ -152,19 +149,70 @@ class Buffer:
         self._sum_tree_last_sampled_indexes = None
 
 
-class TabularSARSA(Model):
+class Estimator:
     """
-    Tabular temporal difference model with Expected SARSA update rule.
-    The weights of the model are the entries of the table and the outputs are computed by multiplication of this
-    matrix elements by the inputs.
+    Estimator defining the real Deep Expected SARSA model. It is used to define two identical models:
+    target network and main-network.
+
+    It is generated given the size of the observation and action spaces and the hidden layer config defining the
+    hidden layers of the network.
+    """
+
+    def __init__(self,
+                 scope: str,
+                 observation_space_shape, agent_action_space_shape,
+                 hidden_layers_config: Config,
+                 error_clipping: bool = False,
+                 huber_delta: float = 1.0):
+        self.scope: str = scope
+        with tensorflow.variable_scope(self.scope):
+            # Define observations placeholder as a float adaptable array with shape Nx(O) where N is the number of examples and (O) the shape of the observation space
+            self.observations = tensorflow.placeholder(shape=[None, *observation_space_shape], dtype=tensorflow.float32, name="observations")
+            # Define the mask
+            self.mask = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="mask")
+            # Define the estimator network hidden layers from the config
+            hidden_layers_output = hidden_layers_config.apply_hidden_layers(self.observations)
+            # Define outputs as an array of neurons of size NxA and with linear activation functions
+            # Define the targets for learning with the same NxA adaptable size
+            # Note: N is the number of examples and A the size of the action space (deep-nn only supports discrete actions spaces)
+            self.q_values_predictions = tensorflow.add(tensorflow.layers.dense(hidden_layers_output, *agent_action_space_shape, name="q_values_predictions"), self.mask)
+            self.q_values_targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="q_values_targets")
+            # Define the weights of the targets during the update process (e.g. the importance sampling weights)
+            self.loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
+            # Define the absolute error
+            self.absolute_error = tensorflow.abs(self.q_values_targets - self.q_values_predictions, name="absolute_error")
+            # Define the loss with error clipping (huber loss) if required, otherwise mean square error loss
+            if error_clipping:
+                self.loss = tensorflow.reduce_mean(self.loss_weights * tensorflow.where(self.absolute_error < huber_delta,
+                                                   0.5 * tensorflow.square(self.absolute_error),
+                                                   self.absolute_error - 0.5), name="loss")
+            else:
+                self.loss = tensorflow.reduce_mean(self.loss_weights * tensorflow.square(self.absolute_error), name="loss")
+            # Define the estimator weight parameters
+            self.weight_parameters = [variable for variable in tensorflow.trainable_variables() if variable.name.startswith(self.scope)]
+            self.weight_parameters = sorted(self.weight_parameters, key=lambda parameter: parameter.name)
+
+
+class DeepExpectedSARSA(Model):
+    """
+    Deep Expected SARSA model with Expected SARSA update rule.
+    The model is a deep neural network which hidden layers can be defined by a config parameter.
+    It uses a target network and a main network to correctly evaluate the expected future reward in order
+    to stabilize learning. It can also clips the error in the [-1, 1] range when computing the loss in order to further
+    stabilize learning (it may cause instability in some environments). This is done using the Huber loss and by default
+    it is enabled.
+
+    In order to synchronize the target network and the main network, every some interval steps the weight have to be
+    copied from the main network to the target network.
 
     The update rule is the following (Bellman equation):
-    Q(s, a) = R + gamma * Q(s', a')
-    It uses also the action predicted at the next observation according to the same policy to update the current
-    estimate of q-values.
+    Q(s, a) = R + gamma * mean_a(Q(s'))
+    It uses the mean of the q-values estimated at the next state to update the estimate of the q-values at the current
+    state.
 
     Supported observation spaces:
         - discrete
+        - continuous
 
     Supported action spaces:
         - discrete
@@ -172,64 +220,79 @@ class TabularSARSA(Model):
 
     def __init__(self,
                  name: str,
-                 learning_rate: float, discount_factor: float,
+                 hidden_layers_config: Config,
                  buffer_capacity: int,
-                 minimum_sample_probability: float, random_sample_trade_off: float,
-                 importance_sampling_value: float, importance_sampling_value_increment: float):
+                 learning_rate: float = 1e-3, discount_factor: float = 0.99,
+                 minimum_sample_probability: float = 1e-2, random_sample_trade_off: float = 0.6,
+                 importance_sampling_value: float = 0.4, importance_sampling_value_increment: float = 1e-3,
+                 error_clipping: bool = False, huber_delta: float = 1.0):
         # Define model attributes
         self.learning_rate: float = learning_rate
         self.discount_factor: float = discount_factor
-        # Define tabular model attributes
+        # Define internal model attributes
         self._buffer_capacity: int = buffer_capacity
         self._minimum_sample_probability: float = minimum_sample_probability
         self._random_sample_trade_off: float = random_sample_trade_off
         self._importance_sampling_value: float = importance_sampling_value
         self._importance_sampling_value_increment: float = importance_sampling_value_increment
+        self._hidden_layers_config: Config = hidden_layers_config
+        self._error_clipping: bool = error_clipping
+        self._huber_delta = huber_delta
         # Define model empty attributes
         self.buffer: Buffer = None
         # Define internal model empty attributes
-        self._inputs = None
-        self._mask = None
-        self._outputs = None
-        self._table = None
+        self._target_network: Estimator = None
+        self._main_network: Estimator = None
+        self._target_network_inputs = None
+        self._target_network_outputs = None
+        self._main_network_inputs = None
+        self._main_network_outputs = None
+        self._main_network_mask = None
+        self._target_network_mask = None
         self._targets = None
         self._loss_weights = None
         self._absolute_error = None
         self._loss = None
         self._optimizer = None
+        self._weight_copier = None
         # Generate the base model
-        super(TabularSARSA, self).__init__(name)
+        super(DeepExpectedSARSA, self).__init__(name)
         # Define the types of allowed observation and action spaces
         self._supported_observation_space_types.append(SpaceType.discrete)
+        self._supported_observation_space_types.append(SpaceType.continuous)
         self._supported_action_space_types.append(SpaceType.discrete)
 
     def _define_graph(self):
         # Set the buffer
         self.buffer = Buffer(self._buffer_capacity, self._minimum_sample_probability, self._random_sample_trade_off,
                              self._importance_sampling_value, self._importance_sampling_value_increment)
-        # Define the tensorflow _model
-        with tensorflow.variable_scope(self._scope + "/" + self._name):
-            # Define inputs of the _model as a float adaptable array with size Nx(S) where N is the number of examples and (O) is the shape of the observations space
-            self._inputs = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="inputs")
-            # Define mask placeholder
-            self._mask = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float32, name="mask")
-            # Initialize the table (a weight matrix) of OxA dimensions with random uniform numbers between 0 and 0.1
-            self._table = tensorflow.get_variable(name="table", trainable=True, initializer=tensorflow.random_uniform([*self._observation_space_shape, *self._agent_action_space_shape], 0, 0.1))
-            # Define the outputs at a given state as a matrix of size NxA given by multiplication of inputs and weights
-            # Define the targets for learning with the same Nx(A) adaptable size
-            # Note: N is the number of examples and (A) the shape of the action space
-            self._outputs = tensorflow.add(tensorflow.matmul(self._inputs, self._table), self._mask, name="outputs")
-            self._targets = tensorflow.placeholder(shape=[None, *self._agent_action_space_shape], dtype=tensorflow.float32, name="targets")
-            # Define the weights of the targets during the update process (e.g. the importance sampling weights)
-            self._loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
-            # Define the absolute error and its mean
-            self._absolute_error = tensorflow.abs(self._targets - self._outputs, name="absolute_error")
-            # Define the loss
-            self._loss = tensorflow.reduce_sum(self._loss_weights * tensorflow.squared_difference(self._targets, self._outputs), name="loss")
-            # Define the optimizer
-            self._optimizer = tensorflow.train.GradientDescentOptimizer(self.learning_rate).minimize(self._loss)
-            # Define the initializer
-            self._initializer = tensorflow.global_variables_initializer()
+        # Define two estimator, one for target network and one for main network, with identical structure
+        self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
+                                       self._observation_space_shape, self._agent_action_space_shape,
+                                       self._hidden_layers_config, self._error_clipping, self._huber_delta)
+        self._target_network = Estimator(self._scope + "/" + self._name + "/TargetNetwork",
+                                         self._observation_space_shape, self._agent_action_space_shape,
+                                         self._hidden_layers_config, self._error_clipping, self._huber_delta)
+        # Assign main and target networks to the model attributes
+        self._main_network_inputs = self._main_network.observations
+        self._main_network_outputs = self._main_network.q_values_predictions
+        self._target_network_outputs = self._target_network.q_values_predictions
+        self._target_network_inputs = self._target_network.observations
+        self._main_network_mask = self._main_network.mask
+        self._target_network_mask = self._target_network.mask
+        self._targets = self._main_network.q_values_targets
+        self._absolute_error = self._main_network.absolute_error
+        self._loss = self._main_network.loss
+        self._loss_weights = self._main_network.loss_weights
+        # Define the optimizer
+        self._optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
+        # Define the initializer
+        self._initializer = tensorflow.global_variables_initializer()
+        # Define the weight copy operation (to copy weights from main network to target network)
+        self._weight_copier = []
+        for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters, self._target_network.weight_parameters):
+            copy_operation = target_network_parameter.assign(main_network_parameter)
+            self._weight_copier.append(copy_operation)
 
     def get_all_action_values(self,
                               session,
@@ -246,10 +309,17 @@ class TabularSARSA(Model):
         # If there is no mask generate a full pass-through mask
         if mask is None:
             mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Generate a one-hot encoded version of the observation
-        observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-        # Return all the predicted q-values given the current observation
-        return session.run(self._outputs, feed_dict={self._inputs: [observation_current_one_hot], self._mask: [mask]})
+        # Save by default the observation current input of the model to the given data
+        observation_current_input = observation_current
+        # Generate a one-hot encoded version of the observation if observation space is discrete
+        if self._observation_space_type == SpaceType.discrete:
+            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
+            observation_current_input = observation_current_one_hot
+        # Compute the q-values predicted by main and target networks
+        main_network_values = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_input], self._main_network_mask: [mask]})
+        target_network_values = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: [observation_current_input], self._target_network_mask: [mask]})
+        # Return the average of the q-values
+        return (main_network_values + target_network_values) / 2
 
     def get_best_action(self,
                         session,
@@ -284,39 +354,58 @@ class TabularSARSA(Model):
         # Return the best action and all the actions
         return numpy.argmax(all_actions), all_actions
 
+    def copy_weight(self,
+                    session):
+        """
+        Copy the weights from the main network to the target network.
+
+        :param session: the session of tensorflow currently running
+        """
+        # Run all the weight copy operations
+        session.run(self._weight_copier)
+
     def update(self,
                session,
                batch: []):
         # Generate a full pass-through mask for each example in the batch
         masks: numpy.ndarray = numpy.zeros((len(batch[0]), *self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
-        observations_current, actions_current, rewards, observations_next, actions_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5], batch[6]
-        # Generate a one-hot encoded version of the observations
-        observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
-        observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
+        observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
+        # Define the input observations to the model (to support both space types)
+        observations_current_input = observations_current
+        observations_next_input = observations_next
+        # Generate a one-hot encoded version of the observations if space type is discrete
+        if self._observation_space_type == SpaceType.discrete:
+            observations_current_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_current.reshape(-1)]
+            observations_next_one_hot: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observations_next.reshape(-1)]
+            # Set the model input to the one-hot encoded representation
+            observations_current_input = observations_current_one_hot
+            observations_next_input = observations_next_one_hot
         # Get the q-values from the model at both current observations and next observations
-        q_values_current: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_current_one_hot, self._mask: masks})
-        q_values_next: numpy.ndarray = session.run(self._outputs, feed_dict={self._inputs: observations_next_one_hot, self._mask: masks})
-        # Apply Bellman equation with the SARSA update rule
-        for sample_index in range(len(actions_current)):
+        # Next observation is estimated by the target network
+        q_values_current: numpy.ndarray = session.run(self._main_network_outputs,
+                                                      feed_dict={self._main_network_inputs: observations_current_input, self._main_network_mask: masks})
+        q_values_next: numpy.ndarray = session.run(self._target_network_outputs,
+                                                   feed_dict={self._target_network_inputs: observations_next_input, self._target_network_mask: masks})
+        # Apply Bellman equation with the Expected SARSA update rule
+        for sample_index in range(len(actions)):
             # Extract current sample values
-            action_current = actions_current[sample_index]
-            action_next = actions_next[sample_index]
+            action = actions[sample_index]
             reward: float = rewards[sample_index]
             last_step: bool = last_steps[sample_index]
             # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
             if last_step:
-                q_values_current[sample_index, action_current] = reward
+                q_values_current[sample_index, action] = reward
             else:
-                q_values_current[sample_index, action_current] = reward + self.discount_factor * q_values_next[sample_index, action_next]
+                q_values_current[sample_index, action] = reward + self.discount_factor * numpy.average(q_values_next[sample_index])
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error = session.run([self._optimizer, self._loss, self._absolute_error],
                                               feed_dict={
-                                                           self._inputs: observations_current_one_hot,
-                                                           self._targets: q_values_current,
-                                                           self._loss_weights: weights,
-                                                           self._mask: masks
-                                                        })
+                                                    self._main_network_inputs: observations_current_input,
+                                                    self._targets: q_values_current,
+                                                    self._loss_weights: weights,
+                                                    self._main_network_mask: masks
+                                               })
         # Generate the tensorflow summary
         summary = tensorflow.Summary()
         summary.value.add(tag="loss", simple_value=loss)
@@ -326,13 +415,3 @@ class TabularSARSA(Model):
     @property
     def warmup_steps(self) -> int:
         return self._buffer_capacity
-
-    @property
-    def inputs_name(self) -> str:
-        # Get the _name of the inputs of the tensorflow graph
-        return "inputs"
-
-    @property
-    def outputs_name(self) -> str:
-        # Get the _name of the outputs of the tensorflow graph
-        return "outputs"
