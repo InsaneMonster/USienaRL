@@ -12,6 +12,7 @@
 
 import logging
 import tensorflow
+import numpy
 
 # Import required src
 
@@ -40,67 +41,134 @@ class Agent:
 
     def __init__(self,
                  name: str):
-        # Define agent attributes
+        # Define internal attributes
         self._name: str = name
-        # Define empty agent attributes
-        self._scope: str = None
+        # Define empty attributes
+        self._saver = None
+        self._scope: str or None = None
         self._summary_writer = None
-        self._checkpoint_path: str = None
-        self._scopes_to_restore: [] = None
-        self._observation_space_type: SpaceType = None
+        self._parallel: int or None = None
+        self._summary_path: str or None = None
+        self._save_path: str or None = None
+        self._saves_to_keep: int or None = None
+        self._observation_space_type: SpaceType or None = None
         self._observation_space_shape = None
-        self._agent_action_space_type: SpaceType = None
+        self._agent_action_space_type: SpaceType or None = None
         self._agent_action_space_shape = None
+        self._save_counter: int or None = None
 
     def setup(self,
               logger: logging.Logger,
-              observation_space_type: SpaceType, observation_space_shape,
-              agent_action_space_type: SpaceType, agent_action_space_shape,
-              scope: str, summary_path: str,
-              checkpoint_path: str, scopes_to_restore: []) -> bool:
+              scope: str,
+              parallel: int,
+              observation_space_type: SpaceType, observation_space_shape: (),
+              agent_action_space_type: SpaceType, agent_action_space_shape: (),
+              summary_path: str = None, save_path: str = None, saves_to_keep: int = 0) -> bool:
         """
-        Setup the agent.
-        It is called before the tensorflow session generation, if any.
-        Note: this should generate the model and other components, if any.
+        Setup the agent, preparing all its components for execution.
 
         :param logger: the logger used to print the agent information, warnings and errors
+        :param scope: the experiment scope encompassing the agent scope
+        :param parallel: the amount of parallel episodes run by the experiment, must be greater than zero
         :param observation_space_type: the space type of the observation space
-        :param observation_space_shape: the shape of the observation space
+        :param observation_space_shape: the shape of the observation space, as a tuple
         :param agent_action_space_type: the space type of the agent action space
-        :param agent_action_space_shape: the shape of the agent action space
-        :param scope: the experiment scope encompassing the agent _scope, if any
-        :param checkpoint_path: the path of the checkpoint to restore, if any
-        :param scopes_to_restore: the list of scopes to restore with the checkpoint, if any
-        :param summary_path: the path of the summary writer of the agent
-        :return a boolean flag True if setup is successful, False otherwise
+        :param agent_action_space_shape: the shape of the agent action space, as a tuple
+        :param summary_path: the optional path of the summary writer of the agent
+        :param save_path: the optional path where to save metagraphs checkpoints of the agent's model
+        :param saves_to_keep: the optional number of checkpoint saves to keep, it does nothing if there is no save path
+        :return: True if setup is successful, False otherwise
         """
+        # Make sure parameters are correct
+        assert(parallel > 0 and saves_to_keep >= 0)
         logger.info("Setup of agent " + self._name + " with scope " + scope + "...")
         # Reset agent attributes
         self._scope = scope
-        self._checkpoint_path = checkpoint_path
-        self._scopes_to_restore = scopes_to_restore
+        self._parallel = parallel
+        self._summary_path = summary_path
+        self._save_path = save_path
+        self._saves_to_keep = saves_to_keep
         self._observation_space_type: SpaceType = observation_space_type
         self._observation_space_shape = observation_space_shape
         self._agent_action_space_type: SpaceType = agent_action_space_type
         self._agent_action_space_shape = agent_action_space_shape
-        # Reset the summary writer if required
+        # Try to generate the agent inner model
+        if not self._generate(logger,
+                              observation_space_type, observation_space_shape,
+                              agent_action_space_type, agent_action_space_shape):
+            return False
+        # Define the summary writer if required
         if summary_path is not None:
             self._summary_writer = tensorflow.summary.FileWriter(summary_path, graph=tensorflow.get_default_graph())
             logger.info("A Tensorboard summary for the agent will be updated during training of its internal model")
             logger.info("Tensorboard summary path: " + summary_path)
-        # Try to generate the agent inner model
-        return self._generate(logger, observation_space_type, observation_space_shape, agent_action_space_type, agent_action_space_shape)
+        # Define the saver if required
+        if self._save_path is not None and self._save_path and self._saves_to_keep > 0:
+            self._saver = tensorflow.train.Saver(self.saved_variables, max_to_keep=self._saves_to_keep)
+            if self._saves_to_keep > 1:
+                logger.info("Agent model metagraph will be saved after each training/validation pair. A set of " + str(self._saves_to_keep) + " models will be stored.")
+            else:
+                logger.info("Agent model metagraph will be saved after each training/validation pair")
+            logger.info("Agent model metagraphs are saved at " + self._save_path)
+            self._save_counter: int = 0
+        # Validate setup
+        return True
+
+    def restore(self,
+                logger: logging.Logger,
+                session,
+                path: str) -> bool:
+        """
+        Restore the agent's model from the checkpoint at the given path.
+
+        :param logger: the logger used to print the agent information, warnings and errors
+        :param session: the session of tensorflow currently running
+        :param path: the path from which to restore, it is required
+        :return: True if restore is successful, false otherwise
+        """
+        # Make sure parameters are correct
+        assert(path is not None and path)
+        # Get checkpoint from path
+        checkpoint = tensorflow.train.get_checkpoint_state(path)
+        # If checkpoint exists restore from checkpoint
+        if checkpoint and checkpoint.model_checkpoint_path:
+            self._saver.restore(session, tensorflow.train.latest_checkpoint(path))
+            logger.info("Model graph stored at " + path + " loaded successfully!")
+            return True
+        logger.error("Checkpoint path specified is wrong: no model can be accessed at " + path)
+        return False
+
+    def save(self,
+             logger: logging.Logger,
+             session):
+        """
+        Save the agent's model metagraph. It does nothing if a saver is not defined.
+
+        :param logger: the logger used to print the agent information, warnings and errors
+        :param session: the session of tensorflow currently running
+        """
+        # Check if the saver exists
+        if self._saver is None:
+            return
+        logger.info("Saving the agent " + self._name + " metagraph at path " + self._save_path + "...")
+        self._saver.save(session, self._save_path, self._save_counter)
+        self._save_counter += 1
+        logger.info("Agent " + self._name + " metagraph saved successfully")
 
     def _generate(self,
                   logger: logging.Logger,
-                  observation_space_type: SpaceType, observation_space_shape,
-                  action_space_type: SpaceType, action_space_shape) -> bool:
+                  observation_space_type: SpaceType, observation_space_shape: (),
+                  agent_action_space_type: SpaceType, agent_action_space_shape: ()) -> bool:
         """
-        Generate the agent internal model. Used to generate all custom components of the agent.
+        Generate the agent's model. Used to generate all custom components of the agent.
         It is always called during setup.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :return a boolean flag True if setup is successful, False otherwise
+        :param observation_space_type: the space type of the observation space
+        :param observation_space_shape: the shape of the observation space, as a tuple
+        :param agent_action_space_type: the space type of the agent action space
+        :param agent_action_space_shape: the shape of the agent action space, as a tuple
+        :return: True if setup is successful, False otherwise
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -110,10 +178,10 @@ class Agent:
                    session):
         """
         Initialize the agent before acting in the environment.
-        It is called right after tensorflow session generation and after the environment is initialized.
+        The environment at this stage is already initialized.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -122,15 +190,19 @@ class Agent:
                    logger: logging.Logger,
                    session,
                    interface: Interface,
-                   agent_observation_current):
+                   agent_observation_current: numpy.ndarray,
+                   warmup_step: int, warmup_episode: int) -> numpy.ndarray:
         """
-        Take an action given the current agent observation in warmup mode. Usually it uses a random policy.
+        Take an action given the current agent observation in warmup mode.
+        Usually it uses a random policy.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         :param interface: the interface between the agent and the environment
-        :param agent_observation_current: the current observation of the agent
-        :return: the action the agent decided to take
+        :param agent_observation_current: the current observation of the agent wrapped in a numpy array
+        :param warmup_step: the current absolute warm-up step of the experiment the agent is warming-up into
+        :param warmup_episode: the current absolute warm-up episode of the experiment the agent is warming-up into
+        :return: the action decided by the agent wrapped in a numpy array
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -139,15 +211,19 @@ class Agent:
                   logger: logging.Logger,
                   session,
                   interface: Interface,
-                  agent_observation_current):
+                  agent_observation_current: numpy.ndarray,
+                  train_step: int, train_episode: int) -> numpy.ndarray:
         """
-        Take an action given the current agent observation in train mode. Usually it uses an exploring policy.
+        Take an action given the current agent observation in train mode.
+        Usually it uses an exploring policy.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         :param interface: the interface between the agent and the environment
-        :param agent_observation_current: the current observation of the agent
-        :return: the action the agent decided to take
+        :param agent_observation_current: the current observation of the agent wrapped in a numpy array
+        :param train_step: the current absolute train step of the experiment the agent is training into
+        :param train_episode: the current absolute train episode of the experiment the agent is training into
+        :return: the action decided by the agent wrapped in a numpy array
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -156,15 +232,19 @@ class Agent:
                       logger: logging.Logger,
                       session,
                       interface: Interface,
-                      agent_observation_current):
+                      agent_observation_current: numpy.ndarray,
+                      inference_step: int, inference_episode: int) -> numpy.ndarray:
         """
-        Take an action given the current agent observation in inference mode. Usually it uses the best possible policy.
+        Take an action given the current agent observation in validation/test mode.
+        Usually it uses the best possible policy.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         :param interface: the interface between the agent and the environment
-        :param agent_observation_current: the current observation of the agent
-        :return: the action the agent decided to take
+        :param agent_observation_current: the current observation of the agent wrapped in a numpy array
+        :param inference_step: the current absolute validation/test step of the experiment the agent is executing into
+        :param inference_episode: the current absolute validation/test episode of the experiment the agent is executing into
+        :return: the action decided by the agent wrapped in a numpy array
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -173,26 +253,25 @@ class Agent:
                              logger: logging.Logger,
                              session,
                              interface: Interface,
-                             agent_observation_current,
-                             agent_action,
-                             reward: float,
-                             agent_observation_next,
-                             warmup_step_current: int,
-                             warmup_episode_current: int,
-                             warmup_steps_volley: int):
+                             agent_observation_current: numpy.ndarray,
+                             agent_action: numpy.ndarray,
+                             reward: numpy.ndarray,
+                             episode_done: numpy.ndarray,
+                             agent_observation_next: numpy.ndarray,
+                             warmup_step: int, warmup_episode: int):
         """
-        Complete a warmup step with the given values.
+        Complete a warm-up step.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         :param interface: the interface between the agent and the environment
-        :param agent_observation_current: the current observation of the agent
-        :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
-        :param reward: the reward obtained by the combination of current observation, next observation and action in-between
-        :param agent_observation_next: the next observation of the agent
-        :param warmup_step_current: the current warmup step in the current episode
-        :param warmup_episode_current: the current warmup episode
-        :param warmup_steps_volley: the number of warmup steps in the volley
+        :param agent_observation_current: the current observation of the agent wrapped in a numpy array
+        :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation wrapped in a numpy array
+        :param reward: the reward obtained by the combination of current observation, next observation and action in-between wrapped in a numpy array
+        :param episode_done: the episode done flag raised by the environment wrapped in a numpy array
+        :param agent_observation_next: the next observation of the agent wrapped in a numpy array
+        :param warmup_step: the current absolute warm-up step of the experiment the agent is warming-up into
+        :param warmup_episode: the current absolute warm-up episode of the experiment the agent is warming-up into
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -201,29 +280,25 @@ class Agent:
                             logger: logging.Logger,
                             session,
                             interface: Interface,
-                            agent_observation_current,
-                            agent_action,
-                            reward: float,
-                            agent_observation_next,
-                            train_step_current: int, train_step_absolute: int,
-                            train_episode_current: int, train_episode_absolute: int,
-                            train_episode_volley: int, train_episode_total: int):
+                            agent_observation_current: numpy.ndarray,
+                            agent_action: numpy.ndarray,
+                            reward: numpy.ndarray,
+                            episode_done: numpy.ndarray,
+                            agent_observation_next: numpy.ndarray,
+                            train_step: int, train_episode: int):
         """
-        Complete a train step with the given values.
+        Complete a train step.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         :param interface: the interface between the agent and the environment
-        :param agent_observation_current: the current observation of the agent
-        :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
-        :param reward: the reward obtained by the combination of current observation, next observation and action in-between
-        :param agent_observation_next: the next observation of the agent
-        :param train_step_current: the current train step in the current episode
-        :param train_step_absolute: the current absolute number of train step (counting all volleys)
-        :param train_episode_current: the current train episode
-        :param train_episode_absolute: the current absolute number of train episode (counting all volleys)
-        :param train_episode_volley: the number of train episodes in the volley
-        :param train_episode_total: the total number of allowed train episodes
+        :param agent_observation_current: the current observation of the agent wrapped in a numpy array
+        :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation wrapped in a numpy array
+        :param reward: the reward obtained by the combination of current observation, next observation and action in-between wrapped in a numpy array
+        :param episode_done: the episode done flag raised by the environment wrapped in a numpy array
+        :param agent_observation_next: the next observation of the agent wrapped in a numpy array
+        :param train_step: the current absolute train step of the experiment the agent is training into
+        :param train_episode: the current absolute train episode of the experiment the agent is training into
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -232,26 +307,25 @@ class Agent:
                                 logger: logging.Logger,
                                 session,
                                 interface: Interface,
-                                agent_observation_current,
-                                agent_action,
-                                reward: float,
-                                agent_observation_next,
-                                inference_step_current: int,
-                                inference_episode_current: int,
-                                inference_episode_volley: int):
+                                agent_observation_current: numpy.ndarray,
+                                agent_action: numpy.ndarray,
+                                reward: numpy.ndarray,
+                                episode_done: numpy.ndarray,
+                                agent_observation_next: numpy.ndarray,
+                                inference_step: int, inference_episode: int):
         """
-        Complete an inference step with the given values.
+        Complete an validation/test step..
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         :param interface: the interface between the agent and the environment
         :param agent_observation_current: the current observation of the agent
         :param agent_action: the action taken in the environment as seen by the agent leading from the current observation to the next observation
         :param reward: the reward obtained by the combination of current observation, next observation and action in-between
+        :param episode_done: the episode done flag raised by the environment wrapped in a numpy array
         :param agent_observation_next: the next observation of the agent
-        :param inference_step_current: the current inference step in the current episode
-        :param inference_episode_current: the current inference episode
-        :param inference_episode_volley: the number of inference episodes in the volley
+        :param inference_step: the current absolute validation/test step of the experiment the agent is executing into
+        :param inference_episode: the current absolute validation/test episode of the experiment the agent is executing into
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -260,20 +334,19 @@ class Agent:
                                 logger: logging.Logger,
                                 session,
                                 interface: Interface,
-                                last_step_reward: float,
-                                episode_total_reward: float,
-                                warmup_episode_current: int,
-                                warmup_steps_volley: int):
+                                last_step_reward: numpy.ndarray,
+                                episode_total_reward: numpy.ndarray,
+                                warmup_step: int, warmup_episode: int):
         """
-        Finish a _warmup episode with the given values.
+        Finish a warm-up episode.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
-        :param interface: the interface between the agent and the environment
-        :param last_step_reward: the reward obtained in the last step in the passed episode
-        :param episode_total_reward: the reward obtained in the passed episode
-        :param warmup_episode_current: the current warmup episode
-        :param warmup_steps_volley: the number of warmup steps in the volley
+        :param session: the session of tensorflow currently running
+        :param interface: the interface between the agent and the environment  wrapped in a numpy array
+        :param last_step_reward: the reward obtained in the last step in the passed episode wrapped in a numpy array  wrapped in a numpy array
+        :param episode_total_reward: the reward obtained in the passed episode wrapped in a numpy array
+        :param warmup_step: the current absolute warm-up step of the experiment the agent is warming-up into
+        :param warmup_episode: the current absolute warm-up episode of the experiment the agent is warming-up into
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -282,24 +355,19 @@ class Agent:
                                logger: logging.Logger,
                                session,
                                interface: Interface,
-                               last_step_reward: float,
-                               episode_total_reward: float,
-                               train_step_absolute: int,
-                               train_episode_current: int, train_episode_absolute: int,
-                               train_episode_volley: int, train_episode_total: int):
+                               last_step_reward: numpy.ndarray,
+                               episode_total_reward: numpy.ndarray,
+                               train_step: int, train_episode: int):
         """
-        Finish a train episode with the given values.
+        Finish a train episode.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         :param interface: the interface between the agent and the environment
-        :param last_step_reward: the reward obtained in the last step in the passed episode
-        :param episode_total_reward: the reward obtained in the passed episode
-        :param train_step_absolute: the current absolute number of train step (counting all volleys)
-        :param train_episode_current: the current train episode
-        :param train_episode_absolute: the current absolute number of train episode (counting all volleys)
-        :param train_episode_volley: the number of train episodes in the volley
-        :param train_episode_total: the total number of allowed train episodes
+        :param last_step_reward: the reward obtained in the last step in the passed episode  wrapped in a numpy array
+        :param episode_total_reward: the reward obtained in the passed episode  wrapped in a numpy array
+        :param train_step: the current absolute train step of the experiment the agent is training into
+        :param train_episode: the current absolute train episode of the experiment the agent is training into
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -308,31 +376,100 @@ class Agent:
                                    logger: logging.Logger,
                                    session,
                                    interface: Interface,
-                                   last_step_reward: float,
-                                   episode_total_reward: float,
-                                   inference_episode_current: int,
-                                   inference_episode_volley: int):
+                                   last_step_reward: numpy.ndarray,
+                                   episode_total_reward: numpy.ndarray,
+                                   inference_step: int, inference_episode: int):
         """
-        Finish an inference episode with the given values.
+        Finish an validation/test episode.
 
         :param logger: the logger used to print the agent information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         :param interface: the interface between the agent and the environment
-        :param last_step_reward: the reward obtained in the last step in the passed episode
-        :param episode_total_reward: the reward obtained in the passed episode
-        :param inference_episode_current: the current inference episode
-        :param inference_episode_volley: the number of inference episodes in the volley
+        :param last_step_reward: the reward obtained in the last step in the passed episode wrapped in a numpy array
+        :param episode_total_reward: the reward obtained in the passed episode wrapped in a numpy array
+        :param inference_step: the current absolute validation/test step of the experiment the agent is executing into
+        :param inference_episode: the current absolute validation/test episode of the experiment the agent is executing into
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
 
     @property
-    def trainable_variables(self):
+    def name(self) -> str:
         """
-        Get the trainable variables of the agent (usually of the internal model of the agent).
-        Is is usually searched with the scope environment/agent.
+        The name of the agent.
+        """
+        return self._name
 
-        :return: the trainable variables defined by this agent.
+    @property
+    def scope(self) -> str or None:
+        """
+        The scope of the agent.
+        It is None if agent is not setup.
+        """
+        return self._scope
+
+    @property
+    def parallel(self) -> int or None:
+        """
+        The number of parallel episodes run by the agent.
+        It is None if agent is not setup.
+        """
+        return self._parallel
+
+    @property
+    def observation_space_type(self) -> SpaceType or None:
+        """
+        The type of the observation space of the agent.
+        It is None if agent is not setup.
+        """
+        return self._observation_space_type
+
+    @property
+    def observation_space_shape(self) -> () or None:
+        """
+        The shape of the observation space of the agent.
+        Note: it may differ from the environment's state space shape.
+        It is None if agent is not setup.
+        """
+        return self._observation_space_shape
+
+    @property
+    def action_space_type(self) -> SpaceType or None:
+        """
+        The type of the action space of the agent.
+        It is None if agent is not setup.
+        """
+        return self._agent_action_space_type
+
+    @property
+    def action_space_shape(self) -> () or None:
+        """
+        The shape of the action space of the agent.
+        Note: it may differ from the environment's action space shape.
+        It is None if agent is not setup.
+        """
+        return self._agent_action_space_shape
+
+    @property
+    def summary_path(self) -> str or None:
+        """
+        The path of the Tensorboard summaries saved by the agent.
+        It is None if agent is not setup.
+        """
+        return self._summary_path
+
+    @property
+    def save_path(self) -> str or None:
+        """
+        The path of the checkpoint metagraph saves of the agent.
+        It is None if agent is not setup.
+        """
+        return self._save_path
+
+    @property
+    def saved_variables(self):
+        """
+        The trainable variables of the agent (usually of its model).
         """
         # Abstract property, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -340,10 +477,7 @@ class Agent:
     @property
     def warmup_steps(self) -> int:
         """
-        Return the integer number of warm-up steps required by the agent.
-
-        :return: the integer number of warm-up steps required by the agent internal model
+        The integer number of warm-up steps required by the agent.
         """
         # Abstract property, it should be implemented on a child class basis
         raise NotImplementedError()
-

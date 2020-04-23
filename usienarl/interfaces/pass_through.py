@@ -11,6 +11,7 @@
 # Import packages
 
 import logging
+import numpy
 
 # Import required src
 
@@ -33,23 +34,31 @@ class PassThroughInterface(Interface):
     def agent_action_to_environment_action(self,
                                            logger: logging.Logger,
                                            session,
-                                           agent_action):
+                                           agent_action: numpy.ndarray) -> numpy.ndarray:
         # Just return the agent action
         return agent_action
 
     def environment_action_to_agent_action(self,
                                            logger: logging.Logger,
                                            session,
-                                           environment_action):
+                                           environment_action: numpy.ndarray) -> numpy.ndarray:
         # Just return the environment action
         return environment_action
 
     def environment_state_to_observation(self,
                                          logger: logging.Logger,
                                          session,
-                                         environment_state):
+                                         environment_state: numpy.ndarray) -> numpy.ndarray:
         # Just return the environment state
         return environment_state
+
+    def possible_agent_actions(self,
+                               logger: logging.Logger,
+                               session) -> numpy.ndarray:
+        # Generate the vectorized version of the translation function
+        vectorized_translation = numpy.vectorize(self.environment_action_to_agent_action)
+        # Return the vectorized translation of the possible actions
+        return vectorized_translation(logger, session, self._environment.possible_actions(logger, session))
 
     @property
     def observation_space_type(self) -> SpaceType:

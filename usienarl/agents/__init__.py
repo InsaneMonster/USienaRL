@@ -20,6 +20,8 @@ from .tabular_q_learning_agent_epsilon_greedy import TabularQLearningAgentEpsilo
 from .tabular_q_learning_agent_boltzmann import TabularQLearningAgentBoltzmann
 from .tabular_q_learning_agent_dirichlet import TabularQLearningAgentDirichlet
 
+from .ddpg_agent import DDPGAgent
+
 from .deep_sarsa_agent_epsilon_greedy import DeepSARSAAgentEpsilonGreedy
 from .deep_sarsa_agent_boltzmann import DeepSARSAAgentBoltzmann
 from .deep_sarsa_agent_dirichlet import DeepSARSAAgentDirichlet

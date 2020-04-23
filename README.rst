@@ -5,56 +5,45 @@ This is a *python 3.6* and above library for Reinforcement Learning (RL) experim
 
 The idea behind this library is to generate an intuitive yet versatile system to generate RL agents, experiments, models, etc.
 The library is modular, and allow for easy experiment iterations and validation. It is currently used in my research and it
-was built first for that purpose.
+was first built for that very purpose.
+
+The entire package system is vectorized using NumPy. This allows both the environments and the agents to run very fast,
+especially on large scale experiments.
 
 **Note:** this is not meant to be an entry level framework. Users are expected to be at least somewhat experienced in both
-python and reinforcement learning. The framework is easy to extend but almost all the agent-related and environment-related
-work should be done by yourself assembling pre-made or custom parts.
+python and reinforcement learning.
 
 **Features**
 
 *Included in package:*
 
-- Model, Agent, Environment, Experiment abstract classes with their interrelationships hidden inside the implementation
-- Customizable experiments in which, besides the default metrics, additional metrics can be used to validate or pass the experiment:
-    - Metrics of experiments are always related to rewards obtained (per-step or per-episode) and training episodes (usually the minimum the better)
-- Utility functions to run the same experiment in multiple equal iterations with automated folder setup and organization, registering the following metrics:
-    - Average total reward (reward in one episode) over training, validation and test
-    - Average scaled reward (reward per step) over training, validation and test
-    - Standard deviation of said total and scaled rewards over training, validation and test
-    - Mean and standard deviation of average total and scaled reward over test in all experiment iterations (if more than one)
-    - Mean and standard deviation of maximum total and scaled reward over test in all experiment iterations (if more than one)
-    - Mean and standard deviation of minimum training episodes over test in all experiment iterations (if more than one)
-    - Experiment iteration achieving best results in each one of the metrics described above
-    - Easy to use .csv file with all the results for each experiment iteration
-    - Plots of total and scaled rewards over both all training and validation episodes, as well as std of both and average episode length, all saved as .png files
-- Many state-of-the-art algorithms already implemented in pre-defined models, including:
+- Environment abstract class to wrap any environment with gym-like methods
+- Interface system to allow communication between agents and environment (for example to make a certain environment not fully observable)
+- Customizable experiments, structured in training/validation and test volleys, plotting the following metrics:
+    - Average total reward (reward in one episode) over training, validation and test volleys and episodes (per each volley)
+    - Average scaled reward (reward per step) over training, validation and test volleys and episodes (per each volley)
+    - Standard deviation of said total and scaled rewards over training, validation and test volleys
+- Utility functions to easily run experiments (even multiple iterations of one type of experiment)
+- Many state-of-the-art algorithms, including:
     - Tabular Temporal Difference Q-Learning, SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
     - Deep Temporal Difference Q-Learning (DQN), SARSA, Expected SARSA with Prioritized Experience Replay memory buffer
     - Double Deep Temporal Difference Q-Learning (DDQN) with Prioritized Experience Replay memory buffer
     - Dueling Temporal Difference Q-Learning (DDDQN) with Prioritized Experience Replay memory buffer
     - Vanilla Policy Gradient (VPG) with General Advantage Estimate (GAE) buffer using rewards-to-go
     - Proximal Policy Optimization (PPO) with General Advantage Estimate (GAE) buffer using rewards-to-go and early stopping
-- Many state-of-the-art exploration policies embedded into the default agents, including:
-    - Epsilon Greedy with tunable decay rate, start value and end value for temporal difference agents
-    - Boltzmann sampling with tunable temperature decay rate, start value and end value for temporal difference agents
-    - Dirichlet distribution with tunable alpha and x parameters for policy optimization agents acting on discrete states
-- Config class to define the hidden layers of all Tensorflow graphs (including the CNN):
-    - Customization of layer types also possible through extension of the class
-- Default Pass-Through interface class to allow communications between agents and environments
-- Additive action mask for all the algorithms supporting it (only discrete action sets):
-    - The mask supports two values: -infinity (mask) and 0.0 (pass-through)
-    - If not supplied, the mask is by default full pass-through
+    - Deep Deterministic Policy Gradient (DDPG) with simple FIFO buffer
 - Default agents for all the included algorithms, including:
-    - Q-Learning both tabular and approximated by DNNs with Epsilon Greedy and Boltzmann exploration policies
-    - SARSA both tabular and approximated by DNNs with Epsilon Greedy and Boltzmann exploration policies
-    - Expected SARSA both tabular and approximated by DNNs with Epsilon Greedy and Boltzmann exploration policies
-    - Vanilla Policy Gradient and Proximal Policy Optimization with optional Dirichlet exploration policy for discrete action spaces
+    - Q-Learning both tabular and approximated by DNNs with Epsilon Greedy, Boltzmann and Dirichlet exploration policies
+    - SARSA both tabular and approximated by DNNs with Epsilon Greedy, Boltzmann and Dirichlet exploration policies
+    - Expected SARSA both tabular and approximated by DNNs with Epsilon Greedy, Boltzmann and Dirichlet exploration policies
+    - Vanilla Policy Gradient and Proximal Policy Optimization
+    - Deep Deterministic Policy Gradient with Gaussian Noise
+- Customizable config class to easily define the layers of the networks (when applicable)
 
 *Not included in package:*
 
 - Extensive set of benchmarks for each default agent using the OpenAI gym environment as a reference
-- OpenAI gym environment wrapper and benchmark experiment classes as good sample on how to implement environments or experiment classes
+- OpenAI gym environment wrappers and benchmark experiment as implementation samples
 
 For additional example of usage of this framework, take a look a these GitHub pages (using old versions of the framework):
 
@@ -106,34 +95,20 @@ For advanced use, refer to the built-in documentation and to the provided source
 
 **Current issues**
 
-Some summaries and docs could not be fully clear, homogeneous or up-to-date. This will be fixed in upcoming releases.
-
-From the save-restore standpoint it could be useful to implement an easy way to pass a metagraph without the need to redefine the entire agent, for example serializing all the agent-related data.
-The same can be said for the experiment as a whole, with all needed data serialized and ready to be "watched" with just one simple script.
-Ideally serialize data could be loaded from folders referring to agents, environments and the experiments as a whole.
-
-Beside that, an experiment can right now work only in a specific environment.
-It could be interesting to test multiple environments both from a curriculum learning perspective (it can still be done using multiple subsequent experiments, however) and from a generalization perspective (train one one, validate on another, etc).
-A way to check if environments are compatible one another would be required too to have that implemented.
+DDPG is experimental. It should work but its performance is not consistent.
+Experiment iterations are not implemented as well as they could be. I'm still thinking about a better implementation.
 
 **Changelog**
 
-- Version 0.6.7: Added minibatches to VPG and PPO to greatly improve training and reduce memory usage, changed summary to be defined inside the update method (it is more versatile this way)
-- Version 0.6.6: Hot-fixed scope in model not flagged as property
-- Version 0.6.5: Added name and shape properties for the abstract model class and exposed checkpoint path to the agent: now the checkpoint path along a list of scopes to restore is given during setup
-- Version 0.6.4: Added post-initialize method in environment to fix restore variable errors when initializing a tensorflow model inside the environment
-- Version 0.6.3: Hot-fixed Vanilla Policy Gradient and Proximal Policy Optimization models not working correctly with discrete observation spaces
-- Version 0.6.2: Hot-fixed Vanilla Policy Gradient agent dirichlet exploration policy not working correctly
-- Version 0.6.1: Hot-fixed deep SARSA agent and tabular SARSA agent dirichlet exploration policy not working correctly
-
-- Added default agents to the package: Tabular QL, Tabular SARSA, Tabular ExpectedSARSA, DQN, DDQN, DDDQN, DSARSA, DExpectedSARSA, VPG, PPO
-- Removed exploration policies, now embedded into agents. This allows for further customization when making your own agents
-- Added Dirichlet exploration policy to overall all agents supporting it
-- Added average episode length (measured in steps) as plot, improved plots differentiations and coloring
-- Improved Tensorboard summaries for policy optimization algorithms
-- Added progress reports over training and validation volleys with additional information
-- Default agents now come with additional information regarding what are they doing when training/updating
-- Some minor fix and improvements
+- Vectorized the entire package.
+- Added DDPG algorithm and agent.
+- Improved all algorithms. They are now clearer, optimized and more intuitive in their implementation.
+- Improved all default agents. They are now clearer, optimized and more intuitive in their implementation.
+- Improved the experiment. Now volleys are classes and all collected data and metrics are easily accessible through attributes.
+- Plots are now saved both per volley and per episode inside each volley
+- Refactored utility functions
+- A huge list of minor fixes and improvements
+- Largely improved summaries and built-in documentation
 
 **CREDITS**
 
