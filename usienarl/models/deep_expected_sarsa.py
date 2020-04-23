@@ -2,6 +2,7 @@
 
 import tensorflow
 import numpy
+import math
 
 # Import required src
 
@@ -16,6 +17,7 @@ class Buffer:
 
     When storing a new sample, the default priority value of the new node associated with such sample is set to
     the maximum defined priority. This value is iteratively changed by the algorithm when update is called.
+    It automatically serializes all the parallel data stored in it.
 
     When getting the samples, a priority segment inversely proportional to the amount of required samples is generated.
     Samples are then uniformly taken for that segment, and stored in a minibatch which is returned.
@@ -29,10 +31,12 @@ class Buffer:
 
     def __init__(self,
                  capacity: int,
+                 parallel_amount: int,
                  minimum_sample_probability: float, random_sample_trade_off: float,
                  importance_sampling_value: float, importance_sampling_value_increment: float):
         # Define internal prioritized experience replay buffer attributes
         self._capacity: int = capacity
+        self._parallel_amount: int = parallel_amount
         self._minimum_sample_probability: float = minimum_sample_probability
         self._random_sample_trade_off: float = random_sample_trade_off
         self._importance_sampling_value_increment: float = importance_sampling_value_increment
@@ -41,26 +45,37 @@ class Buffer:
         self._importance_sampling_value = self._importance_sampling_starting_value
         # Define internal prioritized experience replay buffer empty attributes
         self._sum_tree_last_sampled_indexes = None
+        self._episode_done_previous_step: numpy.ndarray = numpy.zeros(self._parallel_amount, dtype=bool)
 
     def store(self,
-              observation_current, action, reward: float, observation_next, last_step: bool):
+              observation_current: numpy.ndarray,
+              action: numpy.ndarray,
+              reward: numpy.ndarray,
+              observation_next: numpy.ndarray,
+              episode_done: numpy.ndarray):
         """
-        Store the time-step in the buffer.
+        Store the time-step in the buffer, serializing immediately all the parallel episodes.
 
-        :param observation_current: the current observation to store in the buffer
-        :param action: the last action to store in the buffer
-        :param reward: the reward obtained from the action at the current state to store in the buffer
-        :param observation_next: the next observation to store in the buffer
-        :param last_step: whether or not this time-step was the last of the episode
+        :param observation_current: the current observation to store in the buffer wrapped in a numpy array
+        :param action: the last action to store in the buffer wrapped in a numpy array
+        :param reward: the reward obtained from the action at the current state to store in the buffer wrapped in a numpy array
+        :param observation_next: the next observation to store in the buffer wrapped in a numpy array
+        :param episode_done: whether or not this time-step was the last of the episode wrapped in a numpy array
         """
-        # Find the current max priority on the tree leafs
-        max_priority: float = numpy.max(self._sum_tree.leafs)
-        # If the max priority is zero set it to the minimum defined
-        if max_priority <= 0:
-            max_priority = self._MINIMUM_ALLOWED_PRIORITY
-        # Set the max priority as the default one for this new sample
-        # Note: we set the max priority for each new sample and then improve on it iteratively during training
-        self._sum_tree.add((observation_current, action, reward, observation_next, last_step), max_priority)
+        # Serialize all the experiences to store in the buffer
+        for i in range(self._parallel_amount):
+            if self._episode_done_previous_step[i]:
+                continue
+            # Find the current max priority on the tree leafs
+            max_priority: float = numpy.max(self._sum_tree.leafs)
+            # If the max priority is zero set it to the minimum defined
+            if max_priority <= 0:
+                max_priority = self._MINIMUM_ALLOWED_PRIORITY
+            # Set the max priority as the default one for this new sample
+            # Note: we set the max priority for each new sample and then improve on it iteratively during training
+            self._sum_tree.add((observation_current[i], action[i], reward[i], observation_next[i], episode_done[i]), max_priority)
+        # Update the stored episode done flags
+        self._episode_done_previous_step = episode_done.copy()
 
     def get(self,
             amount: int = 0):
@@ -68,7 +83,7 @@ class Buffer:
         Get a batch of data from the buffer of the given size. If size is not given all the buffer is used.
 
         :param amount: the batch size of data to get
-        :return a list containing the ndarrays of: current observations, actions, rewards, next observations and last step flags
+        :return a list containing the arrays of: current observations, actions, rewards, next observations and episode done flags
         """
         # Adjust amount with respect to the size of the sum-tree
         if amount <= 0 or amount > self._sum_tree.size:
@@ -78,7 +93,7 @@ class Buffer:
         actions: [] = []
         rewards: [] = []
         observations_next: [] = []
-        last_steps: [] = []
+        episode_done_flags: [] = []
         # Define the returned arrays of indexes and weights
         self._sum_tree_last_sampled_indexes = numpy.empty((amount,), dtype=numpy.int32)
         importance_sampling_weights = numpy.empty((amount, 1), dtype=numpy.float32)
@@ -116,9 +131,9 @@ class Buffer:
             actions.append(leaf_data[1])
             rewards.append(leaf_data[2])
             observations_next.append(leaf_data[3])
-            last_steps.append(leaf_data[4])
+            episode_done_flags.append(leaf_data[4])
         # Return the sample (minibatch) with related weights
-        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), numpy.array(last_steps), importance_sampling_weights]
+        return [numpy.array(observations_current), numpy.array(actions), numpy.array(rewards), numpy.array(observations_next), numpy.array(episode_done_flags), importance_sampling_weights]
 
     def update(self,
                absolute_errors: []):
@@ -148,6 +163,31 @@ class Buffer:
         # Reset the last sampled sum tree indexes for the next update
         self._sum_tree_last_sampled_indexes = None
 
+    def finish_trajectory(self):
+        """
+        Finish the trajectory, resetting episode done flags.
+        """
+        #  Reset stored episode done flags
+        self._episode_done_previous_step: numpy.ndarray = numpy.zeros(self._parallel_amount, dtype=bool)
+
+    @property
+    def capacity(self) -> int:
+        """
+        The capacity of the buffer..
+
+        :return: the integer capacity of the buffer
+        """
+        return self._capacity
+
+    @property
+    def size(self) -> int:
+        """
+        The size of the buffer at the current time.
+
+        :return: the integer size of the buffer
+        """
+        return self._sum_tree.size
+
 
 class Estimator:
     """
@@ -168,15 +208,14 @@ class Estimator:
         with tensorflow.variable_scope(self.scope):
             # Define observations placeholder as a float adaptable array with shape Nx(O) where N is the number of examples and (O) the shape of the observation space
             self.observations = tensorflow.placeholder(shape=[None, *observation_space_shape], dtype=tensorflow.float32, name="observations")
-            # Define the mask
-            self.mask = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="mask")
+            # Define the q-values targets placeholder with adaptable size NxA where N is the number of examples and A the size of the action space (always discrete)
+            self.q_values_targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="q_values_targets")
             # Define the estimator network hidden layers from the config
             hidden_layers_output = hidden_layers_config.apply_hidden_layers(self.observations)
-            # Define outputs as an array of neurons of size NxA and with linear activation functions
-            # Define the targets for learning with the same NxA adaptable size
-            # Note: N is the number of examples and A the size of the action space (deep-nn only supports discrete actions spaces)
+            # Define the mask
+            self.mask = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="mask")
+            # Define the estimator network predicted q-values given the input observations and the mask
             self.q_values_predictions = tensorflow.add(tensorflow.layers.dense(hidden_layers_output, *agent_action_space_shape, name="q_values_predictions"), self.mask)
-            self.q_values_targets = tensorflow.placeholder(shape=[None, *agent_action_space_shape], dtype=tensorflow.float32, name="q_values_targets")
             # Define the weights of the targets during the update process (e.g. the importance sampling weights)
             self.loss_weights = tensorflow.placeholder(shape=[None, 1], dtype=tensorflow.float32, name="loss_weights")
             # Define the absolute error
@@ -196,13 +235,12 @@ class Estimator:
 class DeepExpectedSARSA(Model):
     """
     Deep Expected SARSA model with Expected SARSA update rule.
-    The model is a deep neural network which hidden layers can be defined by a config parameter.
-    It uses a target network and a main network to correctly evaluate the expected future reward in order
-    to stabilize learning. It can also clips the error in the [-1, 1] range when computing the loss in order to further
-    stabilize learning (it may cause instability in some environments). This is done using the Huber loss and by default
-    it is enabled.
+    The model is a deep neural network whose hidden layers can be defined by a config parameter.
+    It uses a target network and a main network to correctly evaluate the expected future reward in order to stabilize
+    learning. To further stabilize learning error can be clipped through the Huber Loss (note that this may cause
+    instability in some environments).
 
-    In order to synchronize the target network and the main network, every some interval steps the weight have to be
+    In order to synchronize the target network and the main network, every some interval steps model weights have to be
     copied from the main network to the target network.
 
     The update rule is the following (Bellman equation):
@@ -239,17 +277,17 @@ class DeepExpectedSARSA(Model):
         self._error_clipping: bool = error_clipping
         self._huber_delta = huber_delta
         # Define model empty attributes
-        self.buffer: Buffer = None
+        self.buffer: Buffer or None = None
         # Define internal model empty attributes
-        self._target_network: Estimator = None
-        self._main_network: Estimator = None
-        self._target_network_inputs = None
-        self._target_network_outputs = None
-        self._main_network_inputs = None
-        self._main_network_outputs = None
+        self._target_network: Estimator or None = None
+        self._main_network: Estimator or None = None
+        self._target_network_observations = None
+        self._target_network_q_values_predictions = None
+        self._main_network_observations = None
+        self._main_network_q_values_predictions = None
         self._main_network_mask = None
         self._target_network_mask = None
-        self._targets = None
+        self._q_values_targets = None
         self._loss_weights = None
         self._absolute_error = None
         self._loss = None
@@ -264,98 +302,112 @@ class DeepExpectedSARSA(Model):
 
     def _define_graph(self):
         # Set the buffer
-        self.buffer = Buffer(self._buffer_capacity, self._minimum_sample_probability, self._random_sample_trade_off,
+        self.buffer = Buffer(self._buffer_capacity, self._parallel,
+                             self._minimum_sample_probability, self._random_sample_trade_off,
                              self._importance_sampling_value, self._importance_sampling_value_increment)
         # Define two estimator, one for target network and one for main network, with identical structure
-        self._main_network = Estimator(self._scope + "/" + self._name + "/MainNetwork",
+        full_scope: str = self._scope + "/" + self._name
+        self._main_network = Estimator(full_scope + "/MainNetwork",
                                        self._observation_space_shape, self._agent_action_space_shape,
-                                       self._hidden_layers_config, self._error_clipping, self._huber_delta)
-        self._target_network = Estimator(self._scope + "/" + self._name + "/TargetNetwork",
+                                       self._hidden_layers_config,
+                                       self._error_clipping, self._huber_delta)
+        self._target_network = Estimator(full_scope + "/TargetNetwork",
                                          self._observation_space_shape, self._agent_action_space_shape,
-                                         self._hidden_layers_config, self._error_clipping, self._huber_delta)
+                                         self._hidden_layers_config,
+                                         self._error_clipping, self._huber_delta)
         # Assign main and target networks to the model attributes
-        self._main_network_inputs = self._main_network.observations
-        self._main_network_outputs = self._main_network.q_values_predictions
-        self._target_network_outputs = self._target_network.q_values_predictions
-        self._target_network_inputs = self._target_network.observations
+        self._main_network_observations = self._main_network.observations
+        self._main_network_q_values_predictions = self._main_network.q_values_predictions
+        self._target_network_q_values_predictions = self._target_network.q_values_predictions
+        self._target_network_observations = self._target_network.observations
         self._main_network_mask = self._main_network.mask
         self._target_network_mask = self._target_network.mask
-        self._targets = self._main_network.q_values_targets
+        self._q_values_targets = self._main_network.q_values_targets
         self._absolute_error = self._main_network.absolute_error
         self._loss = self._main_network.loss
         self._loss_weights = self._main_network.loss_weights
-        # Define the optimizer
-        self._optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
-        # Define the initializer
-        self._initializer = tensorflow.global_variables_initializer()
-        # Define the weight copy operation (to copy weights from main network to target network)
-        self._weight_copier = []
-        for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters, self._target_network.weight_parameters):
-            copy_operation = target_network_parameter.assign(main_network_parameter)
-            self._weight_copier.append(copy_operation)
+        # Define global operations
+        with tensorflow.variable_scope(full_scope):
+            # Define the optimizer
+            self._optimizer = tensorflow.train.AdamOptimizer(self.learning_rate).minimize(self._loss)
+            # Define the initializer
+            self._initializer = tensorflow.variables_initializer(tensorflow.get_collection(tensorflow.GraphKeys.GLOBAL_VARIABLES, full_scope), name="initializer")
+            # Define the weight copier operation (to copy weights from main network to target network)
+            self._weight_copier = []
+            for main_network_parameter, target_network_parameter in zip(self._main_network.weight_parameters, self._target_network.weight_parameters):
+                copy_operation = target_network_parameter.assign(main_network_parameter)
+                self._weight_copier.append(copy_operation)
 
-    def get_all_action_values(self,
-                              session,
-                              observation_current,
-                              mask: numpy.ndarray = None):
+    def get_q_values(self,
+                     session,
+                     observation_current: numpy.ndarray,
+                     possible_actions: numpy.ndarray = None):
         """
-        Get all the actions values according to the model at the given current observation.
+        Get all the q-values according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
-        :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: all action values predicted by the model
+        :param observation_current: the current observation of the agent in the environment to base prediction upon, wrapped in a numpy array
+        :param possible_actions: the optional array used to remove certain actions from the prediction
+        :return: all q-values predicted by the model
         """
-        # If there is no mask generate a full pass-through mask
-        if mask is None:
-            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Save by default the observation current input of the model to the given data
-        observation_current_input = observation_current
+        # If there is no possible actions list generate a full pass-through mask otherwise generate a mask upon it
+        if possible_actions is None:
+            mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
+        else:
+            mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+            mask[:, possible_actions] = 0.0
         # Generate a one-hot encoded version of the observation if observation space is discrete
         if self._observation_space_type == SpaceType.discrete:
-            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-            observation_current_input = observation_current_one_hot
+            observation_current: numpy.ndarray = numpy.eye(*self._observation_space_shape)[numpy.array(observation_current).reshape(-1)]
         # Compute the q-values predicted by main and target networks
-        main_network_values = session.run(self._main_network_outputs, feed_dict={self._main_network_inputs: [observation_current_input], self._main_network_mask: [mask]})
-        target_network_values = session.run(self._target_network_outputs, feed_dict={self._target_network_inputs: [observation_current_input], self._target_network_mask: [mask]})
+        main_network_q_values = session.run(self._main_network_q_values_predictions,
+                                            feed_dict={
+                                                self._main_network_observations: observation_current,
+                                                self._main_network_mask: mask
+                                            })
+        target_network_q_values = session.run(self._target_network_q_values_predictions,
+                                              feed_dict={
+                                                  self._target_network_observations: observation_current,
+                                                  self._target_network_mask: mask
+                                              })
         # Return the average of the q-values
-        return (main_network_values + target_network_values) / 2
+        return (main_network_q_values + target_network_q_values) / 2
 
-    def get_best_action(self,
-                        session,
-                        observation_current,
-                        mask: numpy.ndarray = None):
+    def get_action_with_highest_q_value(self,
+                                        session,
+                                        observation_current: numpy.ndarray,
+                                        possible_actions: numpy.ndarray = None):
         """
-        Get the best action predicted by the model at the given current observation.
+        Get the action with highest q-value from the q-values predicted by the model at the given current observation.
 
         :param session: the session of tensorflow currently running
-        :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: the action predicted by the model
+        :param observation_current: the current observation of the agent in the environment to base prediction upon, wrapped in a numpy array
+        :param possible_actions: the optional array used to remove certain actions from the prediction
+        :return: the action chosen by the model
         """
-        # Return the predicted action given the current observation
-        return numpy.argmax(self.get_all_action_values(session, observation_current, mask))
+        # Return the action maximizing the predicted q-values given the current observation
+        return numpy.argmax(self.get_q_values(session, observation_current, possible_actions), axis=1)
 
-    def get_best_action_and_all_action_values(self,
-                                              session,
-                                              observation_current,
-                                              mask: numpy.ndarray = None):
+    def get_action_with_highest_q_value_and_q_values(self,
+                                                     session,
+                                                     observation_current: numpy.ndarray,
+                                                     possible_actions: numpy.ndarray = None):
         """
-        Get the best action predicted by the model at the given current observation and all the action values according
-        to the model at the given current observation.
+        Get the action with highest q-value from the q-values predicted by the model at the given current observation
+        and all the q-values according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
-        :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
-        :return: the best action predicted by the model and all action values predicted by the model
+        :param observation_current: the current observation of the agent in the environment to base prediction upon, wrapped in a numpy array
+        :param possible_actions: the optional array used to remove certain actions from the prediction
+        :return: the action chosen by the model and all q-values predicted by the model
         """
-        # Get all actions
-        all_actions = self.get_all_action_values(session, observation_current, mask)
-        # Return the best action and all the actions
-        return numpy.argmax(all_actions), all_actions
+        # Get q-values
+        q_values = self.get_q_values(session, observation_current, possible_actions)
+        # Return the highest q-value action and all the q-values
+        return numpy.argmax(q_values, axis=1), q_values
 
-    def copy_weight(self,
-                    session):
+    def copy_weights(self,
+                     session):
         """
         Copy the weights from the main network to the target network.
 
@@ -367,10 +419,18 @@ class DeepExpectedSARSA(Model):
     def update(self,
                session,
                batch: []):
+        """
+        Update the model weights (thus training the model) using a batch of samples. Update is performed using the
+        Expected SARSA Bellman equation to compute the model target q-values.
+
+        :param session: the session of tensorflow currently running
+        :param batch: a batch of samples each one consisting in a tuple of observation current, action, reward, observation next, episode done flag and sample weight
+        :return: the loss and its relative absolute error
+        """
         # Generate a full pass-through mask for each example in the batch
         masks: numpy.ndarray = numpy.zeros((len(batch[0]), *self._agent_action_space_shape), dtype=float)
         # Unpack the batch into numpy arrays
-        observations_current, actions, rewards, observations_next, last_steps, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
+        observations_current, actions, rewards, observations_next, episode_done_flags, weights = batch[0], batch[1], batch[2], batch[3], batch[4], batch[5]
         # Define the input observations to the model (to support both space types)
         observations_current_input = observations_current
         observations_next_input = observations_next
@@ -383,34 +443,37 @@ class DeepExpectedSARSA(Model):
             observations_next_input = observations_next_one_hot
         # Get the q-values from the model at both current observations and next observations
         # Next observation is estimated by the target network
-        q_values_current: numpy.ndarray = session.run(self._main_network_outputs,
-                                                      feed_dict={self._main_network_inputs: observations_current_input, self._main_network_mask: masks})
-        q_values_next: numpy.ndarray = session.run(self._target_network_outputs,
-                                                   feed_dict={self._target_network_inputs: observations_next_input, self._target_network_mask: masks})
+        q_values_current: numpy.ndarray = session.run(self._main_network_q_values_predictions,
+                                                      feed_dict={
+                                                          self._main_network_observations: observations_current_input,
+                                                          self._main_network_mask: masks
+                                                      })
+        q_values_next: numpy.ndarray = session.run(self._target_network_q_values_predictions,
+                                                   feed_dict={
+                                                       self._target_network_observations: observations_next_input,
+                                                       self._target_network_mask: masks
+                                                   })
         # Apply Bellman equation with the Expected SARSA update rule
         for sample_index in range(len(actions)):
             # Extract current sample values
             action = actions[sample_index]
             reward: float = rewards[sample_index]
-            last_step: bool = last_steps[sample_index]
+            episode_done: bool = episode_done_flags[sample_index]
             # Note: only the immediate reward can be assigned at end of the episode, i.e. when next observation is None
-            if last_step:
+            if episode_done:
                 q_values_current[sample_index, action] = reward
             else:
                 q_values_current[sample_index, action] = reward + self.discount_factor * numpy.average(q_values_next[sample_index])
         # Train the model and save the value of the loss and of the absolute error as well as the summary
         _, loss, absolute_error = session.run([self._optimizer, self._loss, self._absolute_error],
                                               feed_dict={
-                                                    self._main_network_inputs: observations_current_input,
-                                                    self._targets: q_values_current,
+                                                    self._main_network_observations: observations_current_input,
+                                                    self._q_values_targets: q_values_current,
                                                     self._loss_weights: weights,
                                                     self._main_network_mask: masks
                                                })
-        # Generate the tensorflow summary
-        summary = tensorflow.Summary()
-        summary.value.add(tag="loss", simple_value=loss)
-        # Return the loss, the absolute error and relative summary
-        return summary, loss, absolute_error
+        # Return the loss and the absolute error
+        return loss, absolute_error
 
     @property
     def warmup_steps(self) -> int:

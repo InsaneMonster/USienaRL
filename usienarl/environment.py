@@ -12,6 +12,7 @@
 
 import enum
 import logging
+import numpy
 
 # Define space types for observation and action spaces definition in the environment
 
@@ -20,14 +21,8 @@ class SpaceType(enum.Enum):
     """
     Space types for environment definition.
 
-    If discrete, each value is one-hot encoded.
-    If continuous, each value can have infinite sub values.
-
-    Usually, the discrete space has greater size than the continuous one (it requires more variables one-hot encoded
-    to properly define each state, while in continuous it is defined by all the values in the state itself).
-
-    Except for the properties and the setup method, all the methods can be used with tensorflow by the mean of its
-    session.
+    If discrete, each value is defined by an integer.
+    If continuous, each value is defined by a vector.
     """
     discrete = 1
     continuous = 2
@@ -35,27 +30,47 @@ class SpaceType(enum.Enum):
 
 class Environment:
     """
-    Base environment abstract class.
+    Base environment abstract class. It is not ready to be used before setup.
 
-    The environment is not created until the setup method is called.
-    The environment template is inspired by the gym environment and as such should be pretty standard in a
-    reinforcement learning research setting.
+    Actions, states, rewards and episode-done flags are all defined in a vectorized way to allow batch parallelization.
+    The parallel amount if set during setup.
 
-    To define your own environment, implement the abstract class in a specific child class.
+    You should always define your own environment, the base class cannot be used as-is.
     """
 
     def __init__(self,
                  name: str):
-        # Define the _name attribute
-        self.name: str = name
+        # Make sure parameters are valid
+        assert(name != "")
+        # Define internal attributes
+        self._name: str = name
+        # Define empty attributes
+        self._parallel: int or None = None
 
     def setup(self,
-              logger: logging.Logger) -> bool:
+              logger: logging.Logger,
+              parallel: int = 1) -> bool:
         """
         Setup the environment.
 
         :param logger: the logger used to print the environment information, warnings and errors
-        :return a boolean flag True if the setup is successful, false otherwise
+        :param parallel: the amount of parallel episodes run by the environment
+        :return: True if the setup is successful, false otherwise
+        """
+        # Make sure parameters are valid
+        assert(parallel > 0)
+        # Set parallel attribute
+        self._parallel = parallel
+        # Generate the environment and check if generation is successful
+        return self._generate(logger)
+
+    def _generate(self,
+                  logger: logging.Logger) -> bool:
+        """
+        Generate the environment.
+
+        :param logger: the logger used to print the environment information, warnings and errors
+        :return: True if the environment generation is successful, false otherwise
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -65,63 +80,51 @@ class Environment:
                    session):
         """
         Initialize the environment.
-        It is called right after tensorflow session generation and before the agent is initialized.
 
         :param logger: the logger used to print the environment information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         """
         # Abstract method, it should be implemented on a child class basis
-        raise NotImplementedError()
-
-    def post_initialize(self,
-                        logger: logging.Logger,
-                        session):
-        """
-        Post-initialize the environment.
-        It is called after both the environment and the agent are initialized.
-
-        :param logger: the logger used to print the environment information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
-        """
         raise NotImplementedError()
 
     def close(self,
               logger: logging.Logger,
               session):
         """
-        Close the environment (e.g. the window of a rendered OpenAI environment).
+        Close the environment (e.g. the window of a rendered OpenAI environment). Usually is not required.
 
         :param logger: the logger used to print the environment information, warnings and errors
-        :param session: the session of tensorflow currently running, if any
+        :param session: the session of tensorflow currently running
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
 
     def reset(self,
               logger: logging.Logger,
-              session):
+              session) -> numpy.ndarray:
         """
         Reset the environment to its default state. Requires the environment to be initialized.
+        This is used when an episode is done to start a new episode.
 
         :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
-        :return: the current state of the environment on its default state
+        :return: the current state of the environment on its default state, wrapped in a numpy array
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
 
     def step(self,
              logger: logging.Logger,
-             action,
-             session):
+             session,
+             action: numpy.ndarray) -> ():
         """
-        Execute a step on the environment with the given action. It returns back all the data describing the transition.
+        Execute a step on the environment with the given action.
         Requires the environment to be initialized.
 
         :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
-        :param action: the action executed on the environment, causing the step and the state change
-        :return: the next state, the reward obtained and a boolean flag indicating whether or not the episode is completed
+        :param action: the action executed on the environment, wrapped in a numpy array
+        :return: the next state, the reward obtained and a boolean flag indicating whether or not the episode is done, all wrapped in numpy arrays wrapped in a tuple
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
@@ -139,57 +142,79 @@ class Environment:
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
 
-    def get_random_action(self,
-                          logger: logging.Logger,
-                          session):
+    def sample_action(self,
+                      logger: logging.Logger,
+                      session) -> numpy.ndarray:
         """
-        Get a random action from the environment.
+        Sample a random action from the environment.
 
         :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
-        :return: a random action of the environment in the shape supported the environment (discrete: an int, continuous: a tuple)
+        :return: a random action of the environment wrapped in a numpy array
+        """
+        # Abstract method, it should be implemented on a child class basis
+        raise NotImplementedError()
+
+    def possible_actions(self,
+                         logger: logging.Logger,
+                         session) -> numpy.ndarray:
+        """
+        Get a numpy array of all actions' indexes possible at the current states of the environment if the action space
+        is discrete.
+        Get a numpy array containing the lower and the upper bounds at the current states of the environment, each
+        wrapped in numpy array with the shape of the  action space.
+
+        :param logger: the logger used to print the environment information, warnings and errors
+        :param session: the session of tensorflow currently running
+        :return: an array of indices containing the possible actions or an array of upper and lower bounds arrays
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()
 
     @property
-    def state_space_type(self):
+    def name(self) -> str:
         """
-        Get the type (according to its SpaceType enum definition) of the state space of the environment.
+        The name of the environment.
+        """
+        return self._name
 
-        :return: the SpaceType describing the state space type of the environment
+    @property
+    def parallel(self) -> int:
+        """
+        The amount of parallelization of the environment.
+        """
+        return self._parallel
+
+    @property
+    def state_space_type(self) -> SpaceType:
+        """
+        The type of the state space of the environment.
         """
         # Abstract property, it should be implemented on a child class basis
         raise NotImplementedError()
 
     @property
-    def state_space_shape(self):
+    def state_space_shape(self) -> ():
         """
-        Get the shape of the state space of the environment.
-
-        :return: the shape of the state space of the environment in the form of a tuple
-        """
-        # Abstract property, it should be implemented on a child class basis
-        raise NotImplementedError()
-
-    @property
-    def action_space_type(self):
-        """
-        Get the type (according to its SpaceType enum definition) of the action space of the environment.
-
-        :return: the SpaceType describing the action space type of the environment
+        The shape of the state space of the environment, wrapped in a tuple.
+        Note: it may differ from the agent's observation space shape.
         """
         # Abstract property, it should be implemented on a child class basis
         raise NotImplementedError()
 
     @property
-    def action_space_shape(self):
+    def action_space_type(self) -> SpaceType:
         """
-        Get the shape of the action space of the environment.
-
-        :return: the shape of the action space of the environment in the form of a tuple
+        The type of the action space of the environment.
         """
         # Abstract property, it should be implemented on a child class basis
         raise NotImplementedError()
 
-
+    @property
+    def action_space_shape(self) -> ():
+        """
+        The shape of the action space of the environment, wrapped in a tuple.
+        Note: it may differ from the agent's action space shape.
+        """
+        # Abstract property, it should be implemented on a child class basis
+        raise NotImplementedError()

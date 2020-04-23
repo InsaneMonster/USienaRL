@@ -15,9 +15,6 @@ from .environment import Environment, SpaceType
 from .interface import Interface
 from .agent import Agent
 from .model import Model
+from .volley import Volley
 from .experiment import Experiment
-
-# Import functions
-
-from .functions import command_line_parse, run_experiment, watch_experiment
 

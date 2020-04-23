@@ -12,6 +12,7 @@
 
 from .vanilla_policy_gradient import VanillaPolicyGradient
 from .proximal_policy_optimization import ProximalPolicyOptimization
+
 from .deep_deterministic_policy_gradient import DeepDeterministicPolicyGradient
 
 from .tabular_q_learning import TabularQLearning

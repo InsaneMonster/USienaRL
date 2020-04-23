@@ -13,11 +13,12 @@
 import logging
 import numpy
 import random
+import tensorflow
 
 # Import usienarl
 
 from usienarl import Agent, Interface, SpaceType
-from usienarl.td_models import DeepSARSA
+from usienarl.models import DeepSARSA
 
 
 class DeepSARSAAgentEpsilonGreedy(Agent):
@@ -42,23 +43,26 @@ class DeepSARSAAgentEpsilonGreedy(Agent):
     def __init__(self,
                  name: str,
                  model: DeepSARSA,
-                 weight_copy_step_interval: int,
-                 batch_size: int = 1,
+                 summary_save_every_steps: int = 500,
+                 weight_copy_every_steps: int = 100,
+                 batch_size: int = 64,
                  exploration_rate_max: float = 1.0, exploration_rate_min: float = 0.001,
                  exploration_rate_decay: float = 0.001):
-        # Define agent attributes
+        # Define internal attributes
         self._model: DeepSARSA = model
         self._exploration_rate_max: float = exploration_rate_max
         self._exploration_rate_min: float = exploration_rate_min
         self._exploration_rate_decay: float = exploration_rate_decay
-        # Define internal agent attributes
-        self._weight_copy_step_interval: int = weight_copy_step_interval
+        self._summary_save_every_steps: int = summary_save_every_steps
+        self._weight_copy_every_steps: int = weight_copy_every_steps
         self._batch_size: int = batch_size
-        self._current_absolute_errors = None
-        self._current_loss = None
+        # Define empty attributes
+        self._last_training_step: int = 0
+        self._last_summary_save_step: int = 0
+        self._last_weight_copy_step: int = 0
         self._next_warmup_action = None
         self._next_train_action = None
-        self._exploration_rate: float = None
+        self._exploration_rate: float or None = None
         # Generate base agent
         super(DeepSARSAAgentEpsilonGreedy, self).__init__(name)
 
@@ -68,15 +72,17 @@ class DeepSARSAAgentEpsilonGreedy(Agent):
                   agent_action_space_type: SpaceType, agent_action_space_shape) -> bool:
         # Generate the model and return a flag stating if generation was successful
         return self._model.generate(logger, self._scope + "/" + self._name,
+                                    self._parallel,
                                     observation_space_type, observation_space_shape,
                                     agent_action_space_type, agent_action_space_shape)
 
     def initialize(self,
                    logger: logging.Logger,
                    session):
-        # Reset internal agent attributes
-        self._current_absolute_errors = None
-        self._current_loss = None
+        # Reset internal attributes
+        self._last_training_step = 0
+        self._last_summary_save_step = 0
+        self._last_weight_copy_step = 0
         self._next_warmup_action = None
         self._next_train_action = None
         # Initialize the model
@@ -84,17 +90,18 @@ class DeepSARSAAgentEpsilonGreedy(Agent):
         # Reset exploration rate to its starting value (the max)
         self._exploration_rate = self._exploration_rate_max
         # Run the weight copy operation to uniform main and target networks
-        self._model.copy_weight(session)
+        self._model.copy_weights(session)
 
     def act_warmup(self,
                    logger: logging.Logger,
                    session,
                    interface: Interface,
-                   agent_observation_current):
+                   agent_observation_current: numpy.ndarray,
+                   warmup_step: int, warmup_episode: int):
         # Act randomly or with the already chosen random action, if any
-        action = self._next_warmup_action
-        if self._next_warmup_action is None:
-            action = interface.get_random_agent_action(logger, session)
+        action = self._next_warmup_action.copy() if self._next_warmup_action is not None else None
+        if action is None:
+            action = interface.sample_agent_action(logger, session)
         # Return the random action
         return action
 
@@ -102,15 +109,18 @@ class DeepSARSAAgentEpsilonGreedy(Agent):
                   logger: logging.Logger,
                   session,
                   interface: Interface,
-                  agent_observation_current):
+                  agent_observation_current: numpy.ndarray,
+                  train_step: int, train_episode: int):
         # Get the best action predicted by the model or use the already predicted action, if any
-        action = self._next_train_action
-        if self._next_train_action is None:
+        action = self._next_train_action.copy() if self._next_train_action is not None else None
+        if action is None:
             # Choose an action according to the epsilon greedy approach: best action predicted by the model or random action
-            if self._exploration_rate > 0 and random.uniform(0, 1.0) < self._exploration_rate:
-                action = interface.get_random_agent_action(logger, session)
-            else:
-                action = self._model.get_best_action(session, agent_observation_current)
+            action: numpy.ndarray = self._model.get_action_with_highest_q_value(session, agent_observation_current, interface.possible_agent_actions(logger, session))
+            if self._exploration_rate > 0:
+                random_action: numpy.ndarray = interface.sample_agent_action(logger, session)
+                for i in range(self._parallel):
+                    if random.uniform(0, 1.0) < self._exploration_rate:
+                        action[i] = random_action[i]
         # Return the exploration action
         return action
 
@@ -118,93 +128,102 @@ class DeepSARSAAgentEpsilonGreedy(Agent):
                       logger: logging.Logger,
                       session,
                       interface: Interface,
-                      agent_observation_current):
+                      agent_observation_current,
+                      inference_step: int, inference_episode: int):
         # Act with the best policy according to the model
-        action = self._model.get_best_action(session, agent_observation_current)
-        # Return the predicted action
-        return action
+        return self._model.get_action_with_highest_q_value(session, agent_observation_current, interface.possible_agent_actions(logger, session))
 
     def complete_step_warmup(self,
                              logger: logging.Logger,
                              session,
                              interface: Interface,
-                             agent_observation_current,
-                             agent_action, reward: float,
-                             agent_observation_next,
-                             warmup_step_current: int,
-                             warmup_episode_current: int,
-                             warmup_steps_volley: int):
-        # Adjust the next observation if None (final step)
-        last_step: bool = False
-        if agent_observation_next is None:
-            last_step = True
-            if self._observation_space_type == SpaceType.discrete:
-                agent_observation_next = 0
-            else:
-                agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
+                             agent_observation_current: numpy.ndarray,
+                             agent_action: numpy.ndarray,
+                             reward: numpy.ndarray,
+                             episode_done: numpy.ndarray,
+                             agent_observation_next: numpy.ndarray,
+                             warmup_step: int, warmup_episode: int):
+        # Adjust the next observation if the episode is done
+        if self._observation_space_type == SpaceType.discrete:
+            agent_observation_next[episode_done] = 0
+        else:
+            agent_observation_next[episode_done] = numpy.zeros(self._observation_space_shape, dtype=float)
         # Choose randomly the next action
-        self._next_warmup_action = interface.get_random_agent_action(logger, session)
+        self._next_warmup_action = interface.sample_agent_action(logger, session)
         # Save the current step in the buffer
-        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, self._next_warmup_action, last_step)
+        self._model.buffer.store(agent_observation_current.copy(), agent_action.copy(), reward.copy(), agent_observation_next.copy(), self._next_warmup_action.copy(), episode_done.copy())
 
     def complete_step_train(self,
                             logger: logging.Logger,
                             session,
                             interface: Interface,
-                            agent_observation_current,
-                            agent_action,
-                            reward: float,
-                            agent_observation_next,
-                            train_step_current: int, train_step_absolute: int,
-                            train_episode_current: int, train_episode_absolute: int,
-                            train_episode_volley: int, train_episode_total: int):
-        # Adjust the next observation if None (final step)
-        last_step: bool = False
-        if agent_observation_next is None:
-            last_step = True
-            if self._observation_space_type == SpaceType.discrete:
-                agent_observation_next = 0
-            else:
-                agent_observation_next = numpy.zeros(self._observation_space_shape, dtype=float)
-        # After each weight step interval update the target network weights with the main network weights
-        if (train_step_absolute % self._weight_copy_step_interval) == 0 and train_episode_absolute > 0:
-            logger.info("Copying weights from main network to target network at step " + str(train_step_absolute))
-            self._model.copy_weight(session)
-        # Choose an action according to the epsilon greedy approach: best action predicted by the model or random action
-        if self._exploration_rate > 0 and random.uniform(0, 1.0) < self._exploration_rate:
-            self._next_train_action = interface.get_random_agent_action(logger, session)
+                            agent_observation_current: numpy.ndarray,
+                            agent_action: numpy.ndarray,
+                            reward: numpy.ndarray,
+                            episode_done: numpy.ndarray,
+                            agent_observation_next: numpy.ndarray,
+                            train_step: int, train_episode: int):
+        # Adjust the next observation if the episode is done
+        if self._observation_space_type == SpaceType.discrete:
+            agent_observation_next[episode_done] = 0
         else:
-            self._next_train_action = self._model.get_best_action(session, agent_observation_current)
+            agent_observation_next[episode_done] = numpy.zeros(self._observation_space_shape, dtype=float)
+        # Choose an action according to the epsilon greedy approach: best action predicted by the model or random action
+        action: numpy.ndarray = self._model.get_action_with_highest_q_value(session, agent_observation_current, interface.possible_agent_actions(logger, session))
+        if self._exploration_rate > 0:
+            random_action: numpy.ndarray = interface.sample_agent_action(logger, session)
+            for i in range(self._parallel):
+                if random.uniform(0, 1.0) < self._exploration_rate:
+                    action[i] = random_action[i]
+        # Set the next train action
+        self._next_train_action = action.copy()
         # Save the current step in the buffer
-        self._model.buffer.store(agent_observation_current, agent_action, reward, agent_observation_next, self._next_train_action, last_step)
-        # Update the model and save current loss and absolute errors
-        summary, self._current_loss, self._current_absolute_errors = self._model.update(session, self._model.buffer.get(self._batch_size))
-        # Update the buffer with the computed absolute error
-        self._model.buffer.update(self._current_absolute_errors)
-        # Update the summary at the absolute current step
-        self._summary_writer.add_summary(summary, train_step_absolute)
+        self._model.buffer.store(agent_observation_current.copy(), agent_action.copy(), reward.copy(),
+                                 agent_observation_next.copy(), self._next_train_action.copy(), episode_done.copy())
+        # Get the number of steps actually done in the environment according to parallelization
+        for step in range(self._last_training_step, train_step):
+            # After each weight step interval update the target network weights with the main network weights
+            if step - self._last_weight_copy_step >= self._weight_copy_every_steps:
+                self._model.copy_weights(session)
+                # Update last weight copy step
+                self._last_weight_copy_step = step
+            # Update the model and get current loss and absolute errors
+            loss, absolute_errors = self._model.update(session, self._model.buffer.get(self._batch_size))
+            # Update the buffer with absolute error
+            self._model.buffer.update(absolute_errors)
+            # Save the summary at the current step if it is the appropriate time and if required
+            if self._summary_writer is not None:
+                if step - self._last_summary_save_step >= self._summary_save_every_steps:
+                    # Generate the tensorflow summary on the loss and add it to the writer
+                    summary = tensorflow.Summary()
+                    summary.value.add(tag="loss", simple_value=loss)
+                    self._summary_writer.add_summary(summary, step)
+                    # Update last summary save step
+                    self._last_summary_save_step = step
+        # Update last training step
+        self._last_training_step = train_step
 
     def complete_step_inference(self,
                                 logger: logging.Logger,
                                 session,
                                 interface: Interface,
-                                agent_observation_current,
-                                agent_action,
-                                reward: float,
-                                agent_observation_next,
-                                inference_step_current: int,
-                                inference_episode_current: int,
-                                inference_episode_volley: int):
+                                agent_observation_current: numpy.ndarray,
+                                agent_action: numpy.ndarray,
+                                reward: numpy.ndarray,
+                                episode_done: numpy.ndarray,
+                                agent_observation_next: numpy.ndarray,
+                                inference_step: int, inference_episode: int):
         pass
 
     def complete_episode_warmup(self,
                                 logger: logging.Logger,
                                 session,
                                 interface: Interface,
-                                last_step_reward: float,
-                                episode_total_reward: float,
-                                warmup_episode_current: int,
-                                warmup_steps_volley: int):
+                                last_step_reward: numpy.ndarray,
+                                episode_total_reward: numpy.ndarray,
+                                warmup_step: int, warmup_episode: int):
+        # Update the buffer at the end of trajectory
+        self._model.buffer.finish_trajectory()
         # Reset predicted next warmup action
         self._next_warmup_action = None
 
@@ -212,11 +231,11 @@ class DeepSARSAAgentEpsilonGreedy(Agent):
                                logger: logging.Logger,
                                session,
                                interface: Interface,
-                               last_step_reward: float,
-                               episode_total_reward: float,
-                               train_step_absolute: int,
-                               train_episode_current: int, train_episode_absolute: int,
-                               train_episode_volley: int, train_episode_total: int):
+                               last_step_reward: numpy.ndarray,
+                               episode_total_reward: numpy.ndarray,
+                               train_step: int, train_episode: int):
+        # Update the buffer at the end of trajectory
+        self._model.buffer.finish_trajectory()
         # Reset predicted next train action
         self._next_train_action = None
         # Decrease the exploration rate by its decay value
@@ -226,15 +245,14 @@ class DeepSARSAAgentEpsilonGreedy(Agent):
                                    logger: logging.Logger,
                                    session,
                                    interface: Interface,
-                                   last_step_reward: float,
-                                   episode_total_reward: float,
-                                   inference_episode_current: int,
-                                   inference_episode_volley: int):
+                                   last_step_reward: numpy.ndarray,
+                                   episode_total_reward: numpy.ndarray,
+                                   inference_step: int, inference_episode: int):
         pass
 
     @property
-    def trainable_variables(self):
-        # Return the trainable variables of the agent model in experiment/agent _scope
+    def saved_variables(self):
+        # Return the trainable variables of the agent model in experiment/agent scope
         return self._model.trainable_variables
 
     @property

@@ -4,6 +4,7 @@ import tensorflow
 import numpy
 import scipy.signal
 import random
+import math
 
 # Import required src
 
@@ -16,107 +17,139 @@ class Buffer:
     A buffer for storing trajectories experienced by a VPG agent interacting with the environment,
     and using Generalized Advantage Estimation (GAE-Lambda) for calculating the advantages of state-action pairs.
 
-    The buffer is dynamically resizable.
+    The buffer is dynamically resizable and each sample stored is a numpy array of parallel samples.
 
-    The buffer contains list of states (or observations), actions (used as targets), values (computed by the value stream
-    of the _model itself during prediction), advantages (computed by the buffer using GAE when a trajectory finishes and
-    fed back up in the policy stream to drive the loss), rewards (used to compute rewards-to-go) and rewards-to-go
-    (computed inside the buffer itself and used as weight for the targets action when training the value stream).
+    The buffer contains list of observations, actions, rewards, episode done flags, values (computed by the value stream
+    of the model itself during prediction).
+    When the buffer is emptied, the buffer also computes and returns advantages (using GAE) and rewards-to-go.
     """
 
     def __init__(self,
+                 parallel_amount: int,
                  discount_factor: float, lambda_parameter: float):
         # Define buffer components
         self._observations: [] = []
         self._actions: [] = []
-        self._advantages: [] = []
         self._rewards: [] = []
-        self._rewards_to_go: [] = []
         self._values: [] = []
+        self._last_step_rewards: [] = []
         # Define parameters
         self._discount_factor: float = discount_factor
         self._lambda_parameter: float = lambda_parameter
-        # Define buffer pointer
-        self._pointer: int = 0
-        self._path_start_index: int = 0
+        self._parallel_amount: int = parallel_amount
+        # Define buffer pointer attributes
+        self._end_trajectories_pointers: [] = []
+        self._pointer: numpy.ndarray = numpy.zeros(self._parallel_amount, dtype=int)
+        self._episode_done_previous_step: numpy.ndarray = numpy.zeros(self._parallel_amount, dtype=bool)
 
     def store(self,
-              observation, action, reward: float, value: float):
+              observation: numpy.ndarray,
+              action: numpy.ndarray,
+              reward: numpy.ndarray,
+              episode_done: numpy.ndarray,
+              value: numpy.ndarray):
         """
-        Store the time-step in the buffer.
+        Store the time-step in the buffer, taking care of the parallelization of the environment.
 
-        :param observation: the current observation to store in the buffer
-        :param action: the last action to store in the buffer
-        :param reward: the reward obtained from the action at the current state to store in the buffer
-        :param value: the value of the state as estimated by the value stream of the model to store in the buffer
+        :param observation: the current observation to store in the buffer wrapped in a numpy array
+        :param action: the last action to store in the buffer wrapped in a numpy array
+        :param reward: the reward obtained from the action at the current state to store in the buffer wrapped in a numpy array
+        :param episode_done: the flag defining the end of the episode at the current state to store in the buffer wrapped in a numpy array
+        :param value: the value of the state as estimated by the value stream of the model to store in the buffer wrapped in a numpy array
         """
         # Append all data and increase the pointer
         self._observations.append(observation)
         self._actions.append(action)
         self._rewards.append(reward)
         self._values.append(value)
-        self._pointer += 1
+        # Update pointer by adding one where the episode is not already finished
+        self._pointer = numpy.where(numpy.logical_not(self._episode_done_previous_step), self._pointer + 1, self._pointer)
+        # Update the stored episode done flags
+        self._episode_done_previous_step = episode_done.copy()
 
     def get(self) -> []:
         """
-        Get all of the data from the buffer, with advantages appropriately normalized (shifted to have mean zero and
-        standard deviation equals to one). Also reset pointers in the buffer and the lists composing the buffer.
+        Get all of the data from the buffer, serializing all the parallel data.
+        Also reset pointers in the buffer and the lists composing the buffer.
 
-        :return a list containing the ndarrays of: states, actions, advantages, rewards-to-go
+        :return a list containing the numpy arrays of: observations, actions, advantages, rewards-to-go
         """
-        # Get a numpy array on the advantage list
-        advantages_array: numpy.ndarray = numpy.array(self._advantages)
+        # Generate numpy arrays out of the buffer
+        observations_array: numpy.ndarray = numpy.stack(numpy.array(self._observations))
+        actions_array: numpy.ndarray = numpy.stack(numpy.array(self._actions))
+        # Prepare serialized list of all data in the buffer
+        serialized_observations: [] = []
+        serialized_actions: [] = []
+        advantages: [] = []
+        rewards_to_go: [] = []
+        trajectory_start_pointer: numpy.ndarray = numpy.zeros(self._parallel_amount, dtype=int)
+        for trajectory_index in range(len(self._end_trajectories_pointers)):
+            pointer: numpy.ndarray = self._end_trajectories_pointers[trajectory_index]
+            last_step_reward: numpy.ndarray = self._last_step_rewards[trajectory_index]
+            for i in range(self._parallel_amount):
+                # Get the trajectory slice for the current parallel episode
+                trajectory_slice = slice(trajectory_start_pointer[i], pointer[i])
+                # Compute rewards and values by appending the last step reward
+                rewards: numpy.ndarray = numpy.array(numpy.array(self._rewards)[trajectory_slice, i].tolist() + [last_step_reward[i]])
+                values: numpy.ndarray = numpy.array(numpy.array(self._values)[trajectory_slice, i].tolist() + [last_step_reward[i]])
+                # Compute GAE-Lambda advantage estimation (compute advantages using the values in the buffer taken from the model)
+                deltas: numpy.ndarray = rewards[:-1] + self._discount_factor * values[1:] - values[:-1]
+                advantages += self._discount_cumulative_sum(deltas, self._discount_factor * self._lambda_parameter).tolist()
+                # Compute rewards-to-go
+                rewards_to_go += (self._discount_cumulative_sum(rewards, self._discount_factor)[:-1]).tolist()
+                # Get the observations, actions and log likelihoods of the trajectory
+                observations_trajectory: numpy.ndarray = observations_array[trajectory_slice]
+                actions_trajectory: numpy.ndarray = actions_array[trajectory_slice]
+                # Serialize all observations, actions and log likelihoods for all parallel episodes
+                serialized_observations += observations_trajectory[:, i].tolist()
+                serialized_actions += actions_trajectory[:, i].tolist()
+            trajectory_start_pointer = pointer.copy()
+        # Get the numpy arrays out of all serialized data (plus advantages and rewards to go, already serialized)
+        observations_array = numpy.array(serialized_observations)
+        actions_array = numpy.array(serialized_actions)
+        rewards_to_go_array: numpy.ndarray = numpy.array(rewards_to_go)
+        advantages_array: numpy.ndarray = numpy.array(advantages)
         # Execute the advantage normalization trick
         # Note: make sure mean and std are not zero!
-        global_sum: float = numpy.sum(advantages_array)
-        advantage_mean: float = global_sum / advantages_array.size + 1e-8
-        global_sum_squared: float = numpy.sum((advantages_array - advantage_mean) ** 2) + 1e-8
+        advantage_mean: float = float(numpy.mean(advantages_array)) + 1e-8
+        global_sum_squared: float = float(numpy.sum((advantages_array - advantage_mean) ** 2)) + 1e-8
         advantage_std: float = numpy.sqrt(global_sum_squared / advantages_array.size) + 1e-8
         # Adjust advantages according to the trick
         advantages_array = ((advantages_array - advantage_mean) / advantage_std)
-        # Save the necessary values as numpy arrays before reset
-        states_array: numpy.ndarray = numpy.array(self._observations)
-        actions_array: numpy.ndarray = numpy.array(self._actions)
-        rewards_to_go_array: numpy.ndarray = numpy.array(self._rewards_to_go)
-        # Reset the buffer and related pointers
-        self._pointer = 0
-        self._path_start_index = 0
+        # Reset the buffer
         self._observations = []
         self._actions = []
-        self._advantages = []
         self._rewards = []
-        self._rewards_to_go = []
         self._values = []
+        self._last_step_rewards = []
+        # Reset pointer
+        self._pointer: numpy.ndarray = numpy.zeros(self._parallel_amount, dtype=int)
+        self._end_trajectories_pointers: [] = []
         # Return all the buffer components
-        return [states_array, actions_array, advantages_array, rewards_to_go_array]
+        return [observations_array, actions_array, advantages_array, rewards_to_go_array]
 
-    def finish_path(self,
-                    value: float = 0):
+    def finish_trajectory(self,
+                          last_step_reward: numpy.ndarray):
         """
-        Finish the path at the end of a trajectory. This looks back in the buffer to where the trajectory started,
-        and uses rewards and value estimates from the whole trajectory to compute advantage estimates with GAE-Lambda,
-        as well as compute the rewards-to-go for each state, to use as the targets for the value stream optimization.
+        Finish the trajectory storing all pointers data related to each parallel episode and resetting flags.
 
-        :param value: the last reward given by the environment or the last predicted value if last state is not terminal
+        :param last_step_reward: the last reward given by the environment or the last predicted value if last state is not terminal
         """
-        path_slice = slice(self._path_start_index, self._pointer)
-        rewards: numpy.ndarray = numpy.array(self._rewards[path_slice] + [value])
-        values: numpy.ndarray = numpy.array(self._values[path_slice] + [value])
-        # Compute GAE-Lambda advantage estimation (compute advantages using the value in the buffer taken from the model)
-        deltas: numpy.ndarray = rewards[:-1] + self._discount_factor * values[1:] - values[:-1]
-        self._advantages[path_slice] = self._discount_cumulative_sum(deltas, self._discount_factor * self._lambda_parameter).tolist()
-        # Compute rewards-to-go
-        self._rewards_to_go[path_slice] = (self._discount_cumulative_sum(rewards, self._discount_factor)[:-1]).tolist()
-        self._path_start_index = self._pointer
+        # Add the last step rewards
+        self._last_step_rewards.append(last_step_reward)
+        # Save the current pointer as a trajectory end pointer
+        self._end_trajectories_pointers.append(self._pointer.copy())
+        # Since the episode is done reset flags for previous step
+        self._episode_done_previous_step: numpy.ndarray = numpy.zeros(self._parallel_amount, dtype=bool)
 
     @property
     def size(self) -> int:
         """
         The size of the buffer at the current time (it is dynamic).
 
-        :return: the integer size of the buffer.
+        :return: the integer size of the buffer
         """
-        return self._pointer
+        return int(numpy.sum(self._pointer))
 
     @staticmethod
     def _discount_cumulative_sum(vector: numpy.ndarray, discount: float) -> numpy.ndarray:
@@ -135,7 +168,7 @@ class VanillaPolicyGradient(Model):
     Vanilla Policy Gradient with GAE (Generalized Advantage Estimation) buffer.
     The algorithm is on-policy and executes updates every a certain number of episodes. It is an actor-critic model.
     The model is constituted by two streams, the policy stream (the actor part of the model) adn the value stream (the
-    critic part of the model).
+    critic part of the model). Hidden layers can be defined separately for each stream.
     The first stream computes and optimizes the policy loss. To drive the policy loss the advantages for each
     observation in the batch is required to be estimated. They are estimated by the buffer using GAE.
     The second stream computes the values of the current observations of the states and optimizes such estimation.
@@ -145,9 +178,10 @@ class VanillaPolicyGradient(Model):
     The buffer stores all the trajectories up to the update point. Since each episode can contains different numbers of
     steps, the buffer is dynamically resizable. When updated, the entire buffer is taken as batch and the buffer is
     cleared. This is necessary since to update the policy only trajectories collected using the current policy can be
-    used. To stabilize learning and avoid overfitting, each update is done using minibatches.
+    used. To stabilize learning and avoid overfitting, each update is done using minibatches. Usually actor and critic
+    network are set to have the same structure.
 
-    This algorithm is very likely to converge to local minimum.
+    This algorithm is very likely to converge to local minimum and tends to be very unstable.
 
     Supported observation spaces:
         - discrete
@@ -160,7 +194,7 @@ class VanillaPolicyGradient(Model):
 
     def __init__(self,
                  name: str,
-                 hidden_layers_config: Config,
+                 actor_hidden_layers_config: Config, critic_hidden_layers_config: Config,
                  discount_factor: float = 0.99,
                  learning_rate_policy: float = 3e-4, learning_rate_value: float = 1e-3,
                  value_update_epochs: int = 80,
@@ -171,12 +205,13 @@ class VanillaPolicyGradient(Model):
         self.learning_rate_value: float = learning_rate_value
         self.discount_factor: float = discount_factor
         # Define internal model attributes
-        self._hidden_layers_config: Config = hidden_layers_config
+        self._actor_hidden_layers_config: Config = actor_hidden_layers_config
+        self._critic_hidden_layers_config: Config = critic_hidden_layers_config
         self._value_update_epochs: int = value_update_epochs
         self._minibatch_size: int = minibatch_size
         self._lambda_parameter: float = lambda_parameter
         # Define vanilla policy gradient empty attributes
-        self.buffer: Buffer = None
+        self.buffer: Buffer or None = None
         # Define internal vanilla policy gradient empty attributes
         self._observations = None
         self._actions = None
@@ -186,6 +221,8 @@ class VanillaPolicyGradient(Model):
         self._mask = None
         self._logits = None
         self._masked_logits = None
+        self._lower_bound = None
+        self._upper_bound = None
         self._expected_value = None
         self._std = None
         self._log_std = None
@@ -207,12 +244,13 @@ class VanillaPolicyGradient(Model):
 
     def _define_graph(self):
         # Set the GAE buffer for the vanilla policy gradient algorithm
-        self.buffer: Buffer = Buffer(self.discount_factor, self._lambda_parameter)
+        self.buffer: Buffer = Buffer(self._parallel, self.discount_factor, self._lambda_parameter)
         # Define the tensorflow model
-        with tensorflow.variable_scope(self._scope + "/" + self._name):
+        full_scope: str = self._scope + "/" + self._name
+        with tensorflow.variable_scope(full_scope):
             # Define observations placeholder as an adaptable vector with shape Nx(O) where N is the number of examples and (O) the shape of the observation space
             # Note: it is the input of the model
-            self._observations = tensorflow.placeholder(shape=[None, *self._observation_space_shape], dtype=tensorflow.float32, name="observations")
+            self._observations = tensorflow.placeholder(shape=(None, *self._observation_space_shape), dtype=tensorflow.float32, name="observations")
             # Define the actions placeholder as an adaptable vector with shape Nx(A) where N is the number of examples and (A) the shape of the action space
             self._actions = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="targets")
             # Define the rewards placeholder as an adaptable vector of floats (they are actually rewards-to-go computed in the buffer)
@@ -225,7 +263,7 @@ class VanillaPolicyGradient(Model):
             # Note: this define the actor part of the model and its proper output (the predicted actions)
             with tensorflow.variable_scope("policy_stream"):
                 # Define the policy stream network hidden layers from the config
-                policy_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._observations)
+                policy_stream_hidden_layers_output = self._actor_hidden_layers_config.apply_hidden_layers(self._observations)
                 # Change the model definition according to its action space type
                 if self._agent_action_space_type == SpaceType.discrete:
                     # Define the mask placeholder
@@ -240,13 +278,16 @@ class VanillaPolicyGradient(Model):
                     self._log_likelihood_actions, _ = self.get_categorical_log_likelihood(self._actions, self._logits, name="log_likelihood_actions")
                     self._log_likelihood_predictions, _ = self.get_categorical_log_likelihood(tensorflow.one_hot(self._actions_predicted, depth=self._agent_action_space_shape[0]), self._logits, name="log_likelihood_predictions")
                 else:
+                    # Define the boundaries placeholders to clip the actions
+                    self._lower_bound = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="lower_bound")
+                    self._upper_bound = tensorflow.placeholder(shape=(None, *self._agent_action_space_shape), dtype=tensorflow.float32, name="upper_bound")
                     # Define the expected value as the output of the deep neural network with shape Nx(A) where N is the number of inputs, (A) is the action shape when its type is continuous
                     self._expected_value = tensorflow.layers.dense(policy_stream_hidden_layers_output, *self._agent_action_space_shape, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="expected_value")
                     # Define the log standard deviation and the standard deviation itself
                     self._log_std = tensorflow.get_variable(name="log_std", initializer=-0.5*numpy.ones(*self._agent_action_space_shape, dtype=numpy.float32))
                     self._std = tensorflow.exp(self._log_std, name="std")
-                    # Define actions as the expected value summed up with a random gaussian vector multiplied by the standard deviation
-                    self._actions_predicted = self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std
+                    # Define actions as the expected value summed up with a random gaussian vector multiplied by the standard deviation, clipped appropriately
+                    self._actions_predicted = tensorflow.clip_by_value(self._expected_value + tensorflow.random_normal(tensorflow.shape(self._expected_value)) * self._std, self._lower_bound, self._upper_bound)
                     # Define the log likelihood according to the gaussian distribution on actions given and actions predicted
                     self._log_likelihood_actions = self.get_gaussian_log_likelihood(self._actions, self._expected_value, self._log_std, name="log_likelihood_actions")
                     self._log_likelihood_predictions = self.get_gaussian_log_likelihood(self._actions_predicted, self._expected_value, self._log_std, name="log_likelihood_predictions")
@@ -258,7 +299,7 @@ class VanillaPolicyGradient(Model):
             # Note: this is the critic part of the model and the system making the reward differentiable (the value computation)
             with tensorflow.variable_scope("value_stream"):
                 # Define the value stream network hidden layers from the config and its output (a single float value)
-                value_stream_hidden_layers_output = self._hidden_layers_config.apply_hidden_layers(self._observations)
+                value_stream_hidden_layers_output = self._critic_hidden_layers_config.apply_hidden_layers(self._observations)
                 value_stream_output = tensorflow.layers.dense(value_stream_hidden_layers_output, 1, activation=None, kernel_initializer=tensorflow.contrib.layers.xavier_initializer(), name="value")
                 # Define value by squeezing the output of the value stream
                 self._value_predicted = tensorflow.squeeze(value_stream_output, axis=1, name="value_predicted")
@@ -269,92 +310,111 @@ class VanillaPolicyGradient(Model):
             # Define approximated entropy for the logger
             self._approximated_entropy = tensorflow.reduce_mean(-self._log_likelihood_actions, name="approximated_entropy")
             # Define the initializer
-            self._initializer = tensorflow.global_variables_initializer()
+            self._initializer = tensorflow.variables_initializer(tensorflow.get_collection(tensorflow.GraphKeys.GLOBAL_VARIABLES, full_scope), name="initializer")
 
     def sample_action(self,
                       session,
-                      observation_current,
-                      mask: numpy.ndarray = None):
+                      observation_current: numpy.ndarray,
+                      possible_actions: numpy.ndarray = None):
         """
         Get the action sampled from the probability distribution of the model given the current observation and an optional mask.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :param possible_actions: the optional list used to remove certain actions from the prediction (with discrete action space) or to bound the actions predicted (with continuous action space)
         :return: the action predicted by the model, with the value estimated at the current state and the relative log-likelihood of the sampled action
         """
-        # If there is no mask and the action space type is discrete generate a full pass-through mask
-        if mask is None and self._agent_action_space_type == SpaceType.discrete:
-            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Return a random action sample given the current state and depending on the observation space type and also compute value estimate and log-likelihood
+        # Generate a one-hot encoded version of the observation if observation space type is discrete
         if self._observation_space_type == SpaceType.discrete:
-            # Generate a one-hot encoded version of the observation if observation space type is discrete
-            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-            if self._agent_action_space_type == SpaceType.discrete:
-                action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
-                                                            feed_dict={self._observations: [observation_current_one_hot], self._mask: [mask]})
+            observation_current: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observation_current.reshape(-1)]
+        # Compute with respect of the action space shape
+        if self._agent_action_space_type == SpaceType.discrete:
+            # If there is no possible actions list and the action space type is discrete generate a full pass-through mask otherwise generate a mask upon it
+            if possible_actions is None:
+                mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
-                action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
-                                                            feed_dict={self._observations: [observation_current_one_hot]})
+                mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+                mask[:, possible_actions] = 0.0
+            # Get action, value and log-likelihood with discrete action space shape
+            action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
+                                                        feed_dict={
+                                                            self._observations: observation_current,
+                                                            self._mask: mask
+                                                        })
         else:
-            if self._agent_action_space_type == SpaceType.discrete:
-                action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
-                                                            feed_dict={self._observations: [observation_current], self._mask: [mask]})
+            # If there is no possible action list and the action space type is continuous generate an unbounded range, otherwise use the given range
+            if possible_actions is None:
+                lower_bound: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+                upper_bound: numpy.ndarray = math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
-                action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
-                                                            feed_dict={self._observations: [observation_current]})
+                lower_bound: numpy.ndarray = possible_actions[:, 0]
+                upper_bound: numpy.ndarray = possible_actions[:, 1]
+            # Get action, value and log-likelihood with continuous action space shape
+            action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
+                                                        feed_dict={
+                                                            self._observations: observation_current,
+                                                            self._lower_bound: lower_bound,
+                                                            self._upper_bound: upper_bound
+                                                        })
         # Return the predicted action, the estimated value and the log-likelihood
-        return action[0], value[0], log_likelihood[0]
+        return action, value, log_likelihood
 
     def get_value_and_log_likelihood(self,
                                      session,
-                                     action,
-                                     observation_current,
-                                     mask: numpy.ndarray = None):
+                                     action: numpy.ndarray,
+                                     observation_current: numpy.ndarray,
+                                     possible_actions: numpy.ndarray = None):
         """
         Get the estimated value of the given current observation and the log-likelihood of the given action.
 
         :param session: the session of tensorflow currently running
         :param action: the action of which to compute the log-likelihood
         :param observation_current: the current observation of the agent in the environment to estimate the value
-        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :param possible_actions: the optional list used to remove certain actions from the prediction (with discrete action space) or to bound the actions predicted (with continuous action space)
         :return: the value estimated at the current state and the log-likelihood of the given action
         """
-        # If there is no mask and the action space type is discrete generate a full pass-through mask
-        if mask is None and self._agent_action_space_type == SpaceType.discrete:
-            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Generate a one-hot encoded version of the action if action space type is discrete
-        if self._agent_action_space_type == SpaceType.discrete:
-            action: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(action).reshape(-1)]
-        # Return the estimated value of the given current state and the log-likelihood of the given action
+        # Generate a one-hot encoded version of the observation if observation space type is discrete
         if self._observation_space_type == SpaceType.discrete:
-            # Generate a one-hot encoded version of the observation if observation space type is discrete
-            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-            if self._agent_action_space_type == SpaceType.discrete:
-                value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
-                                                    feed_dict={self._observations: [observation_current_one_hot],
-                                                               self._mask: [mask],
-                                                               self._actions: action})
+            observation_current: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observation_current.reshape(-1)]
+        # Compute with respect of the action space shape
+        if self._agent_action_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the action if action space type is discrete
+            action: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[action.reshape(-1)]
+            # If there is no possible actions list and the action space type is discrete generate a full pass-through mask otherwise generate a mask upon it
+            if possible_actions is None:
+                mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
-                value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
-                                                    feed_dict={self._observations: [observation_current_one_hot],
-                                                               self._actions: action})
+                mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+                mask[:, possible_actions] = 0.0
+            # Get value and log-likelihood with discrete action space shape
+            value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
+                                                feed_dict={
+                                                    self._observations: observation_current,
+                                                    self._mask: mask,
+                                                    self._actions: action
+                                                })
         else:
-            if self._agent_action_space_type == SpaceType.discrete:
-                value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
-                                                    feed_dict={self._observations: [observation_current],
-                                                               self._mask: [mask],
-                                                               self._actions: action})
+            # If there is no possible action list and the action space type is continuous generate an unbounded range, otherwise use the given range
+            if possible_actions is None:
+                lower_bound: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+                upper_bound: numpy.ndarray = math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
-                value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
-                                                    feed_dict={self._observations: [observation_current],
-                                                               self._actions: action})
-        # Return the estimated value and the log-likelihood
-        return value[0], log_likelihood[0]
+                lower_bound: numpy.ndarray = possible_actions[:, 0]
+                upper_bound: numpy.ndarray = possible_actions[:, 1]
+            # Get value and log-likelihood with continuous action space shape
+            value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
+                                                feed_dict={
+                                                    self._observations: observation_current,
+                                                    self._lower_bound: lower_bound,
+                                                    self._upper_bound: upper_bound,
+                                                    self._actions: action
+                                                })
+        # Return the estimated value of the given current state and the log-likelihood of the given action
+        return value, log_likelihood
 
     def get_value(self,
                   session,
-                  observation_current):
+                  observation_current: numpy.ndarray):
         """
         Get the estimated value of the given current observation.
 
@@ -362,108 +422,132 @@ class VanillaPolicyGradient(Model):
         :param observation_current: the current observation of the agent in the environment to estimate the value
         :return: the value estimated at the current state
         """
-        # Return the value predicted by the network at the current state
         if self._observation_space_type == SpaceType.discrete:
             # Generate a one-hot encoded version of the observation if observation space type is discrete
-            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-            value = session.run(self._value_predicted,
-                                feed_dict={self._observations: [observation_current_one_hot]})
-        else:
-            value = session.run(self._value_predicted,
-                                feed_dict={self._observations: [observation_current]})
+            observation_current: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observation_current.reshape(-1)]
+        # Get the value predicted by the network at the current state
+        value = session.run(self._value_predicted,
+                            feed_dict={
+                                self._observations: observation_current
+                            })
         # Return the estimated value
-        return value[0]
+        return value
 
     def get_log_likelihood(self,
                            session,
                            action,
-                           observation_current,
-                           mask: numpy.ndarray = None):
+                           observation_current: numpy.ndarray,
+                           possible_actions: numpy.ndarray = None):
         """
         Get the the log-likelihood of the given action.
 
         :param session: the session of tensorflow currently running
         :param action: the action of which to compute the log-likelihood
         :param observation_current: the current observation of the agent in the environment
-        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :param possible_actions: the optional list used to remove certain actions from the prediction (with discrete action space) or to bound the actions predicted (with continuous action space)
         :return: the log-likelihood of the given action
         """
-        # If there is no mask and the action space type is discrete generate a full pass-through mask
-        if mask is None and self._agent_action_space_type == SpaceType.discrete:
-            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Generate a one-hot encoded version of the action if action space type is discrete
-        if self._agent_action_space_type == SpaceType.discrete:
-            action: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[numpy.array(action).reshape(-1)]
-        # Return log likelihood over the given action with the given current observation and the given mask
+        # Generate a one-hot encoded version of the observation if observation space type is discrete
         if self._observation_space_type == SpaceType.discrete:
-            # Generate a one-hot encoded version of the observation if observation space type is discrete
-            observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[observation_current]
-            if self._agent_action_space_type == SpaceType.discrete:
-                log_likelihood = session.run(self._log_likelihood_actions,
-                                             feed_dict={self._observations: [observation_current_one_hot],
-                                                        self._mask: [mask],
-                                                        self._actions: action})
+            observation_current: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observation_current.reshape(-1)]
+        # Compute with respect of the action space shape
+        if self._agent_action_space_type == SpaceType.discrete:
+            # Generate a one-hot encoded version of the action if action space type is discrete
+            action: numpy.ndarray = numpy.eye(*self._agent_action_space_shape)[action.reshape(-1)]
+            # If there is no possible actions list and the action space type is discrete generate a full pass-through mask otherwise generate a mask upon it
+            if possible_actions is None:
+                mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
-                log_likelihood = session.run(self._log_likelihood_actions,
-                                             feed_dict={self._observations: [observation_current_one_hot],
-                                                        self._actions: action})
+                mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+                mask[:, possible_actions] = 0.0
+            # Get value and log-likelihood with discrete action space shape
+            log_likelihood = session.run(self._log_likelihood_actions,
+                                         feed_dict={
+                                             self._observations: observation_current,
+                                             self._mask: mask,
+                                             self._actions: action
+                                         })
         else:
-            if self._agent_action_space_type == SpaceType.discrete:
-                log_likelihood = session.run(self._log_likelihood_actions,
-                                             feed_dict={self._observations: [observation_current],
-                                                        self._mask: [mask],
-                                                        self._actions: action})
+            # If there is no possible action list and the action space type is continuous generate an unbounded range, otherwise use the given range
+            if possible_actions is None:
+                lower_bound: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+                upper_bound: numpy.ndarray = math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
-                log_likelihood = session.run(self._log_likelihood_actions,
-                                             feed_dict={self._observations: [observation_current],
-                                                        self._actions: action})
-        # Return the log-likelihood
-        return log_likelihood[0]
+                lower_bound: numpy.ndarray = possible_actions[:, 0]
+                upper_bound: numpy.ndarray = possible_actions[:, 1]
+            # Get log-likelihood with continuous action space shape
+            log_likelihood = session.run(self._log_likelihood_actions,
+                                         feed_dict={
+                                             self._observations: observation_current,
+                                             self._lower_bound: lower_bound,
+                                             self._upper_bound: upper_bound,
+                                             self._actions: action
+                                         })
+        # Return the log-likelihood of the given action
+        return log_likelihood
 
     def get_action_probabilities(self,
                                  session,
-                                 observation_current,
-                                 mask: numpy.ndarray = None) -> []:
+                                 observation_current: numpy.ndarray,
+                                 possible_actions: numpy.ndarray = None) -> []:
         """
         Get all the action probabilities (softmax over masked logits if discrete, expected value and standard deviation if continuous) for the
         given current observation and an optional mask.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon
-        :param mask: the optional mask used (only if the action space type is discrete) to remove certain actions from the prediction (-infinity to remove, 0.0 to pass-through)
+        :param possible_actions: the optional list used to remove certain actions from the prediction (with discrete action space) or to bound the actions predicted (with continuous action space)
         :return: the list of action probabilities (softmax over masked logits or expected values and std wrapped in a list depending on the agent action space type)
         """
-        if mask is None and self._agent_action_space_type == SpaceType.discrete:
-            mask = numpy.zeros(self._agent_action_space_shape, dtype=float)
-        # Get the logits or the expected value as the distribution of the action probabilities depending on the action space shape
+        # Generate a one-hot encoded version of the observation if observation space type is discrete
+        if self._observation_space_type == SpaceType.discrete:
+            observation_current: numpy.ndarray = numpy.eye(*self._observation_space_shape)[observation_current.reshape(-1)]
+        # Get the logits or the expected value and std of the distribution to compute the action probabilities depending on the action space shape
         if self._agent_action_space_type == SpaceType.discrete:
-            if self._observation_space_type == SpaceType.discrete:
-                observation_current_one_hot: numpy.ndarray = numpy.identity(*self._observation_space_shape)[
-                    observation_current]
-                if self._agent_action_space_type == SpaceType.discrete:
-                    logits = session.run([self._masked_logits],
-                                         feed_dict={self._observations: [observation_current_one_hot],
-                                                    self._mask: [mask]})
-                else:
-                    logits = session.run([self._masked_logits],
-                                         feed_dict={self._observations: [observation_current_one_hot]})
+            # If there is no possible actions list and the action space type is discrete generate a full pass-through mask otherwise generate a mask upon it
+            if possible_actions is None:
+                mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
-                if self._agent_action_space_type == SpaceType.discrete:
-                    logits = session.run([self._masked_logits],
-                                         feed_dict={self._observations: [observation_current], self._mask: [mask]})
-                else:
-                    logits = session.run([self._masked_logits],
-                                         feed_dict={self._observations: [observation_current]})
+                mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+                mask[:, possible_actions] = 0.0
+            # Get logits on the current observation
+            logits = session.run(self._masked_logits,
+                                 feed_dict={
+                                     self._observations: observation_current,
+                                     self._mask: mask
+                                 })
             # Return the softmax over the logits (probabilities of all actions)
-            return softmax(logits[0]).flatten()
+            return softmax(logits)
         else:
-            expected_value, std = session.run([self._expected_value, self._std], feed_dict={self._observations: [observation_current]})
+            # If there is no possible action list and the action space type is continuous generate an unbounded range, otherwise use the given range
+            if possible_actions is None:
+                lower_bound: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+                upper_bound: numpy.ndarray = math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
+            else:
+                lower_bound: numpy.ndarray = possible_actions[:, 0]
+                upper_bound: numpy.ndarray = possible_actions[:, 1]
+            # Get logits on the current observation
+            expected_value, std = session.run([self._expected_value, self._std],
+                                              feed_dict={
+                                                  self._observations: observation_current,
+                                                  self._lower_bound: lower_bound,
+                                                  self._upper_bound: upper_bound
+                                              })
             # Return the expected value and the standard deviation wrapped in a list
             return [expected_value, std]
 
     def update(self,
                session,
                batch: []):
+        """
+        Update the model weights (thus training the model) of the policy and value stream, given a batch of samples.
+        Update is done through minibatches. Only one update of the policy (actor) is performed, while the value (critic)
+        is updated multiple times.
+
+        :param session: the session of tensorflow currently running
+        :param batch: a batch of samples each one consisting in a tuple of observation, action, advantage and reward
+        :return: the policy stream average loss of all minibatches, the value stream loss average over all updates and minibatches and the average approximated entropy of the policy
+        """
         # Unpack the batch
         observations, actions, advantages, rewards = batch[0], batch[1], batch[2], batch[3]
         # Generate a one-hot encoded version of the observations if observation space type is discrete
@@ -480,7 +564,7 @@ class VanillaPolicyGradient(Model):
             # Unpack the minibatch
             minibatch_observations, minibatch_actions, minibatch_advantages, _ = minibatch
             # Update the policy
-            _, policy_stream_loss, approximated_entropy = session.run([self._policy_stream_optimizer, self._policy_stream_loss,self._approximated_entropy],
+            _, policy_stream_loss, approximated_entropy = session.run([self._policy_stream_optimizer, self._policy_stream_loss, self._approximated_entropy],
                                                                       feed_dict={
                                                                             self._observations: minibatch_observations,
                                                                             self._actions: minibatch_actions,
@@ -510,13 +594,8 @@ class VanillaPolicyGradient(Model):
                 value_stream_loss_total += value_stream_loss
             # The average is only really saved on the last value update to know it at the end of all the update steps
             value_stream_loss_average = value_stream_loss_total / value_update_minibatch_iterations
-        # Generate the tensorflow summary
-        summary = tensorflow.Summary()
-        summary.value.add(tag="policy_stream_loss", simple_value=policy_stream_loss_average)
-        summary.value.add(tag="value_stream_loss", simple_value=value_stream_loss_average)
-        summary.value.add(tag="approximated_entropy", simple_value=approximated_entropy_average)
-        # Return both losses and summary for the update sequence
-        return summary, policy_stream_loss_average, value_stream_loss_average
+        # Return all metrics
+        return policy_stream_loss_average, value_stream_loss_average, approximated_entropy_average
 
     @property
     def warmup_steps(self) -> int:
