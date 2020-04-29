@@ -110,6 +110,13 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 - A huge list of minor fixes and improvements
 - Largely improved summaries and built-in documentation
 
+v0.7.1:
+- Fixed a return value of the tabular SARSA algorithm
+- Fixed interface now able to translate environment actions to agent actions on discrete spaces when possible actions list have different sizes
+- Added default routine to translate environment possible actions to agent possible actions (not fully optimized yet)
+- Largely improved and optimized pass-through interface routine to translate between environment possible actions to agent possible actions
+- Possible actions are now list instead of arrays. Built-in documentation is updated accordingly.
+
 **CREDITS**
 
 Luca Pasqualini at `SAILab <http://sailab.diism.unisi.it/people/luca-pasqualini/>`_ - University of Siena.
