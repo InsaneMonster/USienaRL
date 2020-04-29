@@ -116,7 +116,7 @@ class DeepSARSAAgentDirichlet(Agent):
         action = self._next_train_action.copy() if self._next_train_action is not None else None
         if self._next_train_action is None:
             # Get the possible actions at the current step of the environment by its interface
-            possible_actions: numpy.ndarray = interface.possible_agent_actions(logger, session)
+            possible_actions: [] = interface.possible_agent_actions(logger, session)
             # Act according to dirichlet approach: first get the softmax over all the q-values predicted by the model
             prior_probabilities = softmax(self._model.get_q_values(session, agent_observation_current, possible_actions))
             # Then generate a dirichlet distribution (d) with parameter alpha
@@ -126,7 +126,8 @@ class DeepSARSAAgentDirichlet(Agent):
             # Get a random action value (random output) using x * p + (1 - x) * d as probability distribution where x is the trade-off
             # Note: use a multiplicative to adjust dirichlet probabilities accordingly
             multiplicative_mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
-            multiplicative_mask[:, possible_actions] = 1.0
+            for i in range(self._parallel):
+                multiplicative_mask[i, possible_actions[i]] = 1.0
             output = self._dirichlet_trade_off * prior_probabilities + (1 - self._dirichlet_trade_off) * (dirichlet_probabilities * multiplicative_mask)
             # Get an action for each row of the output
             action: numpy.ndarray = numpy.zeros(self._parallel, dtype=int)
@@ -184,7 +185,7 @@ class DeepSARSAAgentDirichlet(Agent):
         else:
             agent_observation_next[episode_done] = numpy.zeros(self._observation_space_shape, dtype=float)
         # Get the possible actions at the current step of the environment by its interface
-        possible_actions: numpy.ndarray = interface.possible_agent_actions(logger, session)
+        possible_actions: [] = interface.possible_agent_actions(logger, session)
         # Act according to dirichlet approach: first get the softmax over all the q-values predicted by the model
         prior_probabilities = softmax(self._model.get_q_values(session, agent_observation_current, possible_actions))
         # Then generate a dirichlet distribution (d) with parameter alpha
@@ -194,7 +195,8 @@ class DeepSARSAAgentDirichlet(Agent):
         # Get a random action value (random output) using x * p + (1 - x) * d as probability distribution where x is the trade-off
         # Note: use a multiplicative to adjust dirichlet probabilities accordingly
         multiplicative_mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
-        multiplicative_mask[:, possible_actions] = 1.0
+        for i in range(self._parallel):
+            multiplicative_mask[i, possible_actions[i]] = 1.0
         output = self._dirichlet_trade_off * prior_probabilities + (1 - self._dirichlet_trade_off) * (dirichlet_probabilities * multiplicative_mask)
         # Get an action for each row of the output
         action: numpy.ndarray = numpy.zeros(self._parallel, dtype=int)

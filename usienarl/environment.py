@@ -157,16 +157,16 @@ class Environment:
 
     def possible_actions(self,
                          logger: logging.Logger,
-                         session) -> numpy.ndarray:
+                         session) -> []:
         """
-        Get a numpy array of all actions' indexes possible at the current states of the environment if the action space
+        Get a list of all actions' indexes possible at the current states of the environment if the action space
         is discrete.
-        Get a numpy array containing the lower and the upper bounds at the current states of the environment, each
+        Get a list containing the lower and the upper bounds at the current states of the environment, each
         wrapped in numpy array with the shape of the  action space.
 
         :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
-        :return: an array of indices containing the possible actions or an array of upper and lower bounds arrays
+        :return: a list of indices containing the possible actions or a list of upper and lower bounds arrays
         """
         # Abstract method, it should be implemented on a child class basis
         raise NotImplementedError()

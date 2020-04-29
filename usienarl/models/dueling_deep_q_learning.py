@@ -357,13 +357,13 @@ class DuelingDeepQLearning(Model):
     def get_q_values(self,
                      session,
                      observation_current: numpy.ndarray,
-                     possible_actions: numpy.ndarray = None):
+                     possible_actions: [] = None):
         """
         Get all the q-values according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon, wrapped in a numpy array
-        :param possible_actions: the optional array used to remove certain actions from the prediction
+        :param possible_actions: the optional list used to remove certain actions from the prediction
         :return: all q-values predicted by the model
         """
         # If there is no possible actions list generate a full pass-through mask otherwise generate a mask upon it
@@ -371,7 +371,8 @@ class DuelingDeepQLearning(Model):
             mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
         else:
             mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
-            mask[:, possible_actions] = 0.0
+            for i in range(self._parallel):
+                mask[i, possible_actions[i]] = 0.0
         # Generate a one-hot encoded version of the observation if observation space is discrete
         if self._observation_space_type == SpaceType.discrete:
             observation_current: numpy.ndarray = numpy.eye(*self._observation_space_shape)[numpy.array(observation_current).reshape(-1)]
@@ -387,13 +388,13 @@ class DuelingDeepQLearning(Model):
     def get_action_with_highest_q_value(self,
                                         session,
                                         observation_current: numpy.ndarray,
-                                        possible_actions: numpy.ndarray = None):
+                                        possible_actions: [] = None):
         """
         Get the action with highest q-value from the q-values predicted by the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon, wrapped in a numpy array
-        :param possible_actions: the optional array used to remove certain actions from the prediction
+        :param possible_actions: the optional list used to remove certain actions from the prediction
         :return: the action chosen by the model
         """
         # Return the action maximizing the predicted q-values given the current observation
@@ -402,14 +403,14 @@ class DuelingDeepQLearning(Model):
     def get_action_with_highest_q_value_and_q_values(self,
                                                      session,
                                                      observation_current: numpy.ndarray,
-                                                     possible_actions: numpy.ndarray = None):
+                                                     possible_actions: [] = None):
         """
         Get the action with highest q-value from the q-values predicted by the model at the given current observation
         and all the q-values according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon, wrapped in a numpy array
-        :param possible_actions: the optional array used to remove certain actions from the prediction
+        :param possible_actions: the optional list used to remove certain actions from the prediction
         :return: the action chosen by the model and all q-values predicted by the model
         """
         # Get q-values
