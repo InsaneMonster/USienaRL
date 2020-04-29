@@ -315,7 +315,7 @@ class VanillaPolicyGradient(Model):
     def sample_action(self,
                       session,
                       observation_current: numpy.ndarray,
-                      possible_actions: numpy.ndarray = None):
+                      possible_actions: [] = None):
         """
         Get the action sampled from the probability distribution of the model given the current observation and an optional mask.
 
@@ -334,7 +334,8 @@ class VanillaPolicyGradient(Model):
                 mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
                 mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
-                mask[:, possible_actions] = 0.0
+                for i in range(self._parallel):
+                    mask[i, possible_actions[i]] = 0.0
             # Get action, value and log-likelihood with discrete action space shape
             action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
                                                         feed_dict={
@@ -363,7 +364,7 @@ class VanillaPolicyGradient(Model):
                                      session,
                                      action: numpy.ndarray,
                                      observation_current: numpy.ndarray,
-                                     possible_actions: numpy.ndarray = None):
+                                     possible_actions: [] = None):
         """
         Get the estimated value of the given current observation and the log-likelihood of the given action.
 
@@ -385,7 +386,8 @@ class VanillaPolicyGradient(Model):
                 mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
                 mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
-                mask[:, possible_actions] = 0.0
+                for i in range(self._parallel):
+                    mask[i, possible_actions[i]] = 0.0
             # Get value and log-likelihood with discrete action space shape
             value, log_likelihood = session.run([self._value_predicted, self._log_likelihood_actions],
                                                 feed_dict={
@@ -437,7 +439,7 @@ class VanillaPolicyGradient(Model):
                            session,
                            action,
                            observation_current: numpy.ndarray,
-                           possible_actions: numpy.ndarray = None):
+                           possible_actions: [] = None):
         """
         Get the the log-likelihood of the given action.
 
@@ -459,7 +461,8 @@ class VanillaPolicyGradient(Model):
                 mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
                 mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
-                mask[:, possible_actions] = 0.0
+                for i in range(self._parallel):
+                    mask[i, possible_actions[i]] = 0.0
             # Get value and log-likelihood with discrete action space shape
             log_likelihood = session.run(self._log_likelihood_actions,
                                          feed_dict={
@@ -489,7 +492,7 @@ class VanillaPolicyGradient(Model):
     def get_action_probabilities(self,
                                  session,
                                  observation_current: numpy.ndarray,
-                                 possible_actions: numpy.ndarray = None) -> []:
+                                 possible_actions: [] = None) -> []:
         """
         Get all the action probabilities (softmax over masked logits if discrete, expected value and standard deviation if continuous) for the
         given current observation and an optional mask.
@@ -509,7 +512,8 @@ class VanillaPolicyGradient(Model):
                 mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
                 mask: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
-                mask[:, possible_actions] = 0.0
+                for i in range(self._parallel):
+                    mask[i, possible_actions[i]] = 0.0
             # Get logits on the current observation
             logits = session.run(self._masked_logits,
                                  feed_dict={

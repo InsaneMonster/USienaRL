@@ -102,19 +102,31 @@ class Interface:
 
     def possible_agent_actions(self,
                                logger: logging.Logger,
-                               session) -> numpy.ndarray:
+                               session) -> []:
         """
-        Get a numpy array of all actions' indexes possible at the current states of the environment if the action space
+        Get a list of all actions' indexes possible at the current states of the environment if the action space
         is discrete, translated into agent actions.
-        Get a numpy array containing the lower and the upper bounds at the current states of the environment, each
+        Get a list containing the lower and the upper bounds at the current states of the environment, each
         wrapped in numpy array with the shape of the  action space, translated into agent actions.
 
         :param logger: the logger used to print the environment information, warnings and errors
         :param session: the session of tensorflow currently running
-        :return: an array of indices containing the possible actions or an array of upper and lower bounds arrays, translated into agent actions
+        :return: a list of indices containing the possible actions or a list of upper and lower bounds arrays, translated into agent actions
         """
-        # Abstract method, it should be implemented on a child class basis
-        raise NotImplementedError()
+        # Translate each action in each batch of actions from environment to agent
+        batch_environment_possible_actions: [] = self._environment.possible_actions(logger, session)
+        batch_agent_possible_actions: [] = []
+        for environment_possible_actions in batch_environment_possible_actions:
+            agent_possible_actions: [] = []
+            for environment_action in environment_possible_actions:
+                # If single environment action is discrete append it as a number, otherwise as an array (the lower/upper boundary)
+                if self.agent_action_space_type == SpaceType.discrete:
+                    agent_possible_actions.append(self.environment_action_to_agent_action(logger, session, numpy.array(environment_action)).tolist())
+                else:
+                    agent_possible_actions.append(self.environment_action_to_agent_action(logger, session, numpy.array(environment_action)))
+            batch_agent_possible_actions.append(agent_possible_actions)
+        # Return the agent version of the possible actions
+        return batch_agent_possible_actions
 
     @property
     def environment(self) -> Environment:

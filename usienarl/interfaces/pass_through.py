@@ -54,11 +54,9 @@ class PassThroughInterface(Interface):
 
     def possible_agent_actions(self,
                                logger: logging.Logger,
-                               session) -> numpy.ndarray:
-        # Generate the vectorized version of the translation function
-        vectorized_translation = numpy.vectorize(self.environment_action_to_agent_action)
-        # Return the vectorized translation of the possible actions
-        return vectorized_translation(logger, session, self._environment.possible_actions(logger, session))
+                               session) -> []:
+        # Just return the environment possible actions
+        return self._environment.possible_actions(logger, session)
 
     @property
     def observation_space_type(self) -> SpaceType:

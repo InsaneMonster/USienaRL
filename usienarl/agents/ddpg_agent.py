@@ -92,7 +92,7 @@ class DDPGAgent(Agent):
                   agent_observation_current: numpy.ndarray,
                   train_step: int, train_episode: int):
         # Get the possible actions (action boundaries)
-        possible_actions: numpy.ndarray = interface.possible_agent_actions(logger, session)
+        possible_actions: [] = interface.possible_agent_actions(logger, session)
         lower_bound: numpy.ndarray = possible_actions[:, 0]
         upper_bound: numpy.ndarray = possible_actions[:, 1]
         # Get the best action predicted by the model

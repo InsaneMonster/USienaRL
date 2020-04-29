@@ -294,13 +294,13 @@ class DeepDeterministicPolicyGradient(Model):
     def get_best_action(self,
                         session,
                         observation_current: numpy.ndarray,
-                        possible_actions: numpy.ndarray):
+                        possible_actions: [] = None):
         """
         Get the action predicted by the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon, wrapped in a numpy array
-        :param possible_actions: the optional list used to remove certain actions from the prediction (with discrete action space) or to bound the actions predicted (with continuous action space)
+        :param possible_actions: the optional list used to bound the actions predicted
         :return: the action predicted by the model
         """
         # Generate a one-hot encoded version of the observation if observation space is discrete
@@ -324,14 +324,14 @@ class DeepDeterministicPolicyGradient(Model):
     def get_best_action_and_predicted_action_values(self,
                                                     session,
                                                     observation_current: numpy.ndarray,
-                                                    possible_actions: numpy.ndarray):
+                                                    possible_actions: [] = None):
         """
         Get the best action predicted by the model at the given current observation and the predicted action values
         (q-values) according to the model at the given current observation.
 
         :param session: the session of tensorflow currently running
         :param observation_current: the current observation of the agent in the environment to base prediction upon, wrapped in a numpy array
-        :param possible_actions: the optional list used to remove certain actions from the prediction (with discrete action space) or to bound the actions predicted (with continuous action space)
+        :param possible_actions: the optional list used to bound the actions predicted
         :return: the best action predicted by the model and the action values (q-values) predicted by the model
         """
         # Return the best action and all predicted actions values
