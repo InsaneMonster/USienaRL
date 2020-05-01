@@ -14,6 +14,7 @@ import os
 import numpy
 import logging
 import matplotlib.pyplot as plot
+import matplotlib.ticker as mticker
 import enum
 
 # Import required src
@@ -238,6 +239,7 @@ class EpisodeVolley(Volley):
         # Save plots according to the requested type
         if self._episode_volley_type == EpisodeVolleyType.training:
             plot.plot(list(range(len(avg_total_rewards))), avg_total_rewards, 'r-')
+            plot.gca().xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
             if interval > 1:
                 plot.xlabel("Training episode (averaged every " + str(interval) + " episodes)")
             else:
@@ -246,6 +248,7 @@ class EpisodeVolley(Volley):
             plot.savefig(plot_directory + "/v" + str(self._number) + "_training_episodes_total_rewards.png", dpi=self._plots_dpi, transparent=True)
             plot.clf()
             plot.plot(list(range(len(avg_scaled_rewards))), avg_scaled_rewards, 'r--')
+            plot.gca().xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
             if interval > 1:
                 plot.xlabel("Training episode (averaged every " + str(interval) + " episodes)")
             else:
@@ -254,6 +257,7 @@ class EpisodeVolley(Volley):
             plot.savefig(plot_directory + "/v" + str(self._number) + "_training_episodes_scaled_rewards.png", dpi=self._plots_dpi, transparent=True)
             plot.clf()
             plot.plot(list(range(len(avg_episode_lengths))), avg_episode_lengths, 'b-.')
+            plot.gca().xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
             if interval > 1:
                 plot.xlabel("Training episode (averaged every " + str(interval) + " episodes)")
             else:
@@ -263,6 +267,7 @@ class EpisodeVolley(Volley):
             plot.clf()
         else:
             plot.plot(list(range(len(avg_total_rewards))), avg_total_rewards, 'r-')
+            plot.gca().xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
             if interval > 1:
                 plot.xlabel("Validation episode (averaged every " + str(interval) + " episodes)")
             else:
@@ -271,6 +276,7 @@ class EpisodeVolley(Volley):
             plot.savefig(plot_directory + "/v" + str(self._number) + "_validation_episodes_total_rewards_v.png", dpi=self._plots_dpi, transparent=True)
             plot.clf()
             plot.plot(list(range(len(avg_scaled_rewards))), avg_scaled_rewards, 'r--')
+            plot.gca().xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
             if interval > 1:
                 plot.xlabel("Validation episode (averaged every " + str(interval) + " episodes)")
             else:
@@ -279,6 +285,7 @@ class EpisodeVolley(Volley):
             plot.savefig(plot_directory + "/v" + str(self._number) + "_validation_episodes_scaled_rewards_v.png", dpi=self._plots_dpi, transparent=True)
             plot.clf()
             plot.plot(list(range(len(avg_episode_lengths))), avg_episode_lengths, 'b-.')
+            plot.gca().xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
             if interval > 1:
                 plot.xlabel("Validation episode (averaged every " + str(interval) + " episodes)")
             else:

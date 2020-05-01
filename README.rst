@@ -100,6 +100,8 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 
 **Changelog**
 
+**v0.7.0**:
+
 - Vectorized the entire package.
 - Added DDPG algorithm and agent.
 - Improved all algorithms. They are now clearer, optimized and more intuitive in their implementation.
@@ -110,12 +112,17 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 - A huge list of minor fixes and improvements
 - Largely improved summaries and built-in documentation
 
-v0.7.1:
+**v0.7.1**:
+
 - Fixed a return value of the tabular SARSA algorithm
 - Fixed interface now able to translate environment actions to agent actions on discrete spaces when possible actions list have different sizes
 - Added default routine to translate environment possible actions to agent possible actions (not fully optimized yet)
 - Largely improved and optimized pass-through interface routine to translate between environment possible actions to agent possible actions
 - Possible actions are now list instead of arrays. Built-in documentation is updated accordingly.
+
+**v0.7.2**:
+- Fixed some missing logs at the end of test in the experiment class
+- Fixed plots x-axis using sometimes float-values instead of int-values
 
 **CREDITS**
 
