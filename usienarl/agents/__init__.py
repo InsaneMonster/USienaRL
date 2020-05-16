@@ -40,3 +40,5 @@ from .dueling_deep_q_learning_agent_dirichlet import DuelingDeepQLearningAgentDi
 
 from .vpg_agent import VPGAgent
 from .ppo_agent import PPOAgent
+
+from .random_agent import RandomAgent
