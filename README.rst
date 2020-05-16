@@ -121,8 +121,13 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 - Possible actions are now list instead of arrays. Built-in documentation is updated accordingly.
 
 **v0.7.2**:
+
 - Fixed some missing logs at the end of test in the experiment class
 - Fixed plots x-axis using sometimes float-values instead of int-values
+
+**v0.7.3**:
+
+- Added a default random agent
 
 **CREDITS**
 
