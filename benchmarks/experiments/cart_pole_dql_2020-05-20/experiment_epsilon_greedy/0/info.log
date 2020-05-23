@@ -1,0 +1,543 @@
+2020-05-20 15:18:47,824 - INFO - Setup of experiment experiment_epsilon_greedy_0...
+2020-05-20 15:18:47,825 - INFO - Environment setup...
+2020-05-20 15:18:47,830 - INFO - Environment setup is successful
+2020-05-20 15:18:47,831 - INFO - Agent setup...
+2020-05-20 15:18:47,831 - INFO - Setup of agent dqn_agent with scope experiment_epsilon_greedy_0...
+2020-05-20 15:18:47,831 - INFO - Generating model model with scope experiment_epsilon_greedy_0/dqn_agent...
+2020-05-20 15:18:47,831 - INFO - Model generation successful
+2020-05-20 15:18:48,266 - INFO - A Tensorboard summary for the agent will be updated during training of its internal model
+2020-05-20 15:18:48,268 - INFO - Tensorboard summary path: ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/summary
+2020-05-20 15:18:48,288 - INFO - Agent model metagraph will be saved after each training/validation pair
+2020-05-20 15:18:48,289 - INFO - Agent model metagraphs are saved at ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0
+2020-05-20 15:18:48,289 - INFO - Agent setup is successful
+2020-05-20 15:18:48,289 - INFO - Tensorflow configuration is successful
+2020-05-20 15:18:48,291 - INFO - Matplotlib configuration is successful
+2020-05-20 15:18:48,291 - INFO - Experiment setup is successful
+2020-05-20 15:18:48,291 - INFO - Experiment experiment_epsilon_greedy_0: training process started
+2020-05-20 15:18:48,298 - INFO - Initializing the environment...
+2020-05-20 15:18:48,299 - INFO - Environment initialized
+2020-05-20 15:18:48,299 - INFO - Initializing the agent..
+2020-05-20 15:18:48,493 - INFO - Model initialized to default state
+2020-05-20 15:18:48,547 - INFO - Agent initialized
+2020-05-20 15:18:48,548 - INFO - Setup of warm-up volley...
+2020-05-20 15:18:48,548 - INFO - Setup of warm-up volley completed
+2020-05-20 15:18:48,648 - INFO - Warm-up volley is completed
+2020-05-20 15:18:48,648 - INFO - _____________________________________________________________________________________
+2020-05-20 15:18:48,648 - INFO - Setup of training volley 0...
+2020-05-20 15:18:48,648 - INFO - Setup of training volley 0 completed
+2020-05-20 15:18:48,648 - INFO - Training for 10 episodes...
+2020-05-20 15:18:52,228 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:18:52,228 - INFO - Average total reward: 21.7
+2020-05-20 15:18:52,228 - INFO - Standard deviation of total reward: 12.931
+2020-05-20 15:18:52,228 - INFO - Average scaled reward: 1.0
+2020-05-20 15:18:52,228 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:18:52,228 - INFO - Average episode length: 22.0 steps
+2020-05-20 15:18:52,228 - INFO - Save training volley 0 episodes plots...
+2020-05-20 15:18:53,239 - INFO - Plots of training volley 0 saved successfully
+2020-05-20 15:18:53,241 - INFO - Training volley 0 is completed
+2020-05-20 15:18:53,241 - INFO - Training steps up to now: 207
+2020-05-20 15:18:53,241 - INFO - _____________________________________________________________________________________
+2020-05-20 15:18:53,241 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:18:53,241 - INFO - Setup of validation volley 0...
+2020-05-20 15:18:53,242 - INFO - Setup of validation volley 0 completed
+2020-05-20 15:18:53,242 - INFO - Validating for 100 episodes...
+2020-05-20 15:18:53,456 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:18:53,457 - INFO - Average total reward: 9.33
+2020-05-20 15:18:53,457 - INFO - Standard deviation of total reward: 0.736
+2020-05-20 15:18:53,457 - INFO - Average scaled reward: 1.0
+2020-05-20 15:18:53,457 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:18:53,457 - INFO - Average episode length: 9.0 steps
+2020-05-20 15:18:53,458 - INFO - Save validation volley 0 episodes plots...
+2020-05-20 15:18:54,881 - INFO - Plots of validation volley 0 saved successfully
+2020-05-20 15:18:54,882 - INFO - Validation volley 0 is completed
+2020-05-20 15:18:54,883 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:18:54,883 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:18:54,984 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:18:54,995 - INFO - _____________________________________________________________________________________
+2020-05-20 15:18:54,995 - INFO - Setup of training volley 1...
+2020-05-20 15:18:54,997 - INFO - Setup of training volley 1 completed
+2020-05-20 15:18:54,997 - INFO - Training for 10 episodes...
+2020-05-20 15:18:57,739 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:18:57,742 - INFO - Average total reward: 19.0
+2020-05-20 15:18:57,742 - INFO - Standard deviation of total reward: 4.382
+2020-05-20 15:18:57,742 - INFO - Average scaled reward: 1.0
+2020-05-20 15:18:57,743 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:18:57,743 - INFO - Average episode length: 19.0 steps
+2020-05-20 15:18:57,743 - INFO - Save training volley 1 episodes plots...
+2020-05-20 15:18:58,773 - INFO - Plots of training volley 1 saved successfully
+2020-05-20 15:18:58,780 - INFO - Training volley 1 is completed
+2020-05-20 15:18:58,780 - INFO - Training steps up to now: 387
+2020-05-20 15:18:58,780 - INFO - Update all training volleys plots...
+2020-05-20 15:19:00,223 - INFO - Plots updated successfully
+2020-05-20 15:19:00,230 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:00,231 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:00,231 - INFO - Setup of validation volley 1...
+2020-05-20 15:19:00,231 - INFO - Setup of validation volley 1 completed
+2020-05-20 15:19:00,231 - INFO - Validating for 100 episodes...
+2020-05-20 15:19:00,454 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:19:00,454 - INFO - Average total reward: 9.44
+2020-05-20 15:19:00,454 - INFO - Standard deviation of total reward: 0.697
+2020-05-20 15:19:00,454 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:00,454 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:00,454 - INFO - Average episode length: 9.0 steps
+2020-05-20 15:19:00,454 - INFO - Save validation volley 1 episodes plots...
+2020-05-20 15:19:01,834 - INFO - Plots of validation volley 1 saved successfully
+2020-05-20 15:19:01,834 - INFO - Validation volley 1 is completed
+2020-05-20 15:19:01,835 - INFO - Update all validation volleys plots...
+2020-05-20 15:19:03,380 - INFO - Plots saved successfully
+2020-05-20 15:19:03,390 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:03,391 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:19:03,508 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:19:03,511 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:03,511 - INFO - Setup of training volley 2...
+2020-05-20 15:19:03,512 - INFO - Setup of training volley 2 completed
+2020-05-20 15:19:03,512 - INFO - Training for 10 episodes...
+2020-05-20 15:19:06,526 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:19:06,526 - INFO - Average total reward: 19.9
+2020-05-20 15:19:06,526 - INFO - Standard deviation of total reward: 5.629
+2020-05-20 15:19:06,526 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:06,526 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:06,526 - INFO - Average episode length: 20.0 steps
+2020-05-20 15:19:06,527 - INFO - Save training volley 2 episodes plots...
+2020-05-20 15:19:07,817 - INFO - Plots of training volley 2 saved successfully
+2020-05-20 15:19:07,824 - INFO - Training volley 2 is completed
+2020-05-20 15:19:07,825 - INFO - Training steps up to now: 576
+2020-05-20 15:19:07,825 - INFO - Update all training volleys plots...
+2020-05-20 15:19:09,371 - INFO - Plots updated successfully
+2020-05-20 15:19:09,381 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:09,381 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:09,381 - INFO - Setup of validation volley 2...
+2020-05-20 15:19:09,381 - INFO - Setup of validation volley 2 completed
+2020-05-20 15:19:09,382 - INFO - Validating for 100 episodes...
+2020-05-20 15:19:09,583 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:19:09,583 - INFO - Average total reward: 9.44
+2020-05-20 15:19:09,583 - INFO - Standard deviation of total reward: 0.739
+2020-05-20 15:19:09,583 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:09,583 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:09,583 - INFO - Average episode length: 9.0 steps
+2020-05-20 15:19:09,583 - INFO - Save validation volley 2 episodes plots...
+2020-05-20 15:19:10,667 - INFO - Plots of validation volley 2 saved successfully
+2020-05-20 15:19:10,677 - INFO - Validation volley 2 is completed
+2020-05-20 15:19:10,677 - INFO - Update all validation volleys plots...
+2020-05-20 15:19:12,338 - INFO - Plots updated successfully
+2020-05-20 15:19:12,354 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:12,354 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:19:12,445 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:19:12,447 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:12,447 - INFO - Setup of training volley 3...
+2020-05-20 15:19:12,447 - INFO - Setup of training volley 3 completed
+2020-05-20 15:19:12,447 - INFO - Training for 10 episodes...
+2020-05-20 15:19:15,899 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:19:15,901 - INFO - Average total reward: 23.6
+2020-05-20 15:19:15,902 - INFO - Standard deviation of total reward: 9.861
+2020-05-20 15:19:15,902 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:15,902 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:15,902 - INFO - Average episode length: 24.0 steps
+2020-05-20 15:19:15,902 - INFO - Save training volley 3 episodes plots...
+2020-05-20 15:19:16,920 - INFO - Plots of training volley 3 saved successfully
+2020-05-20 15:19:16,928 - INFO - Training volley 3 is completed
+2020-05-20 15:19:16,929 - INFO - Training steps up to now: 802
+2020-05-20 15:19:16,929 - INFO - Update all training volleys plots...
+2020-05-20 15:19:18,510 - INFO - Plots updated successfully
+2020-05-20 15:19:18,511 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:18,511 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:18,511 - INFO - Setup of validation volley 3...
+2020-05-20 15:19:18,512 - INFO - Setup of validation volley 3 completed
+2020-05-20 15:19:18,512 - INFO - Validating for 100 episodes...
+2020-05-20 15:19:19,361 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:19:19,361 - INFO - Average total reward: 33.19
+2020-05-20 15:19:19,362 - INFO - Standard deviation of total reward: 2.972
+2020-05-20 15:19:19,362 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:19,362 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:19,364 - INFO - Average episode length: 33.0 steps
+2020-05-20 15:19:19,364 - INFO - Save validation volley 3 episodes plots...
+2020-05-20 15:19:20,547 - INFO - Plots of validation volley 3 saved successfully
+2020-05-20 15:19:20,552 - INFO - Validation volley 3 is completed
+2020-05-20 15:19:20,552 - INFO - Update all validation volleys plots...
+2020-05-20 15:19:22,423 - INFO - Plots updated successfully
+2020-05-20 15:19:22,431 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:22,431 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:19:22,499 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:19:22,511 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:22,512 - INFO - Setup of training volley 4...
+2020-05-20 15:19:22,512 - INFO - Setup of training volley 4 completed
+2020-05-20 15:19:22,512 - INFO - Training for 10 episodes...
+2020-05-20 15:19:25,438 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:19:25,438 - INFO - Average total reward: 19.7
+2020-05-20 15:19:25,438 - INFO - Standard deviation of total reward: 8.174
+2020-05-20 15:19:25,438 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:25,438 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:25,438 - INFO - Average episode length: 20.0 steps
+2020-05-20 15:19:25,438 - INFO - Save training volley 4 episodes plots...
+2020-05-20 15:19:26,684 - INFO - Plots of training volley 4 saved successfully
+2020-05-20 15:19:26,686 - INFO - Training volley 4 is completed
+2020-05-20 15:19:26,687 - INFO - Training steps up to now: 989
+2020-05-20 15:19:26,687 - INFO - Update all training volleys plots...
+2020-05-20 15:19:28,572 - INFO - Plots updated successfully
+2020-05-20 15:19:28,579 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:28,580 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:28,580 - INFO - Setup of validation volley 4...
+2020-05-20 15:19:28,580 - INFO - Setup of validation volley 4 completed
+2020-05-20 15:19:28,581 - INFO - Validating for 100 episodes...
+2020-05-20 15:19:29,383 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:19:29,384 - INFO - Average total reward: 31.4
+2020-05-20 15:19:29,384 - INFO - Standard deviation of total reward: 5.528
+2020-05-20 15:19:29,384 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:29,384 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:29,384 - INFO - Average episode length: 31.0 steps
+2020-05-20 15:19:29,384 - INFO - Save validation volley 4 episodes plots...
+2020-05-20 15:19:30,461 - INFO - Plots of validation volley 4 saved successfully
+2020-05-20 15:19:30,471 - INFO - Validation volley 4 is completed
+2020-05-20 15:19:30,472 - INFO - Update all validation volleys plots...
+2020-05-20 15:19:32,342 - INFO - Plots updated successfully
+2020-05-20 15:19:32,342 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:32,348 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:19:32,440 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:19:32,456 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:32,456 - INFO - Setup of training volley 5...
+2020-05-20 15:19:32,457 - INFO - Setup of training volley 5 completed
+2020-05-20 15:19:32,457 - INFO - Training for 10 episodes...
+2020-05-20 15:19:36,435 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:19:36,435 - INFO - Average total reward: 25.9
+2020-05-20 15:19:36,435 - INFO - Standard deviation of total reward: 11.929
+2020-05-20 15:19:36,435 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:36,435 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:36,435 - INFO - Average episode length: 26.0 steps
+2020-05-20 15:19:36,435 - INFO - Save training volley 5 episodes plots...
+2020-05-20 15:19:37,535 - INFO - Plots of training volley 5 saved successfully
+2020-05-20 15:19:37,545 - INFO - Training volley 5 is completed
+2020-05-20 15:19:37,545 - INFO - Training steps up to now: 1238
+2020-05-20 15:19:37,545 - INFO - Update all training volleys plots...
+2020-05-20 15:19:39,150 - INFO - Plots updated successfully
+2020-05-20 15:19:39,150 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:39,152 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:39,152 - INFO - Setup of validation volley 5...
+2020-05-20 15:19:39,152 - INFO - Setup of validation volley 5 completed
+2020-05-20 15:19:39,153 - INFO - Validating for 100 episodes...
+2020-05-20 15:19:41,987 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:19:41,987 - INFO - Average total reward: 127.19
+2020-05-20 15:19:41,989 - INFO - Standard deviation of total reward: 6.338
+2020-05-20 15:19:41,989 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:41,989 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:41,989 - INFO - Average episode length: 127.0 steps
+2020-05-20 15:19:41,989 - INFO - Save validation volley 5 episodes plots...
+2020-05-20 15:19:42,763 - INFO - Plots of validation volley 5 saved successfully
+2020-05-20 15:19:42,764 - INFO - Validation volley 5 is completed
+2020-05-20 15:19:42,764 - INFO - Update all validation volleys plots...
+2020-05-20 15:19:44,755 - INFO - Plots updated successfully
+2020-05-20 15:19:44,755 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:44,756 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:19:44,858 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:19:44,869 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:44,869 - INFO - Setup of training volley 6...
+2020-05-20 15:19:44,870 - INFO - Setup of training volley 6 completed
+2020-05-20 15:19:44,870 - INFO - Training for 10 episodes...
+2020-05-20 15:19:46,737 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:19:46,738 - INFO - Average total reward: 14.4
+2020-05-20 15:19:46,738 - INFO - Standard deviation of total reward: 4.609
+2020-05-20 15:19:46,738 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:46,738 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:46,738 - INFO - Average episode length: 14.0 steps
+2020-05-20 15:19:46,738 - INFO - Save training volley 6 episodes plots...
+2020-05-20 15:19:47,922 - INFO - Plots of training volley 6 saved successfully
+2020-05-20 15:19:47,923 - INFO - Training volley 6 is completed
+2020-05-20 15:19:47,923 - INFO - Training steps up to now: 1372
+2020-05-20 15:19:47,923 - INFO - Update all training volleys plots...
+2020-05-20 15:19:50,009 - INFO - Plots updated successfully
+2020-05-20 15:19:50,010 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:50,010 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:50,010 - INFO - Setup of validation volley 6...
+2020-05-20 15:19:50,011 - INFO - Setup of validation volley 6 completed
+2020-05-20 15:19:50,013 - INFO - Validating for 100 episodes...
+2020-05-20 15:19:52,254 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:19:52,255 - INFO - Average total reward: 92.39
+2020-05-20 15:19:52,255 - INFO - Standard deviation of total reward: 6.425
+2020-05-20 15:19:52,255 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:52,255 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:52,255 - INFO - Average episode length: 92.0 steps
+2020-05-20 15:19:52,255 - INFO - Save validation volley 6 episodes plots...
+2020-05-20 15:19:53,739 - INFO - Plots of validation volley 6 saved successfully
+2020-05-20 15:19:53,739 - INFO - Validation volley 6 is completed
+2020-05-20 15:19:53,739 - INFO - Update all validation volleys plots...
+2020-05-20 15:19:55,557 - INFO - Plots updated successfully
+2020-05-20 15:19:55,558 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:19:55,559 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:19:55,706 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:19:55,709 - INFO - _____________________________________________________________________________________
+2020-05-20 15:19:55,710 - INFO - Setup of training volley 7...
+2020-05-20 15:19:55,710 - INFO - Setup of training volley 7 completed
+2020-05-20 15:19:55,711 - INFO - Training for 10 episodes...
+2020-05-20 15:19:59,298 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:19:59,298 - INFO - Average total reward: 23.9
+2020-05-20 15:19:59,299 - INFO - Standard deviation of total reward: 15.05
+2020-05-20 15:19:59,299 - INFO - Average scaled reward: 1.0
+2020-05-20 15:19:59,299 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:19:59,299 - INFO - Average episode length: 24.0 steps
+2020-05-20 15:19:59,299 - INFO - Save training volley 7 episodes plots...
+2020-05-20 15:20:00,105 - INFO - Plots of training volley 7 saved successfully
+2020-05-20 15:20:00,111 - INFO - Training volley 7 is completed
+2020-05-20 15:20:00,111 - INFO - Training steps up to now: 1601
+2020-05-20 15:20:00,111 - INFO - Update all training volleys plots...
+2020-05-20 15:20:01,721 - INFO - Plots updated successfully
+2020-05-20 15:20:01,722 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:01,722 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:01,722 - INFO - Setup of validation volley 7...
+2020-05-20 15:20:01,723 - INFO - Setup of validation volley 7 completed
+2020-05-20 15:20:01,723 - INFO - Validating for 100 episodes...
+2020-05-20 15:20:04,830 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:20:04,831 - INFO - Average total reward: 102.25
+2020-05-20 15:20:04,831 - INFO - Standard deviation of total reward: 17.731
+2020-05-20 15:20:04,832 - INFO - Average scaled reward: 1.0
+2020-05-20 15:20:04,832 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:20:04,832 - INFO - Average episode length: 102.0 steps
+2020-05-20 15:20:04,832 - INFO - Save validation volley 7 episodes plots...
+2020-05-20 15:20:05,644 - INFO - Plots of validation volley 7 saved successfully
+2020-05-20 15:20:05,653 - INFO - Validation volley 7 is completed
+2020-05-20 15:20:05,653 - INFO - Update all validation volleys plots...
+2020-05-20 15:20:06,937 - INFO - Plots updated successfully
+2020-05-20 15:20:06,937 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:06,937 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:20:07,019 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:20:07,020 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:07,021 - INFO - Setup of training volley 8...
+2020-05-20 15:20:07,021 - INFO - Setup of training volley 8 completed
+2020-05-20 15:20:07,021 - INFO - Training for 10 episodes...
+2020-05-20 15:20:10,738 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:20:10,738 - INFO - Average total reward: 26.1
+2020-05-20 15:20:10,741 - INFO - Standard deviation of total reward: 16.428
+2020-05-20 15:20:10,741 - INFO - Average scaled reward: 1.0
+2020-05-20 15:20:10,741 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:20:10,741 - INFO - Average episode length: 26.0 steps
+2020-05-20 15:20:10,741 - INFO - Save training volley 8 episodes plots...
+2020-05-20 15:20:11,793 - INFO - Plots of training volley 8 saved successfully
+2020-05-20 15:20:11,799 - INFO - Training volley 8 is completed
+2020-05-20 15:20:11,800 - INFO - Training steps up to now: 1852
+2020-05-20 15:20:11,800 - INFO - Update all training volleys plots...
+2020-05-20 15:20:13,737 - INFO - Plots updated successfully
+2020-05-20 15:20:13,741 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:13,741 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:13,741 - INFO - Setup of validation volley 8...
+2020-05-20 15:20:13,742 - INFO - Setup of validation volley 8 completed
+2020-05-20 15:20:13,742 - INFO - Validating for 100 episodes...
+2020-05-20 15:20:17,558 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:20:17,559 - INFO - Average total reward: 136.41
+2020-05-20 15:20:17,559 - INFO - Standard deviation of total reward: 19.226
+2020-05-20 15:20:17,559 - INFO - Average scaled reward: 1.0
+2020-05-20 15:20:17,560 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:20:17,560 - INFO - Average episode length: 136.0 steps
+2020-05-20 15:20:17,560 - INFO - Save validation volley 8 episodes plots...
+2020-05-20 15:20:18,739 - INFO - Plots of validation volley 8 saved successfully
+2020-05-20 15:20:18,741 - INFO - Validation volley 8 is completed
+2020-05-20 15:20:18,742 - INFO - Update all validation volleys plots...
+2020-05-20 15:20:20,676 - INFO - Plots updated successfully
+2020-05-20 15:20:20,685 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:20,686 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:20:20,792 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:20:20,794 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:20,795 - INFO - Setup of training volley 9...
+2020-05-20 15:20:20,795 - INFO - Setup of training volley 9 completed
+2020-05-20 15:20:20,795 - INFO - Training for 10 episodes...
+2020-05-20 15:20:24,658 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:20:24,658 - INFO - Average total reward: 24.4
+2020-05-20 15:20:24,661 - INFO - Standard deviation of total reward: 12.257
+2020-05-20 15:20:24,661 - INFO - Average scaled reward: 1.0
+2020-05-20 15:20:24,661 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:20:24,661 - INFO - Average episode length: 24.0 steps
+2020-05-20 15:20:24,661 - INFO - Save training volley 9 episodes plots...
+2020-05-20 15:20:25,694 - INFO - Plots of training volley 9 saved successfully
+2020-05-20 15:20:25,694 - INFO - Training volley 9 is completed
+2020-05-20 15:20:25,699 - INFO - Training steps up to now: 2086
+2020-05-20 15:20:25,699 - INFO - Update all training volleys plots...
+2020-05-20 15:20:27,661 - INFO - Plots updated successfully
+2020-05-20 15:20:27,661 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:27,665 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:27,665 - INFO - Setup of validation volley 9...
+2020-05-20 15:20:27,666 - INFO - Setup of validation volley 9 completed
+2020-05-20 15:20:27,668 - INFO - Validating for 100 episodes...
+2020-05-20 15:20:32,169 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:20:32,169 - INFO - Average total reward: 176.8
+2020-05-20 15:20:32,169 - INFO - Standard deviation of total reward: 20.726
+2020-05-20 15:20:32,169 - INFO - Average scaled reward: 1.0
+2020-05-20 15:20:32,169 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:20:32,169 - INFO - Average episode length: 177.0 steps
+2020-05-20 15:20:32,169 - INFO - Save validation volley 9 episodes plots...
+2020-05-20 15:20:33,226 - INFO - Plots of validation volley 9 saved successfully
+2020-05-20 15:20:33,236 - INFO - Validation volley 9 is completed
+2020-05-20 15:20:33,236 - INFO - Update all validation volleys plots...
+2020-05-20 15:20:35,336 - INFO - Plots updated successfully
+2020-05-20 15:20:35,340 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:35,341 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:20:35,494 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:20:35,500 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:35,501 - INFO - Setup of training volley 10...
+2020-05-20 15:20:35,501 - INFO - Setup of training volley 10 completed
+2020-05-20 15:20:35,502 - INFO - Training for 10 episodes...
+2020-05-20 15:20:39,917 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:20:39,917 - INFO - Average total reward: 25.4
+2020-05-20 15:20:39,917 - INFO - Standard deviation of total reward: 10.356
+2020-05-20 15:20:39,917 - INFO - Average scaled reward: 1.0
+2020-05-20 15:20:39,917 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:20:39,917 - INFO - Average episode length: 25.0 steps
+2020-05-20 15:20:39,917 - INFO - Save training volley 10 episodes plots...
+2020-05-20 15:20:41,291 - INFO - Plots of training volley 10 saved successfully
+2020-05-20 15:20:41,297 - INFO - Training volley 10 is completed
+2020-05-20 15:20:41,298 - INFO - Training steps up to now: 2330
+2020-05-20 15:20:41,298 - INFO - Update all training volleys plots...
+2020-05-20 15:20:43,553 - INFO - Plots updated successfully
+2020-05-20 15:20:43,561 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:43,562 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:43,562 - INFO - Setup of validation volley 10...
+2020-05-20 15:20:43,563 - INFO - Setup of validation volley 10 completed
+2020-05-20 15:20:43,566 - INFO - Validating for 100 episodes...
+2020-05-20 15:20:48,105 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:20:48,106 - INFO - Average total reward: 188.82
+2020-05-20 15:20:48,106 - INFO - Standard deviation of total reward: 11.634
+2020-05-20 15:20:48,106 - INFO - Average scaled reward: 1.0
+2020-05-20 15:20:48,106 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:20:48,106 - INFO - Average episode length: 189.0 steps
+2020-05-20 15:20:48,106 - INFO - Save validation volley 10 episodes plots...
+2020-05-20 15:20:49,677 - INFO - Plots of validation volley 10 saved successfully
+2020-05-20 15:20:49,677 - INFO - Validation volley 10 is completed
+2020-05-20 15:20:49,677 - INFO - Update all validation volleys plots...
+2020-05-20 15:20:51,629 - INFO - Plots updated successfully
+2020-05-20 15:20:51,629 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:51,630 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:20:51,694 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:20:51,705 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:51,706 - INFO - Setup of training volley 11...
+2020-05-20 15:20:51,707 - INFO - Setup of training volley 11 completed
+2020-05-20 15:20:51,707 - INFO - Training for 10 episodes...
+2020-05-20 15:20:55,087 - INFO - Training for 10 episodes finished with following result:
+2020-05-20 15:20:55,088 - INFO - Average total reward: 24.2
+2020-05-20 15:20:55,089 - INFO - Standard deviation of total reward: 14.614
+2020-05-20 15:20:55,089 - INFO - Average scaled reward: 1.0
+2020-05-20 15:20:55,089 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:20:55,089 - INFO - Average episode length: 24.0 steps
+2020-05-20 15:20:55,089 - INFO - Save training volley 11 episodes plots...
+2020-05-20 15:20:56,169 - INFO - Plots of training volley 11 saved successfully
+2020-05-20 15:20:56,174 - INFO - Training volley 11 is completed
+2020-05-20 15:20:56,175 - INFO - Training steps up to now: 2562
+2020-05-20 15:20:56,175 - INFO - Update all training volleys plots...
+2020-05-20 15:20:57,941 - INFO - Plots updated successfully
+2020-05-20 15:20:57,949 - INFO - _____________________________________________________________________________________
+2020-05-20 15:20:57,949 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:20:57,950 - INFO - Setup of validation volley 11...
+2020-05-20 15:20:57,951 - INFO - Setup of validation volley 11 completed
+2020-05-20 15:20:57,953 - INFO - Validating for 100 episodes...
+2020-05-20 15:21:01,868 - INFO - Validating for 100 episodes finished with following result:
+2020-05-20 15:21:01,869 - INFO - Average total reward: 200.0
+2020-05-20 15:21:01,870 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:01,871 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:01,871 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:01,871 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:01,871 - INFO - Save validation volley 11 episodes plots...
+2020-05-20 15:21:03,245 - INFO - Plots of validation volley 11 saved successfully
+2020-05-20 15:21:03,250 - INFO - Validation volley 11 is completed
+2020-05-20 15:21:03,251 - INFO - Update all validation volleys plots...
+2020-05-20 15:21:05,643 - INFO - Plots updated successfully
+2020-05-20 15:21:05,643 - INFO - ---------------------------------------------------------------------------------------
+2020-05-20 15:21:05,644 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph/experiment_epsilon_greedy_0...
+2020-05-20 15:21:05,769 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-20 15:21:05,771 - INFO - Validation of the agent is successful
+2020-05-20 15:21:05,771 - INFO - End of training
+2020-05-20 15:21:05,801 - INFO - Experiment experiment_epsilon_greedy_0: testing process started
+2020-05-20 15:21:05,813 - INFO - Initializing the environment...
+2020-05-20 15:21:05,813 - INFO - Environment initialized
+2020-05-20 15:21:05,813 - INFO - Initializing the agent..
+2020-05-20 15:21:05,960 - INFO - Model initialized to default state
+2020-05-20 15:21:06,020 - INFO - Agent initialized
+2020-05-20 15:21:06,021 - INFO - Restoring agent graph with checkpoint path: ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph
+2020-05-20 15:21:06,103 - INFO - Model graph stored at ./experiments/cart_pole_dql_2020-05-20/experiment_epsilon_greedy/0/metagraph loaded successfully!
+2020-05-20 15:21:06,103 - INFO - Agent restored
+2020-05-20 15:21:06,103 - INFO - Setup of test volley 0...
+2020-05-20 15:21:06,103 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:10,776 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:10,776 - INFO - Average total reward: 200.0
+2020-05-20 15:21:10,776 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:10,776 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:10,776 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:10,776 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:10,776 - INFO - Setup of test volley 1...
+2020-05-20 15:21:10,777 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:16,139 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:16,140 - INFO - Average total reward: 200.0
+2020-05-20 15:21:16,140 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:16,140 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:16,140 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:16,140 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:16,140 - INFO - Setup of test volley 2...
+2020-05-20 15:21:16,141 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:20,690 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:20,690 - INFO - Average total reward: 200.0
+2020-05-20 15:21:20,690 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:20,690 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:20,690 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:20,690 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:20,691 - INFO - Setup of test volley 3...
+2020-05-20 15:21:20,700 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:24,973 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:24,975 - INFO - Average total reward: 200.0
+2020-05-20 15:21:24,979 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:24,979 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:24,979 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:24,979 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:24,979 - INFO - Setup of test volley 4...
+2020-05-20 15:21:24,980 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:29,176 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:29,176 - INFO - Average total reward: 200.0
+2020-05-20 15:21:29,177 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:29,177 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:29,177 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:29,177 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:29,177 - INFO - Setup of test volley 5...
+2020-05-20 15:21:29,178 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:33,752 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:33,752 - INFO - Average total reward: 200.0
+2020-05-20 15:21:33,752 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:33,752 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:33,752 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:33,753 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:33,753 - INFO - Setup of test volley 6...
+2020-05-20 15:21:33,754 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:38,547 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:38,548 - INFO - Average total reward: 200.0
+2020-05-20 15:21:38,548 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:38,548 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:38,548 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:38,548 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:38,548 - INFO - Setup of test volley 7...
+2020-05-20 15:21:38,549 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:43,314 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:43,314 - INFO - Average total reward: 200.0
+2020-05-20 15:21:43,314 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:43,315 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:43,316 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:43,316 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:43,316 - INFO - Setup of test volley 8...
+2020-05-20 15:21:43,317 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:48,310 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:48,310 - INFO - Average total reward: 200.0
+2020-05-20 15:21:48,310 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:48,310 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:48,310 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:48,310 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:48,310 - INFO - Setup of test volley 9...
+2020-05-20 15:21:48,311 - INFO - Testing for 100 episodes...
+2020-05-20 15:21:52,432 - INFO - Testing for 100 episodes finished with following result:
+2020-05-20 15:21:52,432 - INFO - Average total reward: 200.0
+2020-05-20 15:21:52,432 - INFO - Standard deviation of total reward: 0.0
+2020-05-20 15:21:52,432 - INFO - Average scaled reward: 1.0
+2020-05-20 15:21:52,432 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-20 15:21:52,432 - INFO - Average episode length: 200.0 steps
+2020-05-20 15:21:52,432 - INFO - End of test
+2020-05-20 15:21:52,433 - INFO - Results over 10 test volleys of 100 episodes each are:
+2020-05-20 15:21:52,433 - INFO - Average test total reward: 200.0
+2020-05-20 15:21:52,433 - INFO - Average test scaled reward: 1.0
+2020-05-20 15:21:52,433 - INFO - Max test total reward: 200.0
+2020-05-20 15:21:52,433 - INFO - Max test scaled reward: 1.0
+2020-05-20 15:21:52,433 - INFO - Average test standard deviation of total reward: 0.0
+2020-05-20 15:21:52,433 - INFO - Average test standard deviation of scaled reward: 0.0
+2020-05-20 15:21:52,433 - INFO - Min test standard deviation of total reward: 0.0
+2020-05-20 15:21:52,433 - INFO - Min test standard deviation of scaled reward: 0.0
+2020-05-20 15:21:52,433 - INFO - Average test episode length: 200.0
+2020-05-20 15:21:52,433 - INFO - The experiment terminated successfully
