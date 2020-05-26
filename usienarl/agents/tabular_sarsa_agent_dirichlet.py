@@ -179,7 +179,7 @@ class TabularSARSAAgentDirichlet(Agent):
         multiplicative_mask: numpy.ndarray = numpy.zeros((self._parallel, *self._agent_action_space_shape), dtype=float)
         for i in range(self._parallel):
             multiplicative_mask[i, possible_actions[i]] = 1.0
-        output = self._dirichlet_trade_off * prior_probabilities + (1 - self._dirichlet_trade_off) * (dirichlet_probabilities.transpose() * multiplicative_mask)
+        output = self._dirichlet_trade_off * prior_probabilities + (1 - self._dirichlet_trade_off) * (dirichlet_probabilities * multiplicative_mask)
         # Get an action for each row of the output
         action: numpy.ndarray = numpy.zeros(self._parallel, dtype=int)
         for i in range(self._parallel):

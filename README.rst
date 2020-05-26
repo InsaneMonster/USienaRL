@@ -129,6 +129,11 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 
 - Added a default random agent
 
+**v0.7.4**:
+
+- Fixed a bug on tabular SARSA with dirichlet exploration policy on the transpose operation
+- Fixed a numerical warning on final result when the denominator could happen to be zero
+
 **CREDITS**
 
 Luca Pasqualini at `SAILab <http://sailab.diism.unisi.it/people/luca-pasqualini/>`_ - University of Siena.
