@@ -1,0 +1,822 @@
+2020-05-26 10:41:29,077 - INFO - Setup of experiment experiment_boltzmann_4...
+2020-05-26 10:41:29,077 - INFO - Environment setup...
+2020-05-26 10:41:29,088 - INFO - Environment setup is successful
+2020-05-26 10:41:29,088 - INFO - Agent setup...
+2020-05-26 10:41:29,088 - INFO - Setup of agent dddqn_agent with scope experiment_boltzmann_4...
+2020-05-26 10:41:29,088 - INFO - Generating model model_huber with scope experiment_boltzmann_4/dddqn_agent...
+2020-05-26 10:41:29,089 - INFO - Model generation successful
+2020-05-26 10:41:29,354 - INFO - A Tensorboard summary for the agent will be updated during training of its internal model
+2020-05-26 10:41:29,356 - INFO - Tensorboard summary path: ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/summary
+2020-05-26 10:41:29,369 - INFO - Agent model metagraph will be saved after each training/validation pair
+2020-05-26 10:41:29,369 - INFO - Agent model metagraphs are saved at ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4
+2020-05-26 10:41:29,369 - INFO - Agent setup is successful
+2020-05-26 10:41:29,369 - INFO - Tensorflow configuration is successful
+2020-05-26 10:41:29,370 - INFO - Matplotlib configuration is successful
+2020-05-26 10:41:29,371 - INFO - Experiment setup is successful
+2020-05-26 10:41:29,371 - INFO - Experiment experiment_boltzmann_4: training process started
+2020-05-26 10:41:29,374 - INFO - Initializing the environment...
+2020-05-26 10:41:29,374 - INFO - Environment initialized
+2020-05-26 10:41:29,374 - INFO - Initializing the agent..
+2020-05-26 10:41:29,455 - INFO - Model initialized to default state
+2020-05-26 10:41:29,481 - INFO - Agent initialized
+2020-05-26 10:41:29,481 - INFO - Setup of warm-up volley...
+2020-05-26 10:41:29,481 - INFO - Setup of warm-up volley completed
+2020-05-26 10:41:29,510 - INFO - Warm-up volley is completed
+2020-05-26 10:41:29,510 - INFO - _____________________________________________________________________________________
+2020-05-26 10:41:29,510 - INFO - Setup of training volley 0...
+2020-05-26 10:41:29,510 - INFO - Setup of training volley 0 completed
+2020-05-26 10:41:29,510 - INFO - Training for 100 episodes...
+2020-05-26 10:41:39,855 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:41:39,856 - INFO - Average total reward: 0.0
+2020-05-26 10:41:39,856 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 10:41:39,856 - INFO - Average scaled reward: 0.0
+2020-05-26 10:41:39,856 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 10:41:39,856 - INFO - Average episode length: 9.0 steps
+2020-05-26 10:41:39,856 - INFO - Save training volley 0 episodes plots...
+2020-05-26 10:41:40,195 - INFO - Plots of training volley 0 saved successfully
+2020-05-26 10:41:40,195 - INFO - Training volley 0 is completed
+2020-05-26 10:41:40,195 - INFO - Training steps up to now: 761
+2020-05-26 10:41:40,195 - INFO - _____________________________________________________________________________________
+2020-05-26 10:41:40,195 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:41:40,195 - INFO - Setup of validation volley 0...
+2020-05-26 10:41:40,195 - INFO - Setup of validation volley 0 completed
+2020-05-26 10:41:40,196 - INFO - Validating for 100 episodes...
+2020-05-26 10:41:41,317 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:41:41,317 - INFO - Average total reward: 0.19
+2020-05-26 10:41:41,317 - INFO - Standard deviation of total reward: 0.392
+2020-05-26 10:41:41,318 - INFO - Average scaled reward: 0.009
+2020-05-26 10:41:41,318 - INFO - Standard deviation of scaled reward: 0.022
+2020-05-26 10:41:41,318 - INFO - Average episode length: 28.0 steps
+2020-05-26 10:41:41,318 - INFO - Save validation volley 0 episodes plots...
+2020-05-26 10:41:41,673 - INFO - Plots of validation volley 0 saved successfully
+2020-05-26 10:41:41,673 - INFO - Validation volley 0 is completed
+2020-05-26 10:41:41,673 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:41:41,673 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:41:41,724 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:41:41,725 - INFO - _____________________________________________________________________________________
+2020-05-26 10:41:41,725 - INFO - Setup of training volley 1...
+2020-05-26 10:41:41,725 - INFO - Setup of training volley 1 completed
+2020-05-26 10:41:41,725 - INFO - Training for 100 episodes...
+2020-05-26 10:41:49,569 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:41:49,569 - INFO - Average total reward: 0.01
+2020-05-26 10:41:49,569 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 10:41:49,569 - INFO - Average scaled reward: 0.001
+2020-05-26 10:41:49,570 - INFO - Standard deviation of scaled reward: 0.008
+2020-05-26 10:41:49,570 - INFO - Average episode length: 7.0 steps
+2020-05-26 10:41:49,570 - INFO - Save training volley 1 episodes plots...
+2020-05-26 10:41:49,918 - INFO - Plots of training volley 1 saved successfully
+2020-05-26 10:41:49,918 - INFO - Training volley 1 is completed
+2020-05-26 10:41:49,918 - INFO - Training steps up to now: 1351
+2020-05-26 10:41:49,918 - INFO - Update all training volleys plots...
+2020-05-26 10:41:50,428 - INFO - Plots updated successfully
+2020-05-26 10:41:50,428 - INFO - _____________________________________________________________________________________
+2020-05-26 10:41:50,428 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:41:50,428 - INFO - Setup of validation volley 1...
+2020-05-26 10:41:50,428 - INFO - Setup of validation volley 1 completed
+2020-05-26 10:41:50,428 - INFO - Validating for 100 episodes...
+2020-05-26 10:41:51,556 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:41:51,557 - INFO - Average total reward: 0.26
+2020-05-26 10:41:51,557 - INFO - Standard deviation of total reward: 0.439
+2020-05-26 10:41:51,557 - INFO - Average scaled reward: 0.015
+2020-05-26 10:41:51,557 - INFO - Standard deviation of scaled reward: 0.032
+2020-05-26 10:41:51,557 - INFO - Average episode length: 29.0 steps
+2020-05-26 10:41:51,557 - INFO - Save validation volley 1 episodes plots...
+2020-05-26 10:41:51,926 - INFO - Plots of validation volley 1 saved successfully
+2020-05-26 10:41:51,926 - INFO - Validation volley 1 is completed
+2020-05-26 10:41:51,926 - INFO - Update all validation volleys plots...
+2020-05-26 10:41:52,434 - INFO - Plots saved successfully
+2020-05-26 10:41:52,434 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:41:52,434 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:41:52,463 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:41:52,463 - INFO - _____________________________________________________________________________________
+2020-05-26 10:41:52,463 - INFO - Setup of training volley 2...
+2020-05-26 10:41:52,463 - INFO - Setup of training volley 2 completed
+2020-05-26 10:41:52,463 - INFO - Training for 100 episodes...
+2020-05-26 10:42:03,158 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:42:03,158 - INFO - Average total reward: 0.02
+2020-05-26 10:42:03,158 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 10:42:03,158 - INFO - Average scaled reward: 0.001
+2020-05-26 10:42:03,158 - INFO - Standard deviation of scaled reward: 0.008
+2020-05-26 10:42:03,158 - INFO - Average episode length: 9.0 steps
+2020-05-26 10:42:03,158 - INFO - Save training volley 2 episodes plots...
+2020-05-26 10:42:03,544 - INFO - Plots of training volley 2 saved successfully
+2020-05-26 10:42:03,544 - INFO - Training volley 2 is completed
+2020-05-26 10:42:03,545 - INFO - Training steps up to now: 2149
+2020-05-26 10:42:03,545 - INFO - Update all training volleys plots...
+2020-05-26 10:42:04,064 - INFO - Plots updated successfully
+2020-05-26 10:42:04,064 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:04,064 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:04,064 - INFO - Setup of validation volley 2...
+2020-05-26 10:42:04,064 - INFO - Setup of validation volley 2 completed
+2020-05-26 10:42:04,064 - INFO - Validating for 100 episodes...
+2020-05-26 10:42:05,582 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:42:05,582 - INFO - Average total reward: 0.54
+2020-05-26 10:42:05,583 - INFO - Standard deviation of total reward: 0.498
+2020-05-26 10:42:05,583 - INFO - Average scaled reward: 0.019
+2020-05-26 10:42:05,583 - INFO - Standard deviation of scaled reward: 0.027
+2020-05-26 10:42:05,583 - INFO - Average episode length: 61.0 steps
+2020-05-26 10:42:05,583 - INFO - Save validation volley 2 episodes plots...
+2020-05-26 10:42:05,973 - INFO - Plots of validation volley 2 saved successfully
+2020-05-26 10:42:05,973 - INFO - Validation volley 2 is completed
+2020-05-26 10:42:05,973 - INFO - Update all validation volleys plots...
+2020-05-26 10:42:06,511 - INFO - Plots updated successfully
+2020-05-26 10:42:06,511 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:06,511 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:42:06,540 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:42:06,540 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:06,540 - INFO - Setup of training volley 3...
+2020-05-26 10:42:06,540 - INFO - Setup of training volley 3 completed
+2020-05-26 10:42:06,541 - INFO - Training for 100 episodes...
+2020-05-26 10:42:15,277 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:42:15,277 - INFO - Average total reward: 0.02
+2020-05-26 10:42:15,277 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 10:42:15,277 - INFO - Average scaled reward: 0.001
+2020-05-26 10:42:15,278 - INFO - Standard deviation of scaled reward: 0.01
+2020-05-26 10:42:15,278 - INFO - Average episode length: 7.0 steps
+2020-05-26 10:42:15,278 - INFO - Save training volley 3 episodes plots...
+2020-05-26 10:42:15,651 - INFO - Plots of training volley 3 saved successfully
+2020-05-26 10:42:15,651 - INFO - Training volley 3 is completed
+2020-05-26 10:42:15,651 - INFO - Training steps up to now: 2795
+2020-05-26 10:42:15,651 - INFO - Update all training volleys plots...
+2020-05-26 10:42:16,173 - INFO - Plots updated successfully
+2020-05-26 10:42:16,173 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:16,173 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:16,173 - INFO - Setup of validation volley 3...
+2020-05-26 10:42:16,174 - INFO - Setup of validation volley 3 completed
+2020-05-26 10:42:16,174 - INFO - Validating for 100 episodes...
+2020-05-26 10:42:17,670 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:42:17,670 - INFO - Average total reward: 0.3
+2020-05-26 10:42:17,670 - INFO - Standard deviation of total reward: 0.458
+2020-05-26 10:42:17,670 - INFO - Average scaled reward: 0.01
+2020-05-26 10:42:17,670 - INFO - Standard deviation of scaled reward: 0.023
+2020-05-26 10:42:17,670 - INFO - Average episode length: 49.0 steps
+2020-05-26 10:42:17,671 - INFO - Save validation volley 3 episodes plots...
+2020-05-26 10:42:18,042 - INFO - Plots of validation volley 3 saved successfully
+2020-05-26 10:42:18,042 - INFO - Validation volley 3 is completed
+2020-05-26 10:42:18,042 - INFO - Update all validation volleys plots...
+2020-05-26 10:42:18,565 - INFO - Plots updated successfully
+2020-05-26 10:42:18,565 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:18,565 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:42:18,594 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:42:18,594 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:18,594 - INFO - Setup of training volley 4...
+2020-05-26 10:42:18,594 - INFO - Setup of training volley 4 completed
+2020-05-26 10:42:18,594 - INFO - Training for 100 episodes...
+2020-05-26 10:42:28,463 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:42:28,464 - INFO - Average total reward: 0.01
+2020-05-26 10:42:28,464 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 10:42:28,464 - INFO - Average scaled reward: 0.001
+2020-05-26 10:42:28,464 - INFO - Standard deviation of scaled reward: 0.006
+2020-05-26 10:42:28,464 - INFO - Average episode length: 9.0 steps
+2020-05-26 10:42:28,464 - INFO - Save training volley 4 episodes plots...
+2020-05-26 10:42:28,847 - INFO - Plots of training volley 4 saved successfully
+2020-05-26 10:42:28,847 - INFO - Training volley 4 is completed
+2020-05-26 10:42:28,847 - INFO - Training steps up to now: 3547
+2020-05-26 10:42:28,847 - INFO - Update all training volleys plots...
+2020-05-26 10:42:29,509 - INFO - Plots updated successfully
+2020-05-26 10:42:29,509 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:29,509 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:29,509 - INFO - Setup of validation volley 4...
+2020-05-26 10:42:29,509 - INFO - Setup of validation volley 4 completed
+2020-05-26 10:42:29,509 - INFO - Validating for 100 episodes...
+2020-05-26 10:42:30,769 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:42:30,770 - INFO - Average total reward: 0.63
+2020-05-26 10:42:30,770 - INFO - Standard deviation of total reward: 0.483
+2020-05-26 10:42:30,770 - INFO - Average scaled reward: 0.024
+2020-05-26 10:42:30,770 - INFO - Standard deviation of scaled reward: 0.028
+2020-05-26 10:42:30,770 - INFO - Average episode length: 39.0 steps
+2020-05-26 10:42:30,770 - INFO - Save validation volley 4 episodes plots...
+2020-05-26 10:42:31,137 - INFO - Plots of validation volley 4 saved successfully
+2020-05-26 10:42:31,137 - INFO - Validation volley 4 is completed
+2020-05-26 10:42:31,137 - INFO - Update all validation volleys plots...
+2020-05-26 10:42:31,668 - INFO - Plots updated successfully
+2020-05-26 10:42:31,669 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:31,669 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:42:31,701 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:42:31,702 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:31,702 - INFO - Setup of training volley 5...
+2020-05-26 10:42:31,702 - INFO - Setup of training volley 5 completed
+2020-05-26 10:42:31,702 - INFO - Training for 100 episodes...
+2020-05-26 10:42:42,192 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:42:42,192 - INFO - Average total reward: 0.03
+2020-05-26 10:42:42,192 - INFO - Standard deviation of total reward: 0.171
+2020-05-26 10:42:42,193 - INFO - Average scaled reward: 0.003
+2020-05-26 10:42:42,193 - INFO - Standard deviation of scaled reward: 0.017
+2020-05-26 10:42:42,193 - INFO - Average episode length: 9.0 steps
+2020-05-26 10:42:42,193 - INFO - Save training volley 5 episodes plots...
+2020-05-26 10:42:42,545 - INFO - Plots of training volley 5 saved successfully
+2020-05-26 10:42:42,545 - INFO - Training volley 5 is completed
+2020-05-26 10:42:42,545 - INFO - Training steps up to now: 4321
+2020-05-26 10:42:42,545 - INFO - Update all training volleys plots...
+2020-05-26 10:42:43,102 - INFO - Plots updated successfully
+2020-05-26 10:42:43,102 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:43,102 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:43,102 - INFO - Setup of validation volley 5...
+2020-05-26 10:42:43,102 - INFO - Setup of validation volley 5 completed
+2020-05-26 10:42:43,102 - INFO - Validating for 100 episodes...
+2020-05-26 10:42:44,271 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:42:44,271 - INFO - Average total reward: 0.39
+2020-05-26 10:42:44,271 - INFO - Standard deviation of total reward: 0.488
+2020-05-26 10:42:44,271 - INFO - Average scaled reward: 0.02
+2020-05-26 10:42:44,271 - INFO - Standard deviation of scaled reward: 0.032
+2020-05-26 10:42:44,272 - INFO - Average episode length: 32.0 steps
+2020-05-26 10:42:44,272 - INFO - Save validation volley 5 episodes plots...
+2020-05-26 10:42:44,661 - INFO - Plots of validation volley 5 saved successfully
+2020-05-26 10:42:44,661 - INFO - Validation volley 5 is completed
+2020-05-26 10:42:44,661 - INFO - Update all validation volleys plots...
+2020-05-26 10:42:45,240 - INFO - Plots updated successfully
+2020-05-26 10:42:45,240 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:45,240 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:42:45,272 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:42:45,273 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:45,273 - INFO - Setup of training volley 6...
+2020-05-26 10:42:45,273 - INFO - Setup of training volley 6 completed
+2020-05-26 10:42:45,273 - INFO - Training for 100 episodes...
+2020-05-26 10:42:53,521 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:42:53,522 - INFO - Average total reward: 0.02
+2020-05-26 10:42:53,522 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 10:42:53,522 - INFO - Average scaled reward: 0.002
+2020-05-26 10:42:53,522 - INFO - Standard deviation of scaled reward: 0.017
+2020-05-26 10:42:53,522 - INFO - Average episode length: 7.0 steps
+2020-05-26 10:42:53,522 - INFO - Save training volley 6 episodes plots...
+2020-05-26 10:42:53,870 - INFO - Plots of training volley 6 saved successfully
+2020-05-26 10:42:53,870 - INFO - Training volley 6 is completed
+2020-05-26 10:42:53,870 - INFO - Training steps up to now: 4946
+2020-05-26 10:42:53,870 - INFO - Update all training volleys plots...
+2020-05-26 10:42:54,430 - INFO - Plots updated successfully
+2020-05-26 10:42:54,430 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:54,430 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:54,430 - INFO - Setup of validation volley 6...
+2020-05-26 10:42:54,430 - INFO - Setup of validation volley 6 completed
+2020-05-26 10:42:54,430 - INFO - Validating for 100 episodes...
+2020-05-26 10:42:55,382 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:42:55,383 - INFO - Average total reward: 0.46
+2020-05-26 10:42:55,383 - INFO - Standard deviation of total reward: 0.498
+2020-05-26 10:42:55,383 - INFO - Average scaled reward: 0.021
+2020-05-26 10:42:55,383 - INFO - Standard deviation of scaled reward: 0.03
+2020-05-26 10:42:55,383 - INFO - Average episode length: 28.0 steps
+2020-05-26 10:42:55,383 - INFO - Save validation volley 6 episodes plots...
+2020-05-26 10:42:55,782 - INFO - Plots of validation volley 6 saved successfully
+2020-05-26 10:42:55,782 - INFO - Validation volley 6 is completed
+2020-05-26 10:42:55,782 - INFO - Update all validation volleys plots...
+2020-05-26 10:42:56,364 - INFO - Plots updated successfully
+2020-05-26 10:42:56,364 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:42:56,364 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:42:56,394 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:42:56,396 - INFO - _____________________________________________________________________________________
+2020-05-26 10:42:56,396 - INFO - Setup of training volley 7...
+2020-05-26 10:42:56,396 - INFO - Setup of training volley 7 completed
+2020-05-26 10:42:56,396 - INFO - Training for 100 episodes...
+2020-05-26 10:43:06,132 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:43:06,133 - INFO - Average total reward: 0.01
+2020-05-26 10:43:06,133 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 10:43:06,133 - INFO - Average scaled reward: 0.001
+2020-05-26 10:43:06,133 - INFO - Standard deviation of scaled reward: 0.006
+2020-05-26 10:43:06,133 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:43:06,133 - INFO - Save training volley 7 episodes plots...
+2020-05-26 10:43:06,531 - INFO - Plots of training volley 7 saved successfully
+2020-05-26 10:43:06,531 - INFO - Training volley 7 is completed
+2020-05-26 10:43:06,531 - INFO - Training steps up to now: 5677
+2020-05-26 10:43:06,531 - INFO - Update all training volleys plots...
+2020-05-26 10:43:07,157 - INFO - Plots updated successfully
+2020-05-26 10:43:07,157 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:07,157 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:07,157 - INFO - Setup of validation volley 7...
+2020-05-26 10:43:07,157 - INFO - Setup of validation volley 7 completed
+2020-05-26 10:43:07,157 - INFO - Validating for 100 episodes...
+2020-05-26 10:43:08,684 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:43:08,684 - INFO - Average total reward: 0.13
+2020-05-26 10:43:08,684 - INFO - Standard deviation of total reward: 0.336
+2020-05-26 10:43:08,685 - INFO - Average scaled reward: 0.007
+2020-05-26 10:43:08,685 - INFO - Standard deviation of scaled reward: 0.021
+2020-05-26 10:43:08,685 - INFO - Average episode length: 52.0 steps
+2020-05-26 10:43:08,685 - INFO - Save validation volley 7 episodes plots...
+2020-05-26 10:43:09,050 - INFO - Plots of validation volley 7 saved successfully
+2020-05-26 10:43:09,050 - INFO - Validation volley 7 is completed
+2020-05-26 10:43:09,050 - INFO - Update all validation volleys plots...
+2020-05-26 10:43:09,619 - INFO - Plots updated successfully
+2020-05-26 10:43:09,620 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:09,620 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:43:09,650 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:43:09,651 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:09,651 - INFO - Setup of training volley 8...
+2020-05-26 10:43:09,652 - INFO - Setup of training volley 8 completed
+2020-05-26 10:43:09,652 - INFO - Training for 100 episodes...
+2020-05-26 10:43:18,784 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:43:18,784 - INFO - Average total reward: 0.01
+2020-05-26 10:43:18,784 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 10:43:18,784 - INFO - Average scaled reward: 0.001
+2020-05-26 10:43:18,785 - INFO - Standard deviation of scaled reward: 0.007
+2020-05-26 10:43:18,785 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:43:18,785 - INFO - Save training volley 8 episodes plots...
+2020-05-26 10:43:19,132 - INFO - Plots of training volley 8 saved successfully
+2020-05-26 10:43:19,132 - INFO - Training volley 8 is completed
+2020-05-26 10:43:19,132 - INFO - Training steps up to now: 6361
+2020-05-26 10:43:19,132 - INFO - Update all training volleys plots...
+2020-05-26 10:43:19,815 - INFO - Plots updated successfully
+2020-05-26 10:43:19,815 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:19,815 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:19,816 - INFO - Setup of validation volley 8...
+2020-05-26 10:43:19,816 - INFO - Setup of validation volley 8 completed
+2020-05-26 10:43:19,816 - INFO - Validating for 100 episodes...
+2020-05-26 10:43:21,159 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:43:21,159 - INFO - Average total reward: 0.43
+2020-05-26 10:43:21,159 - INFO - Standard deviation of total reward: 0.495
+2020-05-26 10:43:21,159 - INFO - Average scaled reward: 0.022
+2020-05-26 10:43:21,159 - INFO - Standard deviation of scaled reward: 0.033
+2020-05-26 10:43:21,159 - INFO - Average episode length: 35.0 steps
+2020-05-26 10:43:21,159 - INFO - Save validation volley 8 episodes plots...
+2020-05-26 10:43:21,533 - INFO - Plots of validation volley 8 saved successfully
+2020-05-26 10:43:21,533 - INFO - Validation volley 8 is completed
+2020-05-26 10:43:21,533 - INFO - Update all validation volleys plots...
+2020-05-26 10:43:22,109 - INFO - Plots updated successfully
+2020-05-26 10:43:22,109 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:22,109 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:43:22,162 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:43:22,163 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:22,163 - INFO - Setup of training volley 9...
+2020-05-26 10:43:22,163 - INFO - Setup of training volley 9 completed
+2020-05-26 10:43:22,163 - INFO - Training for 100 episodes...
+2020-05-26 10:43:30,913 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:43:30,913 - INFO - Average total reward: 0.02
+2020-05-26 10:43:30,913 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 10:43:30,913 - INFO - Average scaled reward: 0.002
+2020-05-26 10:43:30,913 - INFO - Standard deviation of scaled reward: 0.016
+2020-05-26 10:43:30,913 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:43:30,914 - INFO - Save training volley 9 episodes plots...
+2020-05-26 10:43:31,288 - INFO - Plots of training volley 9 saved successfully
+2020-05-26 10:43:31,289 - INFO - Training volley 9 is completed
+2020-05-26 10:43:31,289 - INFO - Training steps up to now: 7020
+2020-05-26 10:43:31,289 - INFO - Update all training volleys plots...
+2020-05-26 10:43:31,869 - INFO - Plots updated successfully
+2020-05-26 10:43:31,870 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:31,870 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:31,870 - INFO - Setup of validation volley 9...
+2020-05-26 10:43:31,870 - INFO - Setup of validation volley 9 completed
+2020-05-26 10:43:31,870 - INFO - Validating for 100 episodes...
+2020-05-26 10:43:32,936 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:43:32,937 - INFO - Average total reward: 0.48
+2020-05-26 10:43:32,937 - INFO - Standard deviation of total reward: 0.5
+2020-05-26 10:43:32,937 - INFO - Average scaled reward: 0.025
+2020-05-26 10:43:32,937 - INFO - Standard deviation of scaled reward: 0.035
+2020-05-26 10:43:32,937 - INFO - Average episode length: 31.0 steps
+2020-05-26 10:43:32,937 - INFO - Save validation volley 9 episodes plots...
+2020-05-26 10:43:33,303 - INFO - Plots of validation volley 9 saved successfully
+2020-05-26 10:43:33,303 - INFO - Validation volley 9 is completed
+2020-05-26 10:43:33,303 - INFO - Update all validation volleys plots...
+2020-05-26 10:43:33,886 - INFO - Plots updated successfully
+2020-05-26 10:43:33,886 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:33,886 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:43:33,917 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:43:33,918 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:33,919 - INFO - Setup of training volley 10...
+2020-05-26 10:43:33,919 - INFO - Setup of training volley 10 completed
+2020-05-26 10:43:33,919 - INFO - Training for 100 episodes...
+2020-05-26 10:43:43,542 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:43:43,542 - INFO - Average total reward: 0.03
+2020-05-26 10:43:43,542 - INFO - Standard deviation of total reward: 0.171
+2020-05-26 10:43:43,542 - INFO - Average scaled reward: 0.002
+2020-05-26 10:43:43,542 - INFO - Standard deviation of scaled reward: 0.013
+2020-05-26 10:43:43,542 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:43:43,542 - INFO - Save training volley 10 episodes plots...
+2020-05-26 10:43:43,890 - INFO - Plots of training volley 10 saved successfully
+2020-05-26 10:43:43,891 - INFO - Training volley 10 is completed
+2020-05-26 10:43:43,891 - INFO - Training steps up to now: 7737
+2020-05-26 10:43:43,891 - INFO - Update all training volleys plots...
+2020-05-26 10:43:44,445 - INFO - Plots updated successfully
+2020-05-26 10:43:44,445 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:44,445 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:44,445 - INFO - Setup of validation volley 10...
+2020-05-26 10:43:44,446 - INFO - Setup of validation volley 10 completed
+2020-05-26 10:43:44,446 - INFO - Validating for 100 episodes...
+2020-05-26 10:43:45,824 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:43:45,824 - INFO - Average total reward: 0.31
+2020-05-26 10:43:45,825 - INFO - Standard deviation of total reward: 0.462
+2020-05-26 10:43:45,825 - INFO - Average scaled reward: 0.014
+2020-05-26 10:43:45,825 - INFO - Standard deviation of scaled reward: 0.025
+2020-05-26 10:43:45,825 - INFO - Average episode length: 36.0 steps
+2020-05-26 10:43:45,825 - INFO - Save validation volley 10 episodes plots...
+2020-05-26 10:43:46,204 - INFO - Plots of validation volley 10 saved successfully
+2020-05-26 10:43:46,204 - INFO - Validation volley 10 is completed
+2020-05-26 10:43:46,204 - INFO - Update all validation volleys plots...
+2020-05-26 10:43:46,761 - INFO - Plots updated successfully
+2020-05-26 10:43:46,761 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:46,761 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:43:46,791 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:43:46,792 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:46,792 - INFO - Setup of training volley 11...
+2020-05-26 10:43:46,793 - INFO - Setup of training volley 11 completed
+2020-05-26 10:43:46,793 - INFO - Training for 100 episodes...
+2020-05-26 10:43:56,103 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:43:56,104 - INFO - Average total reward: 0.0
+2020-05-26 10:43:56,104 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 10:43:56,104 - INFO - Average scaled reward: 0.0
+2020-05-26 10:43:56,104 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 10:43:56,104 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:43:56,104 - INFO - Save training volley 11 episodes plots...
+2020-05-26 10:43:56,446 - INFO - Plots of training volley 11 saved successfully
+2020-05-26 10:43:56,447 - INFO - Training volley 11 is completed
+2020-05-26 10:43:56,447 - INFO - Training steps up to now: 8426
+2020-05-26 10:43:56,447 - INFO - Update all training volleys plots...
+2020-05-26 10:43:57,069 - INFO - Plots updated successfully
+2020-05-26 10:43:57,070 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:57,070 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:57,070 - INFO - Setup of validation volley 11...
+2020-05-26 10:43:57,070 - INFO - Setup of validation volley 11 completed
+2020-05-26 10:43:57,070 - INFO - Validating for 100 episodes...
+2020-05-26 10:43:58,526 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:43:58,526 - INFO - Average total reward: 0.17
+2020-05-26 10:43:58,526 - INFO - Standard deviation of total reward: 0.376
+2020-05-26 10:43:58,526 - INFO - Average scaled reward: 0.01
+2020-05-26 10:43:58,527 - INFO - Standard deviation of scaled reward: 0.025
+2020-05-26 10:43:58,527 - INFO - Average episode length: 38.0 steps
+2020-05-26 10:43:58,527 - INFO - Save validation volley 11 episodes plots...
+2020-05-26 10:43:58,939 - INFO - Plots of validation volley 11 saved successfully
+2020-05-26 10:43:58,939 - INFO - Validation volley 11 is completed
+2020-05-26 10:43:58,939 - INFO - Update all validation volleys plots...
+2020-05-26 10:43:59,494 - INFO - Plots updated successfully
+2020-05-26 10:43:59,494 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:43:59,494 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:43:59,524 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:43:59,525 - INFO - _____________________________________________________________________________________
+2020-05-26 10:43:59,525 - INFO - Setup of training volley 12...
+2020-05-26 10:43:59,525 - INFO - Setup of training volley 12 completed
+2020-05-26 10:43:59,525 - INFO - Training for 100 episodes...
+2020-05-26 10:44:09,409 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:44:09,409 - INFO - Average total reward: 0.02
+2020-05-26 10:44:09,409 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 10:44:09,409 - INFO - Average scaled reward: 0.002
+2020-05-26 10:44:09,409 - INFO - Standard deviation of scaled reward: 0.011
+2020-05-26 10:44:09,409 - INFO - Average episode length: 9.0 steps
+2020-05-26 10:44:09,409 - INFO - Save training volley 12 episodes plots...
+2020-05-26 10:44:09,765 - INFO - Plots of training volley 12 saved successfully
+2020-05-26 10:44:09,765 - INFO - Training volley 12 is completed
+2020-05-26 10:44:09,765 - INFO - Training steps up to now: 9183
+2020-05-26 10:44:09,765 - INFO - Update all training volleys plots...
+2020-05-26 10:44:10,344 - INFO - Plots updated successfully
+2020-05-26 10:44:10,344 - INFO - _____________________________________________________________________________________
+2020-05-26 10:44:10,344 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:44:10,344 - INFO - Setup of validation volley 12...
+2020-05-26 10:44:10,344 - INFO - Setup of validation volley 12 completed
+2020-05-26 10:44:10,344 - INFO - Validating for 100 episodes...
+2020-05-26 10:44:11,419 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:44:11,419 - INFO - Average total reward: 0.0
+2020-05-26 10:44:11,419 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 10:44:11,419 - INFO - Average scaled reward: 0.0
+2020-05-26 10:44:11,419 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 10:44:11,420 - INFO - Average episode length: 27.0 steps
+2020-05-26 10:44:11,420 - INFO - Save validation volley 12 episodes plots...
+2020-05-26 10:44:11,771 - INFO - Plots of validation volley 12 saved successfully
+2020-05-26 10:44:11,771 - INFO - Validation volley 12 is completed
+2020-05-26 10:44:11,771 - INFO - Update all validation volleys plots...
+2020-05-26 10:44:12,453 - INFO - Plots updated successfully
+2020-05-26 10:44:12,453 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:44:12,453 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:44:12,485 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:44:12,487 - INFO - _____________________________________________________________________________________
+2020-05-26 10:44:12,487 - INFO - Setup of training volley 13...
+2020-05-26 10:44:12,487 - INFO - Setup of training volley 13 completed
+2020-05-26 10:44:12,487 - INFO - Training for 100 episodes...
+2020-05-26 10:44:22,329 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:44:22,329 - INFO - Average total reward: 0.0
+2020-05-26 10:44:22,329 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 10:44:22,329 - INFO - Average scaled reward: 0.0
+2020-05-26 10:44:22,329 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 10:44:22,329 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:44:22,329 - INFO - Save training volley 13 episodes plots...
+2020-05-26 10:44:22,674 - INFO - Plots of training volley 13 saved successfully
+2020-05-26 10:44:22,674 - INFO - Training volley 13 is completed
+2020-05-26 10:44:22,674 - INFO - Training steps up to now: 9910
+2020-05-26 10:44:22,674 - INFO - Update all training volleys plots...
+2020-05-26 10:44:23,254 - INFO - Plots updated successfully
+2020-05-26 10:44:23,254 - INFO - _____________________________________________________________________________________
+2020-05-26 10:44:23,254 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:44:23,254 - INFO - Setup of validation volley 13...
+2020-05-26 10:44:23,255 - INFO - Setup of validation volley 13 completed
+2020-05-26 10:44:23,255 - INFO - Validating for 100 episodes...
+2020-05-26 10:44:24,587 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:44:24,588 - INFO - Average total reward: 0.7
+2020-05-26 10:44:24,588 - INFO - Standard deviation of total reward: 0.458
+2020-05-26 10:44:24,588 - INFO - Average scaled reward: 0.032
+2020-05-26 10:44:24,588 - INFO - Standard deviation of scaled reward: 0.036
+2020-05-26 10:44:24,588 - INFO - Average episode length: 40.0 steps
+2020-05-26 10:44:24,588 - INFO - Save validation volley 13 episodes plots...
+2020-05-26 10:44:24,973 - INFO - Plots of validation volley 13 saved successfully
+2020-05-26 10:44:24,973 - INFO - Validation volley 13 is completed
+2020-05-26 10:44:24,973 - INFO - Update all validation volleys plots...
+2020-05-26 10:44:25,543 - INFO - Plots updated successfully
+2020-05-26 10:44:25,543 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:44:25,543 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:44:25,574 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:44:25,575 - INFO - _____________________________________________________________________________________
+2020-05-26 10:44:25,575 - INFO - Setup of training volley 14...
+2020-05-26 10:44:25,575 - INFO - Setup of training volley 14 completed
+2020-05-26 10:44:25,575 - INFO - Training for 100 episodes...
+2020-05-26 10:44:36,395 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:44:36,396 - INFO - Average total reward: 0.02
+2020-05-26 10:44:36,396 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 10:44:36,396 - INFO - Average scaled reward: 0.002
+2020-05-26 10:44:36,396 - INFO - Standard deviation of scaled reward: 0.013
+2020-05-26 10:44:36,397 - INFO - Average episode length: 9.0 steps
+2020-05-26 10:44:36,397 - INFO - Save training volley 14 episodes plots...
+2020-05-26 10:44:36,758 - INFO - Plots of training volley 14 saved successfully
+2020-05-26 10:44:36,758 - INFO - Training volley 14 is completed
+2020-05-26 10:44:36,758 - INFO - Training steps up to now: 10719
+2020-05-26 10:44:36,758 - INFO - Update all training volleys plots...
+2020-05-26 10:44:37,345 - INFO - Plots updated successfully
+2020-05-26 10:44:37,345 - INFO - _____________________________________________________________________________________
+2020-05-26 10:44:37,345 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:44:37,345 - INFO - Setup of validation volley 14...
+2020-05-26 10:44:37,346 - INFO - Setup of validation volley 14 completed
+2020-05-26 10:44:37,346 - INFO - Validating for 100 episodes...
+2020-05-26 10:44:39,068 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:44:39,068 - INFO - Average total reward: 0.2
+2020-05-26 10:44:39,068 - INFO - Standard deviation of total reward: 0.4
+2020-05-26 10:44:39,068 - INFO - Average scaled reward: 0.011
+2020-05-26 10:44:39,068 - INFO - Standard deviation of scaled reward: 0.029
+2020-05-26 10:44:39,068 - INFO - Average episode length: 42.0 steps
+2020-05-26 10:44:39,069 - INFO - Save validation volley 14 episodes plots...
+2020-05-26 10:44:39,441 - INFO - Plots of validation volley 14 saved successfully
+2020-05-26 10:44:39,442 - INFO - Validation volley 14 is completed
+2020-05-26 10:44:39,442 - INFO - Update all validation volleys plots...
+2020-05-26 10:44:40,019 - INFO - Plots updated successfully
+2020-05-26 10:44:40,019 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:44:40,019 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:44:40,050 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:44:40,051 - INFO - _____________________________________________________________________________________
+2020-05-26 10:44:40,051 - INFO - Setup of training volley 15...
+2020-05-26 10:44:40,051 - INFO - Setup of training volley 15 completed
+2020-05-26 10:44:40,051 - INFO - Training for 100 episodes...
+2020-05-26 10:44:49,572 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:44:49,572 - INFO - Average total reward: 0.01
+2020-05-26 10:44:49,572 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 10:44:49,573 - INFO - Average scaled reward: 0.001
+2020-05-26 10:44:49,573 - INFO - Standard deviation of scaled reward: 0.007
+2020-05-26 10:44:49,573 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:44:49,573 - INFO - Save training volley 15 episodes plots...
+2020-05-26 10:44:49,923 - INFO - Plots of training volley 15 saved successfully
+2020-05-26 10:44:49,923 - INFO - Training volley 15 is completed
+2020-05-26 10:44:49,923 - INFO - Training steps up to now: 11438
+2020-05-26 10:44:49,923 - INFO - Update all training volleys plots...
+2020-05-26 10:44:50,510 - INFO - Plots updated successfully
+2020-05-26 10:44:50,510 - INFO - _____________________________________________________________________________________
+2020-05-26 10:44:50,510 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:44:50,511 - INFO - Setup of validation volley 15...
+2020-05-26 10:44:50,511 - INFO - Setup of validation volley 15 completed
+2020-05-26 10:44:50,511 - INFO - Validating for 100 episodes...
+2020-05-26 10:44:51,370 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:44:51,371 - INFO - Average total reward: 0.41
+2020-05-26 10:44:51,371 - INFO - Standard deviation of total reward: 0.492
+2020-05-26 10:44:51,371 - INFO - Average scaled reward: 0.019
+2020-05-26 10:44:51,371 - INFO - Standard deviation of scaled reward: 0.028
+2020-05-26 10:44:51,371 - INFO - Average episode length: 28.0 steps
+2020-05-26 10:44:51,371 - INFO - Save validation volley 15 episodes plots...
+2020-05-26 10:44:51,742 - INFO - Plots of validation volley 15 saved successfully
+2020-05-26 10:44:51,742 - INFO - Validation volley 15 is completed
+2020-05-26 10:44:51,742 - INFO - Update all validation volleys plots...
+2020-05-26 10:44:52,374 - INFO - Plots updated successfully
+2020-05-26 10:44:52,374 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:44:52,374 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:44:52,413 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:44:52,416 - INFO - _____________________________________________________________________________________
+2020-05-26 10:44:52,417 - INFO - Setup of training volley 16...
+2020-05-26 10:44:52,417 - INFO - Setup of training volley 16 completed
+2020-05-26 10:44:52,417 - INFO - Training for 100 episodes...
+2020-05-26 10:45:01,975 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:45:01,976 - INFO - Average total reward: 0.01
+2020-05-26 10:45:01,976 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 10:45:01,976 - INFO - Average scaled reward: 0.001
+2020-05-26 10:45:01,976 - INFO - Standard deviation of scaled reward: 0.008
+2020-05-26 10:45:01,976 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:45:01,976 - INFO - Save training volley 16 episodes plots...
+2020-05-26 10:45:02,335 - INFO - Plots of training volley 16 saved successfully
+2020-05-26 10:45:02,335 - INFO - Training volley 16 is completed
+2020-05-26 10:45:02,335 - INFO - Training steps up to now: 12160
+2020-05-26 10:45:02,335 - INFO - Update all training volleys plots...
+2020-05-26 10:45:02,941 - INFO - Plots updated successfully
+2020-05-26 10:45:02,941 - INFO - _____________________________________________________________________________________
+2020-05-26 10:45:02,941 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:45:02,941 - INFO - Setup of validation volley 16...
+2020-05-26 10:45:02,941 - INFO - Setup of validation volley 16 completed
+2020-05-26 10:45:02,941 - INFO - Validating for 100 episodes...
+2020-05-26 10:45:04,390 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:45:04,391 - INFO - Average total reward: 0.71
+2020-05-26 10:45:04,391 - INFO - Standard deviation of total reward: 0.454
+2020-05-26 10:45:04,391 - INFO - Average scaled reward: 0.036
+2020-05-26 10:45:04,391 - INFO - Standard deviation of scaled reward: 0.035
+2020-05-26 10:45:04,391 - INFO - Average episode length: 38.0 steps
+2020-05-26 10:45:04,391 - INFO - Save validation volley 16 episodes plots...
+2020-05-26 10:45:04,770 - INFO - Plots of validation volley 16 saved successfully
+2020-05-26 10:45:04,771 - INFO - Validation volley 16 is completed
+2020-05-26 10:45:04,771 - INFO - Update all validation volleys plots...
+2020-05-26 10:45:05,469 - INFO - Plots updated successfully
+2020-05-26 10:45:05,470 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:45:05,470 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:45:05,518 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:45:05,520 - INFO - _____________________________________________________________________________________
+2020-05-26 10:45:05,520 - INFO - Setup of training volley 17...
+2020-05-26 10:45:05,520 - INFO - Setup of training volley 17 completed
+2020-05-26 10:45:05,520 - INFO - Training for 100 episodes...
+2020-05-26 10:45:14,497 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:45:14,498 - INFO - Average total reward: 0.02
+2020-05-26 10:45:14,498 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 10:45:14,498 - INFO - Average scaled reward: 0.002
+2020-05-26 10:45:14,498 - INFO - Standard deviation of scaled reward: 0.018
+2020-05-26 10:45:14,498 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:45:14,498 - INFO - Save training volley 17 episodes plots...
+2020-05-26 10:45:14,864 - INFO - Plots of training volley 17 saved successfully
+2020-05-26 10:45:14,865 - INFO - Training volley 17 is completed
+2020-05-26 10:45:14,865 - INFO - Training steps up to now: 12837
+2020-05-26 10:45:14,865 - INFO - Update all training volleys plots...
+2020-05-26 10:45:15,459 - INFO - Plots updated successfully
+2020-05-26 10:45:15,460 - INFO - _____________________________________________________________________________________
+2020-05-26 10:45:15,460 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:45:15,460 - INFO - Setup of validation volley 17...
+2020-05-26 10:45:15,460 - INFO - Setup of validation volley 17 completed
+2020-05-26 10:45:15,460 - INFO - Validating for 100 episodes...
+2020-05-26 10:45:16,505 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:45:16,506 - INFO - Average total reward: 0.31
+2020-05-26 10:45:16,506 - INFO - Standard deviation of total reward: 0.462
+2020-05-26 10:45:16,506 - INFO - Average scaled reward: 0.015
+2020-05-26 10:45:16,506 - INFO - Standard deviation of scaled reward: 0.028
+2020-05-26 10:45:16,506 - INFO - Average episode length: 35.0 steps
+2020-05-26 10:45:16,506 - INFO - Save validation volley 17 episodes plots...
+2020-05-26 10:45:16,875 - INFO - Plots of validation volley 17 saved successfully
+2020-05-26 10:45:16,875 - INFO - Validation volley 17 is completed
+2020-05-26 10:45:16,875 - INFO - Update all validation volleys plots...
+2020-05-26 10:45:17,460 - INFO - Plots updated successfully
+2020-05-26 10:45:17,460 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:45:17,460 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:45:17,490 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:45:17,492 - INFO - _____________________________________________________________________________________
+2020-05-26 10:45:17,492 - INFO - Setup of training volley 18...
+2020-05-26 10:45:17,492 - INFO - Setup of training volley 18 completed
+2020-05-26 10:45:17,492 - INFO - Training for 100 episodes...
+2020-05-26 10:45:26,146 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:45:26,147 - INFO - Average total reward: 0.0
+2020-05-26 10:45:26,147 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 10:45:26,147 - INFO - Average scaled reward: 0.0
+2020-05-26 10:45:26,147 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 10:45:26,147 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:45:26,147 - INFO - Save training volley 18 episodes plots...
+2020-05-26 10:45:26,495 - INFO - Plots of training volley 18 saved successfully
+2020-05-26 10:45:26,495 - INFO - Training volley 18 is completed
+2020-05-26 10:45:26,495 - INFO - Training steps up to now: 13511
+2020-05-26 10:45:26,495 - INFO - Update all training volleys plots...
+2020-05-26 10:45:27,104 - INFO - Plots updated successfully
+2020-05-26 10:45:27,104 - INFO - _____________________________________________________________________________________
+2020-05-26 10:45:27,104 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:45:27,104 - INFO - Setup of validation volley 18...
+2020-05-26 10:45:27,104 - INFO - Setup of validation volley 18 completed
+2020-05-26 10:45:27,104 - INFO - Validating for 100 episodes...
+2020-05-26 10:45:28,251 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:45:28,252 - INFO - Average total reward: 0.0
+2020-05-26 10:45:28,252 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 10:45:28,252 - INFO - Average scaled reward: 0.0
+2020-05-26 10:45:28,252 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 10:45:28,252 - INFO - Average episode length: 32.0 steps
+2020-05-26 10:45:28,252 - INFO - Save validation volley 18 episodes plots...
+2020-05-26 10:45:28,606 - INFO - Plots of validation volley 18 saved successfully
+2020-05-26 10:45:28,606 - INFO - Validation volley 18 is completed
+2020-05-26 10:45:28,606 - INFO - Update all validation volleys plots...
+2020-05-26 10:45:29,206 - INFO - Plots updated successfully
+2020-05-26 10:45:29,206 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:45:29,206 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:45:29,236 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:45:29,238 - INFO - _____________________________________________________________________________________
+2020-05-26 10:45:29,238 - INFO - Setup of training volley 19...
+2020-05-26 10:45:29,238 - INFO - Setup of training volley 19 completed
+2020-05-26 10:45:29,238 - INFO - Training for 100 episodes...
+2020-05-26 10:45:38,849 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 10:45:38,850 - INFO - Average total reward: 0.01
+2020-05-26 10:45:38,850 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 10:45:38,850 - INFO - Average scaled reward: 0.001
+2020-05-26 10:45:38,850 - INFO - Standard deviation of scaled reward: 0.014
+2020-05-26 10:45:38,850 - INFO - Average episode length: 8.0 steps
+2020-05-26 10:45:38,850 - INFO - Save training volley 19 episodes plots...
+2020-05-26 10:45:39,205 - INFO - Plots of training volley 19 saved successfully
+2020-05-26 10:45:39,206 - INFO - Training volley 19 is completed
+2020-05-26 10:45:39,206 - INFO - Training steps up to now: 14246
+2020-05-26 10:45:39,206 - INFO - Update all training volleys plots...
+2020-05-26 10:45:39,789 - INFO - Plots updated successfully
+2020-05-26 10:45:39,789 - INFO - _____________________________________________________________________________________
+2020-05-26 10:45:39,789 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:45:39,789 - INFO - Setup of validation volley 19...
+2020-05-26 10:45:39,789 - INFO - Setup of validation volley 19 completed
+2020-05-26 10:45:39,790 - INFO - Validating for 100 episodes...
+2020-05-26 10:45:41,004 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 10:45:41,005 - INFO - Average total reward: 0.18
+2020-05-26 10:45:41,005 - INFO - Standard deviation of total reward: 0.384
+2020-05-26 10:45:41,005 - INFO - Average scaled reward: 0.009
+2020-05-26 10:45:41,006 - INFO - Standard deviation of scaled reward: 0.022
+2020-05-26 10:45:41,006 - INFO - Average episode length: 32.0 steps
+2020-05-26 10:45:41,006 - INFO - Save validation volley 19 episodes plots...
+2020-05-26 10:45:41,377 - INFO - Plots of validation volley 19 saved successfully
+2020-05-26 10:45:41,377 - INFO - Validation volley 19 is completed
+2020-05-26 10:45:41,378 - INFO - Update all validation volleys plots...
+2020-05-26 10:45:41,968 - INFO - Plots updated successfully
+2020-05-26 10:45:41,968 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 10:45:41,968 - INFO - Saving the agent dddqn_agent metagraph at path ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph/experiment_boltzmann_4...
+2020-05-26 10:45:42,006 - INFO - Agent dddqn_agent metagraph saved successfully
+2020-05-26 10:45:42,010 - INFO - End of training
+2020-05-26 10:45:42,019 - INFO - Experiment experiment_boltzmann_4: testing process started
+2020-05-26 10:45:42,022 - INFO - Initializing the environment...
+2020-05-26 10:45:42,023 - INFO - Environment initialized
+2020-05-26 10:45:42,023 - INFO - Initializing the agent..
+2020-05-26 10:45:42,134 - INFO - Model initialized to default state
+2020-05-26 10:45:42,173 - INFO - Agent initialized
+2020-05-26 10:45:42,173 - INFO - Restoring agent graph with checkpoint path: ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph
+2020-05-26 10:45:42,225 - INFO - Model graph stored at ./experiments/frozen_lake_dddql_2020-05-26/experiment_boltzmann/4/metagraph loaded successfully!
+2020-05-26 10:45:42,225 - INFO - Agent restored
+2020-05-26 10:45:42,225 - INFO - Setup of test volley 0...
+2020-05-26 10:45:42,225 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:43,425 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:43,425 - INFO - Average total reward: 0.26
+2020-05-26 10:45:43,425 - INFO - Standard deviation of total reward: 0.439
+2020-05-26 10:45:43,425 - INFO - Average scaled reward: 0.013
+2020-05-26 10:45:43,425 - INFO - Standard deviation of scaled reward: 0.028
+2020-05-26 10:45:43,425 - INFO - Average episode length: 35.0 steps
+2020-05-26 10:45:43,425 - INFO - Setup of test volley 1...
+2020-05-26 10:45:43,426 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:44,578 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:44,579 - INFO - Average total reward: 0.19
+2020-05-26 10:45:44,579 - INFO - Standard deviation of total reward: 0.392
+2020-05-26 10:45:44,579 - INFO - Average scaled reward: 0.011
+2020-05-26 10:45:44,579 - INFO - Standard deviation of scaled reward: 0.026
+2020-05-26 10:45:44,579 - INFO - Average episode length: 32.0 steps
+2020-05-26 10:45:44,579 - INFO - Setup of test volley 2...
+2020-05-26 10:45:44,579 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:45,711 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:45,712 - INFO - Average total reward: 0.18
+2020-05-26 10:45:45,712 - INFO - Standard deviation of total reward: 0.384
+2020-05-26 10:45:45,712 - INFO - Average scaled reward: 0.009
+2020-05-26 10:45:45,712 - INFO - Standard deviation of scaled reward: 0.024
+2020-05-26 10:45:45,712 - INFO - Average episode length: 33.0 steps
+2020-05-26 10:45:45,712 - INFO - Setup of test volley 3...
+2020-05-26 10:45:45,712 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:46,975 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:46,975 - INFO - Average total reward: 0.21
+2020-05-26 10:45:46,976 - INFO - Standard deviation of total reward: 0.407
+2020-05-26 10:45:46,976 - INFO - Average scaled reward: 0.009
+2020-05-26 10:45:46,976 - INFO - Standard deviation of scaled reward: 0.022
+2020-05-26 10:45:46,976 - INFO - Average episode length: 39.0 steps
+2020-05-26 10:45:46,976 - INFO - Setup of test volley 4...
+2020-05-26 10:45:46,977 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:48,331 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:48,331 - INFO - Average total reward: 0.17
+2020-05-26 10:45:48,331 - INFO - Standard deviation of total reward: 0.376
+2020-05-26 10:45:48,331 - INFO - Average scaled reward: 0.009
+2020-05-26 10:45:48,331 - INFO - Standard deviation of scaled reward: 0.024
+2020-05-26 10:45:48,331 - INFO - Average episode length: 33.0 steps
+2020-05-26 10:45:48,332 - INFO - Setup of test volley 5...
+2020-05-26 10:45:48,332 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:49,641 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:49,641 - INFO - Average total reward: 0.2
+2020-05-26 10:45:49,641 - INFO - Standard deviation of total reward: 0.4
+2020-05-26 10:45:49,641 - INFO - Average scaled reward: 0.009
+2020-05-26 10:45:49,642 - INFO - Standard deviation of scaled reward: 0.023
+2020-05-26 10:45:49,642 - INFO - Average episode length: 34.0 steps
+2020-05-26 10:45:49,642 - INFO - Setup of test volley 6...
+2020-05-26 10:45:49,642 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:51,333 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:51,334 - INFO - Average total reward: 0.2
+2020-05-26 10:45:51,334 - INFO - Standard deviation of total reward: 0.4
+2020-05-26 10:45:51,334 - INFO - Average scaled reward: 0.011
+2020-05-26 10:45:51,334 - INFO - Standard deviation of scaled reward: 0.026
+2020-05-26 10:45:51,334 - INFO - Average episode length: 34.0 steps
+2020-05-26 10:45:51,334 - INFO - Setup of test volley 7...
+2020-05-26 10:45:51,335 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:52,776 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:52,776 - INFO - Average total reward: 0.16
+2020-05-26 10:45:52,776 - INFO - Standard deviation of total reward: 0.367
+2020-05-26 10:45:52,776 - INFO - Average scaled reward: 0.006
+2020-05-26 10:45:52,776 - INFO - Standard deviation of scaled reward: 0.016
+2020-05-26 10:45:52,776 - INFO - Average episode length: 35.0 steps
+2020-05-26 10:45:52,776 - INFO - Setup of test volley 8...
+2020-05-26 10:45:52,777 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:53,947 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:53,947 - INFO - Average total reward: 0.26
+2020-05-26 10:45:53,947 - INFO - Standard deviation of total reward: 0.439
+2020-05-26 10:45:53,947 - INFO - Average scaled reward: 0.011
+2020-05-26 10:45:53,948 - INFO - Standard deviation of scaled reward: 0.024
+2020-05-26 10:45:53,948 - INFO - Average episode length: 32.0 steps
+2020-05-26 10:45:53,948 - INFO - Setup of test volley 9...
+2020-05-26 10:45:53,948 - INFO - Testing for 100 episodes...
+2020-05-26 10:45:55,413 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 10:45:55,414 - INFO - Average total reward: 0.18
+2020-05-26 10:45:55,414 - INFO - Standard deviation of total reward: 0.384
+2020-05-26 10:45:55,414 - INFO - Average scaled reward: 0.006
+2020-05-26 10:45:55,414 - INFO - Standard deviation of scaled reward: 0.014
+2020-05-26 10:45:55,414 - INFO - Average episode length: 38.0 steps
+2020-05-26 10:45:55,414 - INFO - End of test
+2020-05-26 10:45:55,415 - INFO - Results over 10 test volleys of 100 episodes each are:
+2020-05-26 10:45:55,415 - INFO - Average test total reward: 0.201
+2020-05-26 10:45:55,415 - INFO - Average test scaled reward: 0.009
+2020-05-26 10:45:55,415 - INFO - Max test total reward: 0.26
+2020-05-26 10:45:55,415 - INFO - Max test scaled reward: 0.013
+2020-05-26 10:45:55,415 - INFO - Average test standard deviation of total reward: 0.399
+2020-05-26 10:45:55,415 - INFO - Average test standard deviation of scaled reward: 0.023
+2020-05-26 10:45:55,415 - INFO - Min test standard deviation of total reward: 0.367
+2020-05-26 10:45:55,415 - INFO - Min test standard deviation of scaled reward: 0.014
+2020-05-26 10:45:55,415 - INFO - Average test episode length: 34.0
+2020-05-26 10:45:55,416 - INFO - The experiment terminated without meeting the requirements

@@ -1,0 +1,158 @@
+2020-05-26 12:30:50,262 - INFO - Setup of experiment experiment_refactored_dirichlet_1...
+2020-05-26 12:30:50,263 - INFO - Environment setup...
+2020-05-26 12:30:50,272 - INFO - Environment setup is successful
+2020-05-26 12:30:50,272 - INFO - Agent setup...
+2020-05-26 12:30:50,272 - INFO - Setup of agent dqn_agent with scope experiment_refactored_dirichlet_1...
+2020-05-26 12:30:50,272 - INFO - Generating model model_huber with scope experiment_refactored_dirichlet_1/dqn_agent...
+2020-05-26 12:30:50,272 - INFO - Model generation successful
+2020-05-26 12:30:50,421 - INFO - A Tensorboard summary for the agent will be updated during training of its internal model
+2020-05-26 12:30:50,422 - INFO - Tensorboard summary path: ./experiments/frozen_lake_dql_2020-05-26/experiment_refactored_dirichlet/1/summary
+2020-05-26 12:30:50,430 - INFO - Agent model metagraph will be saved after each training/validation pair
+2020-05-26 12:30:50,430 - INFO - Agent model metagraphs are saved at ./experiments/frozen_lake_dql_2020-05-26/experiment_refactored_dirichlet/1/metagraph/experiment_refactored_dirichlet_1
+2020-05-26 12:30:50,431 - INFO - Agent setup is successful
+2020-05-26 12:30:50,431 - INFO - Tensorflow configuration is successful
+2020-05-26 12:30:50,432 - INFO - Matplotlib configuration is successful
+2020-05-26 12:30:50,432 - INFO - Experiment setup is successful
+2020-05-26 12:30:50,432 - INFO - Experiment experiment_refactored_dirichlet_1: training process started
+2020-05-26 12:30:50,435 - INFO - Initializing the environment...
+2020-05-26 12:30:50,435 - INFO - Environment initialized
+2020-05-26 12:30:50,435 - INFO - Initializing the agent..
+2020-05-26 12:30:50,481 - INFO - Model initialized to default state
+2020-05-26 12:30:50,495 - INFO - Agent initialized
+2020-05-26 12:30:50,495 - INFO - Setup of warm-up volley...
+2020-05-26 12:30:50,495 - INFO - Setup of warm-up volley completed
+2020-05-26 12:30:50,523 - INFO - Warm-up volley is completed
+2020-05-26 12:30:50,524 - INFO - _____________________________________________________________________________________
+2020-05-26 12:30:50,524 - INFO - Setup of training volley 0...
+2020-05-26 12:30:50,524 - INFO - Setup of training volley 0 completed
+2020-05-26 12:30:50,524 - INFO - Training for 100 episodes...
+2020-05-26 12:30:55,606 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 12:30:55,606 - INFO - Average total reward: -7.26
+2020-05-26 12:30:55,606 - INFO - Standard deviation of total reward: 5.083
+2020-05-26 12:30:55,606 - INFO - Average scaled reward: -1.0
+2020-05-26 12:30:55,606 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 12:30:55,606 - INFO - Average episode length: 7.0 steps
+2020-05-26 12:30:55,606 - INFO - Save training volley 0 episodes plots...
+2020-05-26 12:30:55,959 - INFO - Plots of training volley 0 saved successfully
+2020-05-26 12:30:55,959 - INFO - Training volley 0 is completed
+2020-05-26 12:30:55,959 - INFO - Training steps up to now: 626
+2020-05-26 12:30:55,959 - INFO - _____________________________________________________________________________________
+2020-05-26 12:30:55,959 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 12:30:55,959 - INFO - Setup of validation volley 0...
+2020-05-26 12:30:55,959 - INFO - Setup of validation volley 0 completed
+2020-05-26 12:30:55,959 - INFO - Validating for 100 episodes...
+2020-05-26 12:30:56,066 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 12:30:56,066 - INFO - Average total reward: -4.64
+2020-05-26 12:30:56,066 - INFO - Standard deviation of total reward: 2.83
+2020-05-26 12:30:56,066 - INFO - Average scaled reward: -0.997
+2020-05-26 12:30:56,066 - INFO - Standard deviation of scaled reward: 0.018
+2020-05-26 12:30:56,066 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:56,066 - INFO - Save validation volley 0 episodes plots...
+2020-05-26 12:30:56,432 - INFO - Plots of validation volley 0 saved successfully
+2020-05-26 12:30:56,432 - INFO - Validation volley 0 is completed
+2020-05-26 12:30:56,432 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 12:30:56,432 - INFO - Saving the agent dqn_agent metagraph at path ./experiments/frozen_lake_dql_2020-05-26/experiment_refactored_dirichlet/1/metagraph/experiment_refactored_dirichlet_1...
+2020-05-26 12:30:56,463 - INFO - Agent dqn_agent metagraph saved successfully
+2020-05-26 12:30:56,463 - INFO - Validation of the agent is successful
+2020-05-26 12:30:56,463 - INFO - End of training
+2020-05-26 12:30:56,466 - INFO - Experiment experiment_refactored_dirichlet_1: testing process started
+2020-05-26 12:30:56,469 - INFO - Initializing the environment...
+2020-05-26 12:30:56,469 - INFO - Environment initialized
+2020-05-26 12:30:56,469 - INFO - Initializing the agent..
+2020-05-26 12:30:56,515 - INFO - Model initialized to default state
+2020-05-26 12:30:56,531 - INFO - Agent initialized
+2020-05-26 12:30:56,531 - INFO - Restoring agent graph with checkpoint path: ./experiments/frozen_lake_dql_2020-05-26/experiment_refactored_dirichlet/1/metagraph
+2020-05-26 12:30:56,560 - INFO - Model graph stored at ./experiments/frozen_lake_dql_2020-05-26/experiment_refactored_dirichlet/1/metagraph loaded successfully!
+2020-05-26 12:30:56,560 - INFO - Agent restored
+2020-05-26 12:30:56,560 - INFO - Setup of test volley 0...
+2020-05-26 12:30:56,560 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:56,731 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:56,731 - INFO - Average total reward: -5.33
+2020-05-26 12:30:56,731 - INFO - Standard deviation of total reward: 3.086
+2020-05-26 12:30:56,731 - INFO - Average scaled reward: -0.994
+2020-05-26 12:30:56,731 - INFO - Standard deviation of scaled reward: 0.023
+2020-05-26 12:30:56,731 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:56,731 - INFO - Setup of test volley 1...
+2020-05-26 12:30:56,732 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:56,850 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:56,850 - INFO - Average total reward: -5.04
+2020-05-26 12:30:56,850 - INFO - Standard deviation of total reward: 2.76
+2020-05-26 12:30:56,850 - INFO - Average scaled reward: -0.998
+2020-05-26 12:30:56,850 - INFO - Standard deviation of scaled reward: 0.017
+2020-05-26 12:30:56,850 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:56,850 - INFO - Setup of test volley 2...
+2020-05-26 12:30:56,850 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:56,988 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:56,988 - INFO - Average total reward: -5.33
+2020-05-26 12:30:56,988 - INFO - Standard deviation of total reward: 3.353
+2020-05-26 12:30:56,988 - INFO - Average scaled reward: -0.997
+2020-05-26 12:30:56,989 - INFO - Standard deviation of scaled reward: 0.021
+2020-05-26 12:30:56,989 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:56,989 - INFO - Setup of test volley 3...
+2020-05-26 12:30:56,989 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:57,129 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:57,130 - INFO - Average total reward: -5.18
+2020-05-26 12:30:57,130 - INFO - Standard deviation of total reward: 3.087
+2020-05-26 12:30:57,130 - INFO - Average scaled reward: -0.999
+2020-05-26 12:30:57,130 - INFO - Standard deviation of scaled reward: 0.011
+2020-05-26 12:30:57,130 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:57,130 - INFO - Setup of test volley 4...
+2020-05-26 12:30:57,130 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:57,273 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:57,274 - INFO - Average total reward: -5.44
+2020-05-26 12:30:57,274 - INFO - Standard deviation of total reward: 3.179
+2020-05-26 12:30:57,274 - INFO - Average scaled reward: -0.999
+2020-05-26 12:30:57,274 - INFO - Standard deviation of scaled reward: 0.008
+2020-05-26 12:30:57,274 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:57,274 - INFO - Setup of test volley 5...
+2020-05-26 12:30:57,274 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:57,425 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:57,425 - INFO - Average total reward: -5.11
+2020-05-26 12:30:57,425 - INFO - Standard deviation of total reward: 3.343
+2020-05-26 12:30:57,425 - INFO - Average scaled reward: -0.994
+2020-05-26 12:30:57,426 - INFO - Standard deviation of scaled reward: 0.029
+2020-05-26 12:30:57,426 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:57,426 - INFO - Setup of test volley 6...
+2020-05-26 12:30:57,426 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:57,566 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:57,566 - INFO - Average total reward: -5.58
+2020-05-26 12:30:57,566 - INFO - Standard deviation of total reward: 3.598
+2020-05-26 12:30:57,566 - INFO - Average scaled reward: -0.998
+2020-05-26 12:30:57,566 - INFO - Standard deviation of scaled reward: 0.011
+2020-05-26 12:30:57,566 - INFO - Average episode length: 6.0 steps
+2020-05-26 12:30:57,566 - INFO - Setup of test volley 7...
+2020-05-26 12:30:57,566 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:57,724 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:57,725 - INFO - Average total reward: -5.08
+2020-05-26 12:30:57,725 - INFO - Standard deviation of total reward: 3.246
+2020-05-26 12:30:57,725 - INFO - Average scaled reward: -0.997
+2020-05-26 12:30:57,725 - INFO - Standard deviation of scaled reward: 0.018
+2020-05-26 12:30:57,725 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:57,725 - INFO - Setup of test volley 8...
+2020-05-26 12:30:57,725 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:57,888 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:57,888 - INFO - Average total reward: -5.42
+2020-05-26 12:30:57,888 - INFO - Standard deviation of total reward: 3.317
+2020-05-26 12:30:57,888 - INFO - Average scaled reward: -0.998
+2020-05-26 12:30:57,889 - INFO - Standard deviation of scaled reward: 0.011
+2020-05-26 12:30:57,889 - INFO - Average episode length: 5.0 steps
+2020-05-26 12:30:57,889 - INFO - Setup of test volley 9...
+2020-05-26 12:30:57,889 - INFO - Testing for 100 episodes...
+2020-05-26 12:30:58,089 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 12:30:58,089 - INFO - Average total reward: -5.91
+2020-05-26 12:30:58,089 - INFO - Standard deviation of total reward: 3.884
+2020-05-26 12:30:58,089 - INFO - Average scaled reward: -0.991
+2020-05-26 12:30:58,089 - INFO - Standard deviation of scaled reward: 0.029
+2020-05-26 12:30:58,089 - INFO - Average episode length: 6.0 steps
+2020-05-26 12:30:58,090 - INFO - End of test
+2020-05-26 12:30:58,090 - INFO - Results over 10 test volleys of 100 episodes each are:
+2020-05-26 12:30:58,090 - INFO - Average test total reward: -5.342
+2020-05-26 12:30:58,090 - INFO - Average test scaled reward: -0.996
+2020-05-26 12:30:58,090 - INFO - Max test total reward: -5.04
+2020-05-26 12:30:58,090 - INFO - Max test scaled reward: -0.991
+2020-05-26 12:30:58,090 - INFO - Average test standard deviation of total reward: 3.285
+2020-05-26 12:30:58,090 - INFO - Average test standard deviation of scaled reward: 0.018
+2020-05-26 12:30:58,090 - INFO - Min test standard deviation of total reward: 2.76
+2020-05-26 12:30:58,091 - INFO - Min test standard deviation of scaled reward: 0.008
+2020-05-26 12:30:58,091 - INFO - Average test episode length: 5.0
+2020-05-26 12:30:58,091 - INFO - The experiment terminated successfully
