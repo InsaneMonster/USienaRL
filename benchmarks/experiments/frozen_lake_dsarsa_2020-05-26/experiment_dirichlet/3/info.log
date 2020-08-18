@@ -1,0 +1,822 @@
+2020-05-26 13:54:51,386 - INFO - Setup of experiment experiment_dirichlet_3...
+2020-05-26 13:54:51,386 - INFO - Environment setup...
+2020-05-26 13:54:51,395 - INFO - Environment setup is successful
+2020-05-26 13:54:51,395 - INFO - Agent setup...
+2020-05-26 13:54:51,396 - INFO - Setup of agent dsarsa_agent with scope experiment_dirichlet_3...
+2020-05-26 13:54:51,396 - INFO - Generating model model_huber with scope experiment_dirichlet_3/dsarsa_agent...
+2020-05-26 13:54:51,396 - INFO - Model generation successful
+2020-05-26 13:54:51,549 - INFO - A Tensorboard summary for the agent will be updated during training of its internal model
+2020-05-26 13:54:51,551 - INFO - Tensorboard summary path: ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/summary
+2020-05-26 13:54:51,560 - INFO - Agent model metagraph will be saved after each training/validation pair
+2020-05-26 13:54:51,560 - INFO - Agent model metagraphs are saved at ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3
+2020-05-26 13:54:51,560 - INFO - Agent setup is successful
+2020-05-26 13:54:51,560 - INFO - Tensorflow configuration is successful
+2020-05-26 13:54:51,561 - INFO - Matplotlib configuration is successful
+2020-05-26 13:54:51,561 - INFO - Experiment setup is successful
+2020-05-26 13:54:51,562 - INFO - Experiment experiment_dirichlet_3: training process started
+2020-05-26 13:54:51,564 - INFO - Initializing the environment...
+2020-05-26 13:54:51,564 - INFO - Environment initialized
+2020-05-26 13:54:51,564 - INFO - Initializing the agent..
+2020-05-26 13:54:51,611 - INFO - Model initialized to default state
+2020-05-26 13:54:51,641 - INFO - Agent initialized
+2020-05-26 13:54:51,642 - INFO - Setup of warm-up volley...
+2020-05-26 13:54:51,642 - INFO - Setup of warm-up volley completed
+2020-05-26 13:54:51,672 - INFO - Warm-up volley is completed
+2020-05-26 13:54:51,672 - INFO - _____________________________________________________________________________________
+2020-05-26 13:54:51,672 - INFO - Setup of training volley 0...
+2020-05-26 13:54:51,672 - INFO - Setup of training volley 0 completed
+2020-05-26 13:54:51,672 - INFO - Training for 100 episodes...
+2020-05-26 13:54:57,014 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:54:57,014 - INFO - Average total reward: 0.03
+2020-05-26 13:54:57,014 - INFO - Standard deviation of total reward: 0.171
+2020-05-26 13:54:57,014 - INFO - Average scaled reward: 0.003
+2020-05-26 13:54:57,014 - INFO - Standard deviation of scaled reward: 0.02
+2020-05-26 13:54:57,014 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:54:57,014 - INFO - Save training volley 0 episodes plots...
+2020-05-26 13:54:57,359 - INFO - Plots of training volley 0 saved successfully
+2020-05-26 13:54:57,359 - INFO - Training volley 0 is completed
+2020-05-26 13:54:57,359 - INFO - Training steps up to now: 656
+2020-05-26 13:54:57,359 - INFO - _____________________________________________________________________________________
+2020-05-26 13:54:57,359 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:54:57,359 - INFO - Setup of validation volley 0...
+2020-05-26 13:54:57,359 - INFO - Setup of validation volley 0 completed
+2020-05-26 13:54:57,359 - INFO - Validating for 100 episodes...
+2020-05-26 13:54:57,679 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:54:57,679 - INFO - Average total reward: 0.06
+2020-05-26 13:54:57,679 - INFO - Standard deviation of total reward: 0.237
+2020-05-26 13:54:57,679 - INFO - Average scaled reward: 0.004
+2020-05-26 13:54:57,679 - INFO - Standard deviation of scaled reward: 0.019
+2020-05-26 13:54:57,679 - INFO - Average episode length: 9.0 steps
+2020-05-26 13:54:57,679 - INFO - Save validation volley 0 episodes plots...
+2020-05-26 13:54:58,033 - INFO - Plots of validation volley 0 saved successfully
+2020-05-26 13:54:58,034 - INFO - Validation volley 0 is completed
+2020-05-26 13:54:58,034 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:54:58,034 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:54:58,066 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:54:58,067 - INFO - _____________________________________________________________________________________
+2020-05-26 13:54:58,067 - INFO - Setup of training volley 1...
+2020-05-26 13:54:58,067 - INFO - Setup of training volley 1 completed
+2020-05-26 13:54:58,067 - INFO - Training for 100 episodes...
+2020-05-26 13:55:03,377 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:55:03,378 - INFO - Average total reward: 0.02
+2020-05-26 13:55:03,378 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 13:55:03,378 - INFO - Average scaled reward: 0.002
+2020-05-26 13:55:03,378 - INFO - Standard deviation of scaled reward: 0.015
+2020-05-26 13:55:03,378 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:55:03,378 - INFO - Save training volley 1 episodes plots...
+2020-05-26 13:55:03,725 - INFO - Plots of training volley 1 saved successfully
+2020-05-26 13:55:03,725 - INFO - Training volley 1 is completed
+2020-05-26 13:55:03,725 - INFO - Training steps up to now: 1324
+2020-05-26 13:55:03,725 - INFO - Update all training volleys plots...
+2020-05-26 13:55:04,268 - INFO - Plots updated successfully
+2020-05-26 13:55:04,268 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:04,268 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:04,268 - INFO - Setup of validation volley 1...
+2020-05-26 13:55:04,268 - INFO - Setup of validation volley 1 completed
+2020-05-26 13:55:04,268 - INFO - Validating for 100 episodes...
+2020-05-26 13:55:04,617 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:55:04,617 - INFO - Average total reward: 0.08
+2020-05-26 13:55:04,617 - INFO - Standard deviation of total reward: 0.271
+2020-05-26 13:55:04,618 - INFO - Average scaled reward: 0.007
+2020-05-26 13:55:04,618 - INFO - Standard deviation of scaled reward: 0.025
+2020-05-26 13:55:04,618 - INFO - Average episode length: 9.0 steps
+2020-05-26 13:55:04,618 - INFO - Save validation volley 1 episodes plots...
+2020-05-26 13:55:04,975 - INFO - Plots of validation volley 1 saved successfully
+2020-05-26 13:55:04,976 - INFO - Validation volley 1 is completed
+2020-05-26 13:55:04,976 - INFO - Update all validation volleys plots...
+2020-05-26 13:55:05,515 - INFO - Plots saved successfully
+2020-05-26 13:55:05,515 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:05,515 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:55:05,534 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:55:05,534 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:05,535 - INFO - Setup of training volley 2...
+2020-05-26 13:55:05,535 - INFO - Setup of training volley 2 completed
+2020-05-26 13:55:05,535 - INFO - Training for 100 episodes...
+2020-05-26 13:55:10,574 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:55:10,574 - INFO - Average total reward: 0.0
+2020-05-26 13:55:10,575 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 13:55:10,575 - INFO - Average scaled reward: 0.0
+2020-05-26 13:55:10,575 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 13:55:10,575 - INFO - Average episode length: 7.0 steps
+2020-05-26 13:55:10,575 - INFO - Save training volley 2 episodes plots...
+2020-05-26 13:55:10,956 - INFO - Plots of training volley 2 saved successfully
+2020-05-26 13:55:10,956 - INFO - Training volley 2 is completed
+2020-05-26 13:55:10,956 - INFO - Training steps up to now: 1954
+2020-05-26 13:55:10,956 - INFO - Update all training volleys plots...
+2020-05-26 13:55:11,489 - INFO - Plots updated successfully
+2020-05-26 13:55:11,489 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:11,489 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:11,489 - INFO - Setup of validation volley 2...
+2020-05-26 13:55:11,490 - INFO - Setup of validation volley 2 completed
+2020-05-26 13:55:11,490 - INFO - Validating for 100 episodes...
+2020-05-26 13:55:12,488 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:55:12,488 - INFO - Average total reward: 0.16
+2020-05-26 13:55:12,488 - INFO - Standard deviation of total reward: 0.367
+2020-05-26 13:55:12,488 - INFO - Average scaled reward: 0.012
+2020-05-26 13:55:12,488 - INFO - Standard deviation of scaled reward: 0.031
+2020-05-26 13:55:12,488 - INFO - Average episode length: 19.0 steps
+2020-05-26 13:55:12,489 - INFO - Save validation volley 2 episodes plots...
+2020-05-26 13:55:12,860 - INFO - Plots of validation volley 2 saved successfully
+2020-05-26 13:55:12,860 - INFO - Validation volley 2 is completed
+2020-05-26 13:55:12,860 - INFO - Update all validation volleys plots...
+2020-05-26 13:55:13,403 - INFO - Plots updated successfully
+2020-05-26 13:55:13,403 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:13,404 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:55:13,422 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:55:13,422 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:13,422 - INFO - Setup of training volley 3...
+2020-05-26 13:55:13,423 - INFO - Setup of training volley 3 completed
+2020-05-26 13:55:13,423 - INFO - Training for 100 episodes...
+2020-05-26 13:55:18,267 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:55:18,268 - INFO - Average total reward: 0.01
+2020-05-26 13:55:18,268 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 13:55:18,268 - INFO - Average scaled reward: 0.001
+2020-05-26 13:55:18,268 - INFO - Standard deviation of scaled reward: 0.007
+2020-05-26 13:55:18,269 - INFO - Average episode length: 7.0 steps
+2020-05-26 13:55:18,269 - INFO - Save training volley 3 episodes plots...
+2020-05-26 13:55:18,643 - INFO - Plots of training volley 3 saved successfully
+2020-05-26 13:55:18,643 - INFO - Training volley 3 is completed
+2020-05-26 13:55:18,643 - INFO - Training steps up to now: 2556
+2020-05-26 13:55:18,643 - INFO - Update all training volleys plots...
+2020-05-26 13:55:19,182 - INFO - Plots updated successfully
+2020-05-26 13:55:19,182 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:19,182 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:19,182 - INFO - Setup of validation volley 3...
+2020-05-26 13:55:19,183 - INFO - Setup of validation volley 3 completed
+2020-05-26 13:55:19,183 - INFO - Validating for 100 episodes...
+2020-05-26 13:55:19,763 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:55:19,763 - INFO - Average total reward: 0.16
+2020-05-26 13:55:19,764 - INFO - Standard deviation of total reward: 0.367
+2020-05-26 13:55:19,764 - INFO - Average scaled reward: 0.012
+2020-05-26 13:55:19,764 - INFO - Standard deviation of scaled reward: 0.029
+2020-05-26 13:55:19,764 - INFO - Average episode length: 13.0 steps
+2020-05-26 13:55:19,764 - INFO - Save validation volley 3 episodes plots...
+2020-05-26 13:55:20,139 - INFO - Plots of validation volley 3 saved successfully
+2020-05-26 13:55:20,139 - INFO - Validation volley 3 is completed
+2020-05-26 13:55:20,139 - INFO - Update all validation volleys plots...
+2020-05-26 13:55:20,730 - INFO - Plots updated successfully
+2020-05-26 13:55:20,730 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:20,730 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:55:20,752 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:55:20,753 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:20,753 - INFO - Setup of training volley 4...
+2020-05-26 13:55:20,753 - INFO - Setup of training volley 4 completed
+2020-05-26 13:55:20,753 - INFO - Training for 100 episodes...
+2020-05-26 13:55:25,312 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:55:25,312 - INFO - Average total reward: 0.01
+2020-05-26 13:55:25,313 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 13:55:25,313 - INFO - Average scaled reward: 0.001
+2020-05-26 13:55:25,313 - INFO - Standard deviation of scaled reward: 0.007
+2020-05-26 13:55:25,313 - INFO - Average episode length: 7.0 steps
+2020-05-26 13:55:25,313 - INFO - Save training volley 4 episodes plots...
+2020-05-26 13:55:25,664 - INFO - Plots of training volley 4 saved successfully
+2020-05-26 13:55:25,664 - INFO - Training volley 4 is completed
+2020-05-26 13:55:25,665 - INFO - Training steps up to now: 3140
+2020-05-26 13:55:25,665 - INFO - Update all training volleys plots...
+2020-05-26 13:55:26,246 - INFO - Plots updated successfully
+2020-05-26 13:55:26,247 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:26,247 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:26,247 - INFO - Setup of validation volley 4...
+2020-05-26 13:55:26,247 - INFO - Setup of validation volley 4 completed
+2020-05-26 13:55:26,247 - INFO - Validating for 100 episodes...
+2020-05-26 13:55:26,620 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:55:26,620 - INFO - Average total reward: 0.06
+2020-05-26 13:55:26,621 - INFO - Standard deviation of total reward: 0.237
+2020-05-26 13:55:26,621 - INFO - Average scaled reward: 0.005
+2020-05-26 13:55:26,621 - INFO - Standard deviation of scaled reward: 0.021
+2020-05-26 13:55:26,621 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:55:26,621 - INFO - Save validation volley 4 episodes plots...
+2020-05-26 13:55:26,986 - INFO - Plots of validation volley 4 saved successfully
+2020-05-26 13:55:26,986 - INFO - Validation volley 4 is completed
+2020-05-26 13:55:26,986 - INFO - Update all validation volleys plots...
+2020-05-26 13:55:27,688 - INFO - Plots updated successfully
+2020-05-26 13:55:27,688 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:27,688 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:55:27,711 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:55:27,712 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:27,713 - INFO - Setup of training volley 5...
+2020-05-26 13:55:27,713 - INFO - Setup of training volley 5 completed
+2020-05-26 13:55:27,713 - INFO - Training for 100 episodes...
+2020-05-26 13:55:33,513 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:55:33,513 - INFO - Average total reward: 0.04
+2020-05-26 13:55:33,513 - INFO - Standard deviation of total reward: 0.196
+2020-05-26 13:55:33,513 - INFO - Average scaled reward: 0.004
+2020-05-26 13:55:33,513 - INFO - Standard deviation of scaled reward: 0.018
+2020-05-26 13:55:33,514 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:55:33,514 - INFO - Save training volley 5 episodes plots...
+2020-05-26 13:55:33,895 - INFO - Plots of training volley 5 saved successfully
+2020-05-26 13:55:33,895 - INFO - Training volley 5 is completed
+2020-05-26 13:55:33,895 - INFO - Training steps up to now: 3859
+2020-05-26 13:55:33,895 - INFO - Update all training volleys plots...
+2020-05-26 13:55:34,489 - INFO - Plots updated successfully
+2020-05-26 13:55:34,489 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:34,489 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:34,489 - INFO - Setup of validation volley 5...
+2020-05-26 13:55:34,490 - INFO - Setup of validation volley 5 completed
+2020-05-26 13:55:34,490 - INFO - Validating for 100 episodes...
+2020-05-26 13:55:35,423 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:55:35,423 - INFO - Average total reward: 0.06
+2020-05-26 13:55:35,423 - INFO - Standard deviation of total reward: 0.237
+2020-05-26 13:55:35,424 - INFO - Average scaled reward: 0.003
+2020-05-26 13:55:35,424 - INFO - Standard deviation of scaled reward: 0.013
+2020-05-26 13:55:35,424 - INFO - Average episode length: 19.0 steps
+2020-05-26 13:55:35,424 - INFO - Save validation volley 5 episodes plots...
+2020-05-26 13:55:35,787 - INFO - Plots of validation volley 5 saved successfully
+2020-05-26 13:55:35,787 - INFO - Validation volley 5 is completed
+2020-05-26 13:55:35,787 - INFO - Update all validation volleys plots...
+2020-05-26 13:55:36,356 - INFO - Plots updated successfully
+2020-05-26 13:55:36,356 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:36,356 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:55:36,376 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:55:36,377 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:36,377 - INFO - Setup of training volley 6...
+2020-05-26 13:55:36,377 - INFO - Setup of training volley 6 completed
+2020-05-26 13:55:36,377 - INFO - Training for 100 episodes...
+2020-05-26 13:55:41,543 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:55:41,543 - INFO - Average total reward: 0.04
+2020-05-26 13:55:41,543 - INFO - Standard deviation of total reward: 0.196
+2020-05-26 13:55:41,543 - INFO - Average scaled reward: 0.003
+2020-05-26 13:55:41,543 - INFO - Standard deviation of scaled reward: 0.017
+2020-05-26 13:55:41,543 - INFO - Average episode length: 7.0 steps
+2020-05-26 13:55:41,543 - INFO - Save training volley 6 episodes plots...
+2020-05-26 13:55:41,898 - INFO - Plots of training volley 6 saved successfully
+2020-05-26 13:55:41,898 - INFO - Training volley 6 is completed
+2020-05-26 13:55:41,898 - INFO - Training steps up to now: 4490
+2020-05-26 13:55:41,898 - INFO - Update all training volleys plots...
+2020-05-26 13:55:42,495 - INFO - Plots updated successfully
+2020-05-26 13:55:42,495 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:42,495 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:42,495 - INFO - Setup of validation volley 6...
+2020-05-26 13:55:42,495 - INFO - Setup of validation volley 6 completed
+2020-05-26 13:55:42,495 - INFO - Validating for 100 episodes...
+2020-05-26 13:55:43,174 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:55:43,174 - INFO - Average total reward: 0.04
+2020-05-26 13:55:43,174 - INFO - Standard deviation of total reward: 0.196
+2020-05-26 13:55:43,174 - INFO - Average scaled reward: 0.003
+2020-05-26 13:55:43,174 - INFO - Standard deviation of scaled reward: 0.018
+2020-05-26 13:55:43,174 - INFO - Average episode length: 12.0 steps
+2020-05-26 13:55:43,174 - INFO - Save validation volley 6 episodes plots...
+2020-05-26 13:55:43,533 - INFO - Plots of validation volley 6 saved successfully
+2020-05-26 13:55:43,534 - INFO - Validation volley 6 is completed
+2020-05-26 13:55:43,534 - INFO - Update all validation volleys plots...
+2020-05-26 13:55:44,124 - INFO - Plots updated successfully
+2020-05-26 13:55:44,124 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:44,124 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:55:44,145 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:55:44,146 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:44,146 - INFO - Setup of training volley 7...
+2020-05-26 13:55:44,146 - INFO - Setup of training volley 7 completed
+2020-05-26 13:55:44,146 - INFO - Training for 100 episodes...
+2020-05-26 13:55:49,915 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:55:49,915 - INFO - Average total reward: 0.0
+2020-05-26 13:55:49,915 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 13:55:49,915 - INFO - Average scaled reward: 0.0
+2020-05-26 13:55:49,915 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 13:55:49,915 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:55:49,915 - INFO - Save training volley 7 episodes plots...
+2020-05-26 13:55:50,257 - INFO - Plots of training volley 7 saved successfully
+2020-05-26 13:55:50,258 - INFO - Training volley 7 is completed
+2020-05-26 13:55:50,258 - INFO - Training steps up to now: 5203
+2020-05-26 13:55:50,258 - INFO - Update all training volleys plots...
+2020-05-26 13:55:50,859 - INFO - Plots updated successfully
+2020-05-26 13:55:50,859 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:50,859 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:50,859 - INFO - Setup of validation volley 7...
+2020-05-26 13:55:50,859 - INFO - Setup of validation volley 7 completed
+2020-05-26 13:55:50,859 - INFO - Validating for 100 episodes...
+2020-05-26 13:55:51,811 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:55:51,812 - INFO - Average total reward: 0.23
+2020-05-26 13:55:51,812 - INFO - Standard deviation of total reward: 0.421
+2020-05-26 13:55:51,812 - INFO - Average scaled reward: 0.014
+2020-05-26 13:55:51,812 - INFO - Standard deviation of scaled reward: 0.03
+2020-05-26 13:55:51,812 - INFO - Average episode length: 21.0 steps
+2020-05-26 13:55:51,812 - INFO - Save validation volley 7 episodes plots...
+2020-05-26 13:55:52,183 - INFO - Plots of validation volley 7 saved successfully
+2020-05-26 13:55:52,183 - INFO - Validation volley 7 is completed
+2020-05-26 13:55:52,183 - INFO - Update all validation volleys plots...
+2020-05-26 13:55:52,783 - INFO - Plots updated successfully
+2020-05-26 13:55:52,783 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:52,783 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:55:52,803 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:55:52,804 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:52,804 - INFO - Setup of training volley 8...
+2020-05-26 13:55:52,805 - INFO - Setup of training volley 8 completed
+2020-05-26 13:55:52,805 - INFO - Training for 100 episodes...
+2020-05-26 13:55:58,451 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:55:58,451 - INFO - Average total reward: 0.03
+2020-05-26 13:55:58,451 - INFO - Standard deviation of total reward: 0.171
+2020-05-26 13:55:58,451 - INFO - Average scaled reward: 0.003
+2020-05-26 13:55:58,451 - INFO - Standard deviation of scaled reward: 0.016
+2020-05-26 13:55:58,451 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:55:58,451 - INFO - Save training volley 8 episodes plots...
+2020-05-26 13:55:58,860 - INFO - Plots of training volley 8 saved successfully
+2020-05-26 13:55:58,860 - INFO - Training volley 8 is completed
+2020-05-26 13:55:58,860 - INFO - Training steps up to now: 5876
+2020-05-26 13:55:58,860 - INFO - Update all training volleys plots...
+2020-05-26 13:55:59,509 - INFO - Plots updated successfully
+2020-05-26 13:55:59,509 - INFO - _____________________________________________________________________________________
+2020-05-26 13:55:59,509 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:55:59,509 - INFO - Setup of validation volley 8...
+2020-05-26 13:55:59,509 - INFO - Setup of validation volley 8 completed
+2020-05-26 13:55:59,509 - INFO - Validating for 100 episodes...
+2020-05-26 13:55:59,742 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:55:59,742 - INFO - Average total reward: 0.03
+2020-05-26 13:55:59,742 - INFO - Standard deviation of total reward: 0.171
+2020-05-26 13:55:59,743 - INFO - Average scaled reward: 0.004
+2020-05-26 13:55:59,743 - INFO - Standard deviation of scaled reward: 0.021
+2020-05-26 13:55:59,743 - INFO - Average episode length: 5.0 steps
+2020-05-26 13:55:59,743 - INFO - Save validation volley 8 episodes plots...
+2020-05-26 13:56:00,116 - INFO - Plots of validation volley 8 saved successfully
+2020-05-26 13:56:00,116 - INFO - Validation volley 8 is completed
+2020-05-26 13:56:00,116 - INFO - Update all validation volleys plots...
+2020-05-26 13:56:00,830 - INFO - Plots updated successfully
+2020-05-26 13:56:00,830 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:00,830 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:56:00,854 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:56:00,855 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:00,856 - INFO - Setup of training volley 9...
+2020-05-26 13:56:00,856 - INFO - Setup of training volley 9 completed
+2020-05-26 13:56:00,856 - INFO - Training for 100 episodes...
+2020-05-26 13:56:06,324 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:56:06,324 - INFO - Average total reward: 0.01
+2020-05-26 13:56:06,324 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 13:56:06,324 - INFO - Average scaled reward: 0.001
+2020-05-26 13:56:06,324 - INFO - Standard deviation of scaled reward: 0.006
+2020-05-26 13:56:06,324 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:56:06,324 - INFO - Save training volley 9 episodes plots...
+2020-05-26 13:56:06,685 - INFO - Plots of training volley 9 saved successfully
+2020-05-26 13:56:06,685 - INFO - Training volley 9 is completed
+2020-05-26 13:56:06,686 - INFO - Training steps up to now: 6564
+2020-05-26 13:56:06,686 - INFO - Update all training volleys plots...
+2020-05-26 13:56:07,314 - INFO - Plots updated successfully
+2020-05-26 13:56:07,315 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:07,315 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:07,315 - INFO - Setup of validation volley 9...
+2020-05-26 13:56:07,315 - INFO - Setup of validation volley 9 completed
+2020-05-26 13:56:07,315 - INFO - Validating for 100 episodes...
+2020-05-26 13:56:08,116 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:56:08,117 - INFO - Average total reward: 0.16
+2020-05-26 13:56:08,117 - INFO - Standard deviation of total reward: 0.367
+2020-05-26 13:56:08,117 - INFO - Average scaled reward: 0.008
+2020-05-26 13:56:08,117 - INFO - Standard deviation of scaled reward: 0.02
+2020-05-26 13:56:08,117 - INFO - Average episode length: 16.0 steps
+2020-05-26 13:56:08,117 - INFO - Save validation volley 9 episodes plots...
+2020-05-26 13:56:08,536 - INFO - Plots of validation volley 9 saved successfully
+2020-05-26 13:56:08,537 - INFO - Validation volley 9 is completed
+2020-05-26 13:56:08,537 - INFO - Update all validation volleys plots...
+2020-05-26 13:56:09,166 - INFO - Plots updated successfully
+2020-05-26 13:56:09,166 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:09,166 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:56:09,186 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:56:09,187 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:09,187 - INFO - Setup of training volley 10...
+2020-05-26 13:56:09,187 - INFO - Setup of training volley 10 completed
+2020-05-26 13:56:09,187 - INFO - Training for 100 episodes...
+2020-05-26 13:56:14,431 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:56:14,431 - INFO - Average total reward: 0.04
+2020-05-26 13:56:14,431 - INFO - Standard deviation of total reward: 0.196
+2020-05-26 13:56:14,431 - INFO - Average scaled reward: 0.003
+2020-05-26 13:56:14,431 - INFO - Standard deviation of scaled reward: 0.013
+2020-05-26 13:56:14,431 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:56:14,432 - INFO - Save training volley 10 episodes plots...
+2020-05-26 13:56:14,789 - INFO - Plots of training volley 10 saved successfully
+2020-05-26 13:56:14,790 - INFO - Training volley 10 is completed
+2020-05-26 13:56:14,790 - INFO - Training steps up to now: 7214
+2020-05-26 13:56:14,790 - INFO - Update all training volleys plots...
+2020-05-26 13:56:15,387 - INFO - Plots updated successfully
+2020-05-26 13:56:15,387 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:15,387 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:15,387 - INFO - Setup of validation volley 10...
+2020-05-26 13:56:15,388 - INFO - Setup of validation volley 10 completed
+2020-05-26 13:56:15,388 - INFO - Validating for 100 episodes...
+2020-05-26 13:56:15,719 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:56:15,719 - INFO - Average total reward: 0.12
+2020-05-26 13:56:15,719 - INFO - Standard deviation of total reward: 0.325
+2020-05-26 13:56:15,719 - INFO - Average scaled reward: 0.011
+2020-05-26 13:56:15,719 - INFO - Standard deviation of scaled reward: 0.031
+2020-05-26 13:56:15,719 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:56:15,720 - INFO - Save validation volley 10 episodes plots...
+2020-05-26 13:56:16,146 - INFO - Plots of validation volley 10 saved successfully
+2020-05-26 13:56:16,146 - INFO - Validation volley 10 is completed
+2020-05-26 13:56:16,146 - INFO - Update all validation volleys plots...
+2020-05-26 13:56:16,750 - INFO - Plots updated successfully
+2020-05-26 13:56:16,750 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:16,750 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:56:16,785 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:56:16,786 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:16,786 - INFO - Setup of training volley 11...
+2020-05-26 13:56:16,786 - INFO - Setup of training volley 11 completed
+2020-05-26 13:56:16,787 - INFO - Training for 100 episodes...
+2020-05-26 13:56:22,057 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:56:22,057 - INFO - Average total reward: 0.03
+2020-05-26 13:56:22,057 - INFO - Standard deviation of total reward: 0.171
+2020-05-26 13:56:22,057 - INFO - Average scaled reward: 0.003
+2020-05-26 13:56:22,057 - INFO - Standard deviation of scaled reward: 0.021
+2020-05-26 13:56:22,057 - INFO - Average episode length: 7.0 steps
+2020-05-26 13:56:22,057 - INFO - Save training volley 11 episodes plots...
+2020-05-26 13:56:22,450 - INFO - Plots of training volley 11 saved successfully
+2020-05-26 13:56:22,450 - INFO - Training volley 11 is completed
+2020-05-26 13:56:22,450 - INFO - Training steps up to now: 7856
+2020-05-26 13:56:22,450 - INFO - Update all training volleys plots...
+2020-05-26 13:56:23,042 - INFO - Plots updated successfully
+2020-05-26 13:56:23,042 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:23,042 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:23,042 - INFO - Setup of validation volley 11...
+2020-05-26 13:56:23,043 - INFO - Setup of validation volley 11 completed
+2020-05-26 13:56:23,043 - INFO - Validating for 100 episodes...
+2020-05-26 13:56:23,702 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:56:23,702 - INFO - Average total reward: 0.19
+2020-05-26 13:56:23,702 - INFO - Standard deviation of total reward: 0.392
+2020-05-26 13:56:23,702 - INFO - Average scaled reward: 0.015
+2020-05-26 13:56:23,702 - INFO - Standard deviation of scaled reward: 0.034
+2020-05-26 13:56:23,702 - INFO - Average episode length: 13.0 steps
+2020-05-26 13:56:23,703 - INFO - Save validation volley 11 episodes plots...
+2020-05-26 13:56:24,076 - INFO - Plots of validation volley 11 saved successfully
+2020-05-26 13:56:24,076 - INFO - Validation volley 11 is completed
+2020-05-26 13:56:24,076 - INFO - Update all validation volleys plots...
+2020-05-26 13:56:24,663 - INFO - Plots updated successfully
+2020-05-26 13:56:24,663 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:24,663 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:56:24,683 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:56:24,683 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:24,683 - INFO - Setup of training volley 12...
+2020-05-26 13:56:24,684 - INFO - Setup of training volley 12 completed
+2020-05-26 13:56:24,684 - INFO - Training for 100 episodes...
+2020-05-26 13:56:30,327 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:56:30,327 - INFO - Average total reward: 0.0
+2020-05-26 13:56:30,327 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 13:56:30,327 - INFO - Average scaled reward: 0.0
+2020-05-26 13:56:30,327 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 13:56:30,327 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:56:30,327 - INFO - Save training volley 12 episodes plots...
+2020-05-26 13:56:30,673 - INFO - Plots of training volley 12 saved successfully
+2020-05-26 13:56:30,673 - INFO - Training volley 12 is completed
+2020-05-26 13:56:30,673 - INFO - Training steps up to now: 8531
+2020-05-26 13:56:30,673 - INFO - Update all training volleys plots...
+2020-05-26 13:56:31,293 - INFO - Plots updated successfully
+2020-05-26 13:56:31,294 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:31,294 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:31,294 - INFO - Setup of validation volley 12...
+2020-05-26 13:56:31,294 - INFO - Setup of validation volley 12 completed
+2020-05-26 13:56:31,294 - INFO - Validating for 100 episodes...
+2020-05-26 13:56:31,683 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:56:31,684 - INFO - Average total reward: 0.1
+2020-05-26 13:56:31,684 - INFO - Standard deviation of total reward: 0.3
+2020-05-26 13:56:31,684 - INFO - Average scaled reward: 0.008
+2020-05-26 13:56:31,684 - INFO - Standard deviation of scaled reward: 0.025
+2020-05-26 13:56:31,684 - INFO - Average episode length: 9.0 steps
+2020-05-26 13:56:31,685 - INFO - Save validation volley 12 episodes plots...
+2020-05-26 13:56:32,068 - INFO - Plots of validation volley 12 saved successfully
+2020-05-26 13:56:32,068 - INFO - Validation volley 12 is completed
+2020-05-26 13:56:32,068 - INFO - Update all validation volleys plots...
+2020-05-26 13:56:32,703 - INFO - Plots updated successfully
+2020-05-26 13:56:32,704 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:32,704 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:56:32,724 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:56:32,725 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:32,725 - INFO - Setup of training volley 13...
+2020-05-26 13:56:32,725 - INFO - Setup of training volley 13 completed
+2020-05-26 13:56:32,725 - INFO - Training for 100 episodes...
+2020-05-26 13:56:37,490 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:56:37,491 - INFO - Average total reward: 0.0
+2020-05-26 13:56:37,491 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 13:56:37,491 - INFO - Average scaled reward: 0.0
+2020-05-26 13:56:37,491 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 13:56:37,491 - INFO - Average episode length: 7.0 steps
+2020-05-26 13:56:37,491 - INFO - Save training volley 13 episodes plots...
+2020-05-26 13:56:37,842 - INFO - Plots of training volley 13 saved successfully
+2020-05-26 13:56:37,842 - INFO - Training volley 13 is completed
+2020-05-26 13:56:37,842 - INFO - Training steps up to now: 9107
+2020-05-26 13:56:37,842 - INFO - Update all training volleys plots...
+2020-05-26 13:56:38,627 - INFO - Plots updated successfully
+2020-05-26 13:56:38,628 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:38,628 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:38,628 - INFO - Setup of validation volley 13...
+2020-05-26 13:56:38,628 - INFO - Setup of validation volley 13 completed
+2020-05-26 13:56:38,628 - INFO - Validating for 100 episodes...
+2020-05-26 13:56:39,547 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:56:39,547 - INFO - Average total reward: 0.12
+2020-05-26 13:56:39,547 - INFO - Standard deviation of total reward: 0.325
+2020-05-26 13:56:39,547 - INFO - Average scaled reward: 0.009
+2020-05-26 13:56:39,547 - INFO - Standard deviation of scaled reward: 0.027
+2020-05-26 13:56:39,548 - INFO - Average episode length: 19.0 steps
+2020-05-26 13:56:39,548 - INFO - Save validation volley 13 episodes plots...
+2020-05-26 13:56:39,920 - INFO - Plots of validation volley 13 saved successfully
+2020-05-26 13:56:39,920 - INFO - Validation volley 13 is completed
+2020-05-26 13:56:39,920 - INFO - Update all validation volleys plots...
+2020-05-26 13:56:40,518 - INFO - Plots updated successfully
+2020-05-26 13:56:40,518 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:40,518 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:56:40,542 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:56:40,543 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:40,543 - INFO - Setup of training volley 14...
+2020-05-26 13:56:40,544 - INFO - Setup of training volley 14 completed
+2020-05-26 13:56:40,544 - INFO - Training for 100 episodes...
+2020-05-26 13:56:45,974 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:56:45,974 - INFO - Average total reward: 0.01
+2020-05-26 13:56:45,975 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 13:56:45,975 - INFO - Average scaled reward: 0.001
+2020-05-26 13:56:45,975 - INFO - Standard deviation of scaled reward: 0.009
+2020-05-26 13:56:45,975 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:56:45,975 - INFO - Save training volley 14 episodes plots...
+2020-05-26 13:56:46,325 - INFO - Plots of training volley 14 saved successfully
+2020-05-26 13:56:46,325 - INFO - Training volley 14 is completed
+2020-05-26 13:56:46,325 - INFO - Training steps up to now: 9763
+2020-05-26 13:56:46,326 - INFO - Update all training volleys plots...
+2020-05-26 13:56:46,946 - INFO - Plots updated successfully
+2020-05-26 13:56:46,946 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:46,946 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:46,946 - INFO - Setup of validation volley 14...
+2020-05-26 13:56:46,947 - INFO - Setup of validation volley 14 completed
+2020-05-26 13:56:46,947 - INFO - Validating for 100 episodes...
+2020-05-26 13:56:47,293 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:56:47,293 - INFO - Average total reward: 0.06
+2020-05-26 13:56:47,294 - INFO - Standard deviation of total reward: 0.237
+2020-05-26 13:56:47,294 - INFO - Average scaled reward: 0.006
+2020-05-26 13:56:47,294 - INFO - Standard deviation of scaled reward: 0.023
+2020-05-26 13:56:47,294 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:56:47,294 - INFO - Save validation volley 14 episodes plots...
+2020-05-26 13:56:47,662 - INFO - Plots of validation volley 14 saved successfully
+2020-05-26 13:56:47,662 - INFO - Validation volley 14 is completed
+2020-05-26 13:56:47,662 - INFO - Update all validation volleys plots...
+2020-05-26 13:56:48,270 - INFO - Plots updated successfully
+2020-05-26 13:56:48,270 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:48,270 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:56:48,290 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:56:48,291 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:48,291 - INFO - Setup of training volley 15...
+2020-05-26 13:56:48,291 - INFO - Setup of training volley 15 completed
+2020-05-26 13:56:48,291 - INFO - Training for 100 episodes...
+2020-05-26 13:56:54,797 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:56:54,797 - INFO - Average total reward: 0.03
+2020-05-26 13:56:54,797 - INFO - Standard deviation of total reward: 0.171
+2020-05-26 13:56:54,797 - INFO - Average scaled reward: 0.002
+2020-05-26 13:56:54,797 - INFO - Standard deviation of scaled reward: 0.013
+2020-05-26 13:56:54,797 - INFO - Average episode length: 9.0 steps
+2020-05-26 13:56:54,797 - INFO - Save training volley 15 episodes plots...
+2020-05-26 13:56:55,153 - INFO - Plots of training volley 15 saved successfully
+2020-05-26 13:56:55,154 - INFO - Training volley 15 is completed
+2020-05-26 13:56:55,154 - INFO - Training steps up to now: 10556
+2020-05-26 13:56:55,154 - INFO - Update all training volleys plots...
+2020-05-26 13:56:55,771 - INFO - Plots updated successfully
+2020-05-26 13:56:55,772 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:55,772 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:55,772 - INFO - Setup of validation volley 15...
+2020-05-26 13:56:55,772 - INFO - Setup of validation volley 15 completed
+2020-05-26 13:56:55,772 - INFO - Validating for 100 episodes...
+2020-05-26 13:56:56,093 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:56:56,093 - INFO - Average total reward: 0.03
+2020-05-26 13:56:56,093 - INFO - Standard deviation of total reward: 0.171
+2020-05-26 13:56:56,094 - INFO - Average scaled reward: 0.003
+2020-05-26 13:56:56,094 - INFO - Standard deviation of scaled reward: 0.016
+2020-05-26 13:56:56,094 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:56:56,094 - INFO - Save validation volley 15 episodes plots...
+2020-05-26 13:56:56,470 - INFO - Plots of validation volley 15 saved successfully
+2020-05-26 13:56:56,470 - INFO - Validation volley 15 is completed
+2020-05-26 13:56:56,470 - INFO - Update all validation volleys plots...
+2020-05-26 13:56:57,087 - INFO - Plots updated successfully
+2020-05-26 13:56:57,087 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:56:57,088 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:56:57,107 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:56:57,108 - INFO - _____________________________________________________________________________________
+2020-05-26 13:56:57,108 - INFO - Setup of training volley 16...
+2020-05-26 13:56:57,109 - INFO - Setup of training volley 16 completed
+2020-05-26 13:56:57,109 - INFO - Training for 100 episodes...
+2020-05-26 13:57:02,716 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:57:02,716 - INFO - Average total reward: 0.0
+2020-05-26 13:57:02,717 - INFO - Standard deviation of total reward: 0.0
+2020-05-26 13:57:02,717 - INFO - Average scaled reward: 0.0
+2020-05-26 13:57:02,717 - INFO - Standard deviation of scaled reward: 0.0
+2020-05-26 13:57:02,717 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:57:02,717 - INFO - Save training volley 16 episodes plots...
+2020-05-26 13:57:03,066 - INFO - Plots of training volley 16 saved successfully
+2020-05-26 13:57:03,066 - INFO - Training volley 16 is completed
+2020-05-26 13:57:03,066 - INFO - Training steps up to now: 11217
+2020-05-26 13:57:03,066 - INFO - Update all training volleys plots...
+2020-05-26 13:57:03,703 - INFO - Plots updated successfully
+2020-05-26 13:57:03,704 - INFO - _____________________________________________________________________________________
+2020-05-26 13:57:03,704 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:57:03,704 - INFO - Setup of validation volley 16...
+2020-05-26 13:57:03,704 - INFO - Setup of validation volley 16 completed
+2020-05-26 13:57:03,704 - INFO - Validating for 100 episodes...
+2020-05-26 13:57:04,057 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:57:04,057 - INFO - Average total reward: 0.05
+2020-05-26 13:57:04,058 - INFO - Standard deviation of total reward: 0.218
+2020-05-26 13:57:04,058 - INFO - Average scaled reward: 0.004
+2020-05-26 13:57:04,058 - INFO - Standard deviation of scaled reward: 0.019
+2020-05-26 13:57:04,058 - INFO - Average episode length: 8.0 steps
+2020-05-26 13:57:04,058 - INFO - Save validation volley 16 episodes plots...
+2020-05-26 13:57:04,428 - INFO - Plots of validation volley 16 saved successfully
+2020-05-26 13:57:04,429 - INFO - Validation volley 16 is completed
+2020-05-26 13:57:04,429 - INFO - Update all validation volleys plots...
+2020-05-26 13:57:05,062 - INFO - Plots updated successfully
+2020-05-26 13:57:05,062 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:57:05,062 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:57:05,081 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:57:05,082 - INFO - _____________________________________________________________________________________
+2020-05-26 13:57:05,082 - INFO - Setup of training volley 17...
+2020-05-26 13:57:05,082 - INFO - Setup of training volley 17 completed
+2020-05-26 13:57:05,082 - INFO - Training for 100 episodes...
+2020-05-26 13:57:11,756 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:57:11,756 - INFO - Average total reward: 0.05
+2020-05-26 13:57:11,756 - INFO - Standard deviation of total reward: 0.218
+2020-05-26 13:57:11,756 - INFO - Average scaled reward: 0.004
+2020-05-26 13:57:11,756 - INFO - Standard deviation of scaled reward: 0.017
+2020-05-26 13:57:11,756 - INFO - Average episode length: 9.0 steps
+2020-05-26 13:57:11,756 - INFO - Save training volley 17 episodes plots...
+2020-05-26 13:57:12,152 - INFO - Plots of training volley 17 saved successfully
+2020-05-26 13:57:12,152 - INFO - Training volley 17 is completed
+2020-05-26 13:57:12,152 - INFO - Training steps up to now: 12043
+2020-05-26 13:57:12,152 - INFO - Update all training volleys plots...
+2020-05-26 13:57:12,772 - INFO - Plots updated successfully
+2020-05-26 13:57:12,772 - INFO - _____________________________________________________________________________________
+2020-05-26 13:57:12,772 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:57:12,772 - INFO - Setup of validation volley 17...
+2020-05-26 13:57:12,772 - INFO - Setup of validation volley 17 completed
+2020-05-26 13:57:12,772 - INFO - Validating for 100 episodes...
+2020-05-26 13:57:13,124 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:57:13,124 - INFO - Average total reward: 0.09
+2020-05-26 13:57:13,124 - INFO - Standard deviation of total reward: 0.286
+2020-05-26 13:57:13,124 - INFO - Average scaled reward: 0.007
+2020-05-26 13:57:13,124 - INFO - Standard deviation of scaled reward: 0.023
+2020-05-26 13:57:13,125 - INFO - Average episode length: 9.0 steps
+2020-05-26 13:57:13,125 - INFO - Save validation volley 17 episodes plots...
+2020-05-26 13:57:13,613 - INFO - Plots of validation volley 17 saved successfully
+2020-05-26 13:57:13,613 - INFO - Validation volley 17 is completed
+2020-05-26 13:57:13,613 - INFO - Update all validation volleys plots...
+2020-05-26 13:57:14,222 - INFO - Plots updated successfully
+2020-05-26 13:57:14,222 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:57:14,222 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:57:14,243 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:57:14,243 - INFO - _____________________________________________________________________________________
+2020-05-26 13:57:14,244 - INFO - Setup of training volley 18...
+2020-05-26 13:57:14,244 - INFO - Setup of training volley 18 completed
+2020-05-26 13:57:14,244 - INFO - Training for 100 episodes...
+2020-05-26 13:57:19,442 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:57:19,442 - INFO - Average total reward: 0.02
+2020-05-26 13:57:19,443 - INFO - Standard deviation of total reward: 0.14
+2020-05-26 13:57:19,443 - INFO - Average scaled reward: 0.002
+2020-05-26 13:57:19,443 - INFO - Standard deviation of scaled reward: 0.017
+2020-05-26 13:57:19,443 - INFO - Average episode length: 7.0 steps
+2020-05-26 13:57:19,443 - INFO - Save training volley 18 episodes plots...
+2020-05-26 13:57:19,811 - INFO - Plots of training volley 18 saved successfully
+2020-05-26 13:57:19,811 - INFO - Training volley 18 is completed
+2020-05-26 13:57:19,811 - INFO - Training steps up to now: 12666
+2020-05-26 13:57:19,811 - INFO - Update all training volleys plots...
+2020-05-26 13:57:20,441 - INFO - Plots updated successfully
+2020-05-26 13:57:20,441 - INFO - _____________________________________________________________________________________
+2020-05-26 13:57:20,441 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:57:20,441 - INFO - Setup of validation volley 18...
+2020-05-26 13:57:20,441 - INFO - Setup of validation volley 18 completed
+2020-05-26 13:57:20,441 - INFO - Validating for 100 episodes...
+2020-05-26 13:57:21,716 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:57:21,716 - INFO - Average total reward: 0.54
+2020-05-26 13:57:21,716 - INFO - Standard deviation of total reward: 0.498
+2020-05-26 13:57:21,716 - INFO - Average scaled reward: 0.025
+2020-05-26 13:57:21,716 - INFO - Standard deviation of scaled reward: 0.032
+2020-05-26 13:57:21,716 - INFO - Average episode length: 31.0 steps
+2020-05-26 13:57:21,716 - INFO - Save validation volley 18 episodes plots...
+2020-05-26 13:57:22,105 - INFO - Plots of validation volley 18 saved successfully
+2020-05-26 13:57:22,105 - INFO - Validation volley 18 is completed
+2020-05-26 13:57:22,105 - INFO - Update all validation volleys plots...
+2020-05-26 13:57:22,760 - INFO - Plots updated successfully
+2020-05-26 13:57:22,760 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:57:22,760 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:57:22,781 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:57:22,782 - INFO - _____________________________________________________________________________________
+2020-05-26 13:57:22,782 - INFO - Setup of training volley 19...
+2020-05-26 13:57:22,782 - INFO - Setup of training volley 19 completed
+2020-05-26 13:57:22,782 - INFO - Training for 100 episodes...
+2020-05-26 13:57:27,994 - INFO - Training for 100 episodes finished with following result:
+2020-05-26 13:57:27,994 - INFO - Average total reward: 0.01
+2020-05-26 13:57:27,994 - INFO - Standard deviation of total reward: 0.099
+2020-05-26 13:57:27,995 - INFO - Average scaled reward: 0.001
+2020-05-26 13:57:27,995 - INFO - Standard deviation of scaled reward: 0.012
+2020-05-26 13:57:27,995 - INFO - Average episode length: 7.0 steps
+2020-05-26 13:57:27,995 - INFO - Save training volley 19 episodes plots...
+2020-05-26 13:57:28,350 - INFO - Plots of training volley 19 saved successfully
+2020-05-26 13:57:28,350 - INFO - Training volley 19 is completed
+2020-05-26 13:57:28,350 - INFO - Training steps up to now: 13313
+2020-05-26 13:57:28,351 - INFO - Update all training volleys plots...
+2020-05-26 13:57:28,957 - INFO - Plots updated successfully
+2020-05-26 13:57:28,957 - INFO - _____________________________________________________________________________________
+2020-05-26 13:57:28,957 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:57:28,957 - INFO - Setup of validation volley 19...
+2020-05-26 13:57:28,957 - INFO - Setup of validation volley 19 completed
+2020-05-26 13:57:28,958 - INFO - Validating for 100 episodes...
+2020-05-26 13:57:30,456 - INFO - Validating for 100 episodes finished with following result:
+2020-05-26 13:57:30,456 - INFO - Average total reward: 0.4
+2020-05-26 13:57:30,456 - INFO - Standard deviation of total reward: 0.49
+2020-05-26 13:57:30,456 - INFO - Average scaled reward: 0.019
+2020-05-26 13:57:30,456 - INFO - Standard deviation of scaled reward: 0.031
+2020-05-26 13:57:30,457 - INFO - Average episode length: 33.0 steps
+2020-05-26 13:57:30,457 - INFO - Save validation volley 19 episodes plots...
+2020-05-26 13:57:30,829 - INFO - Plots of validation volley 19 saved successfully
+2020-05-26 13:57:30,829 - INFO - Validation volley 19 is completed
+2020-05-26 13:57:30,829 - INFO - Update all validation volleys plots...
+2020-05-26 13:57:31,424 - INFO - Plots updated successfully
+2020-05-26 13:57:31,424 - INFO - ---------------------------------------------------------------------------------------
+2020-05-26 13:57:31,424 - INFO - Saving the agent dsarsa_agent metagraph at path ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph/experiment_dirichlet_3...
+2020-05-26 13:57:31,444 - INFO - Agent dsarsa_agent metagraph saved successfully
+2020-05-26 13:57:31,445 - INFO - End of training
+2020-05-26 13:57:31,448 - INFO - Experiment experiment_dirichlet_3: testing process started
+2020-05-26 13:57:31,452 - INFO - Initializing the environment...
+2020-05-26 13:57:31,452 - INFO - Environment initialized
+2020-05-26 13:57:31,452 - INFO - Initializing the agent..
+2020-05-26 13:57:31,500 - INFO - Model initialized to default state
+2020-05-26 13:57:31,516 - INFO - Agent initialized
+2020-05-26 13:57:31,516 - INFO - Restoring agent graph with checkpoint path: ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph
+2020-05-26 13:57:31,539 - INFO - Model graph stored at ./experiments/frozen_lake_dsarsa_2020-05-26/experiment_dirichlet/3/metagraph loaded successfully!
+2020-05-26 13:57:31,540 - INFO - Agent restored
+2020-05-26 13:57:31,540 - INFO - Setup of test volley 0...
+2020-05-26 13:57:31,540 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:32,816 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:32,816 - INFO - Average total reward: 0.29
+2020-05-26 13:57:32,816 - INFO - Standard deviation of total reward: 0.454
+2020-05-26 13:57:32,816 - INFO - Average scaled reward: 0.018
+2020-05-26 13:57:32,817 - INFO - Standard deviation of scaled reward: 0.035
+2020-05-26 13:57:32,817 - INFO - Average episode length: 27.0 steps
+2020-05-26 13:57:32,817 - INFO - Setup of test volley 1...
+2020-05-26 13:57:32,818 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:33,985 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:33,985 - INFO - Average total reward: 0.31
+2020-05-26 13:57:33,985 - INFO - Standard deviation of total reward: 0.462
+2020-05-26 13:57:33,985 - INFO - Average scaled reward: 0.019
+2020-05-26 13:57:33,986 - INFO - Standard deviation of scaled reward: 0.036
+2020-05-26 13:57:33,986 - INFO - Average episode length: 26.0 steps
+2020-05-26 13:57:33,986 - INFO - Setup of test volley 2...
+2020-05-26 13:57:33,986 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:35,390 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:35,390 - INFO - Average total reward: 0.39
+2020-05-26 13:57:35,390 - INFO - Standard deviation of total reward: 0.488
+2020-05-26 13:57:35,390 - INFO - Average scaled reward: 0.018
+2020-05-26 13:57:35,390 - INFO - Standard deviation of scaled reward: 0.029
+2020-05-26 13:57:35,390 - INFO - Average episode length: 33.0 steps
+2020-05-26 13:57:35,391 - INFO - Setup of test volley 3...
+2020-05-26 13:57:35,391 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:36,852 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:36,853 - INFO - Average total reward: 0.29
+2020-05-26 13:57:36,853 - INFO - Standard deviation of total reward: 0.454
+2020-05-26 13:57:36,853 - INFO - Average scaled reward: 0.012
+2020-05-26 13:57:36,853 - INFO - Standard deviation of scaled reward: 0.023
+2020-05-26 13:57:36,853 - INFO - Average episode length: 31.0 steps
+2020-05-26 13:57:36,853 - INFO - Setup of test volley 4...
+2020-05-26 13:57:36,853 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:37,945 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:37,945 - INFO - Average total reward: 0.33
+2020-05-26 13:57:37,945 - INFO - Standard deviation of total reward: 0.47
+2020-05-26 13:57:37,945 - INFO - Average scaled reward: 0.018
+2020-05-26 13:57:37,945 - INFO - Standard deviation of scaled reward: 0.03
+2020-05-26 13:57:37,945 - INFO - Average episode length: 27.0 steps
+2020-05-26 13:57:37,945 - INFO - Setup of test volley 5...
+2020-05-26 13:57:37,946 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:39,339 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:39,339 - INFO - Average total reward: 0.33
+2020-05-26 13:57:39,339 - INFO - Standard deviation of total reward: 0.47
+2020-05-26 13:57:39,339 - INFO - Average scaled reward: 0.02
+2020-05-26 13:57:39,339 - INFO - Standard deviation of scaled reward: 0.036
+2020-05-26 13:57:39,340 - INFO - Average episode length: 29.0 steps
+2020-05-26 13:57:39,340 - INFO - Setup of test volley 6...
+2020-05-26 13:57:39,340 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:40,858 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:40,858 - INFO - Average total reward: 0.23
+2020-05-26 13:57:40,858 - INFO - Standard deviation of total reward: 0.421
+2020-05-26 13:57:40,858 - INFO - Average scaled reward: 0.012
+2020-05-26 13:57:40,858 - INFO - Standard deviation of scaled reward: 0.03
+2020-05-26 13:57:40,858 - INFO - Average episode length: 31.0 steps
+2020-05-26 13:57:40,859 - INFO - Setup of test volley 7...
+2020-05-26 13:57:40,859 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:42,411 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:42,411 - INFO - Average total reward: 0.29
+2020-05-26 13:57:42,412 - INFO - Standard deviation of total reward: 0.454
+2020-05-26 13:57:42,412 - INFO - Average scaled reward: 0.016
+2020-05-26 13:57:42,412 - INFO - Standard deviation of scaled reward: 0.031
+2020-05-26 13:57:42,412 - INFO - Average episode length: 30.0 steps
+2020-05-26 13:57:42,412 - INFO - Setup of test volley 8...
+2020-05-26 13:57:42,412 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:43,775 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:43,775 - INFO - Average total reward: 0.29
+2020-05-26 13:57:43,775 - INFO - Standard deviation of total reward: 0.454
+2020-05-26 13:57:43,775 - INFO - Average scaled reward: 0.014
+2020-05-26 13:57:43,775 - INFO - Standard deviation of scaled reward: 0.028
+2020-05-26 13:57:43,775 - INFO - Average episode length: 32.0 steps
+2020-05-26 13:57:43,775 - INFO - Setup of test volley 9...
+2020-05-26 13:57:43,776 - INFO - Testing for 100 episodes...
+2020-05-26 13:57:45,161 - INFO - Testing for 100 episodes finished with following result:
+2020-05-26 13:57:45,161 - INFO - Average total reward: 0.35
+2020-05-26 13:57:45,161 - INFO - Standard deviation of total reward: 0.477
+2020-05-26 13:57:45,161 - INFO - Average scaled reward: 0.019
+2020-05-26 13:57:45,162 - INFO - Standard deviation of scaled reward: 0.031
+2020-05-26 13:57:45,162 - INFO - Average episode length: 30.0 steps
+2020-05-26 13:57:45,162 - INFO - End of test
+2020-05-26 13:57:45,162 - INFO - Results over 10 test volleys of 100 episodes each are:
+2020-05-26 13:57:45,162 - INFO - Average test total reward: 0.31
+2020-05-26 13:57:45,162 - INFO - Average test scaled reward: 0.017
+2020-05-26 13:57:45,162 - INFO - Max test total reward: 0.39
+2020-05-26 13:57:45,162 - INFO - Max test scaled reward: 0.02
+2020-05-26 13:57:45,163 - INFO - Average test standard deviation of total reward: 0.46
+2020-05-26 13:57:45,163 - INFO - Average test standard deviation of scaled reward: 0.031
+2020-05-26 13:57:45,163 - INFO - Min test standard deviation of total reward: 0.421
+2020-05-26 13:57:45,163 - INFO - Min test standard deviation of scaled reward: 0.023
+2020-05-26 13:57:45,163 - INFO - Average test episode length: 30.0
+2020-05-26 13:57:45,163 - INFO - The experiment terminated without meeting the requirements
