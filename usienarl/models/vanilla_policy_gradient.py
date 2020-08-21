@@ -348,8 +348,8 @@ class VanillaPolicyGradient(Model):
                 lower_bound: numpy.ndarray = -math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
                 upper_bound: numpy.ndarray = math.inf * numpy.ones((self._parallel, *self._agent_action_space_shape), dtype=float)
             else:
-                lower_bound: numpy.ndarray = possible_actions[:, 0]
-                upper_bound: numpy.ndarray = possible_actions[:, 1]
+                lower_bound: numpy.ndarray = numpy.array(possible_actions)[:, 0]
+                upper_bound: numpy.ndarray = numpy.array(possible_actions)[:, 1]
             # Get action, value and log-likelihood with continuous action space shape
             action, value, log_likelihood = session.run([self._actions_predicted, self._value_predicted, self._log_likelihood_predictions],
                                                         feed_dict={
