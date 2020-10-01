@@ -138,6 +138,9 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 
 - Fixed a small bug in vanilla policy gradient and proximal policy optimization with continuous acton spaces
 
+**v0.7.6**:
+
+- Updated the agent to be able to be restored when there is no need to save the model itself
 
 **CREDITS**
 
