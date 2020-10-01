@@ -134,6 +134,14 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 - Fixed a bug on tabular SARSA with dirichlet exploration policy on the transpose operation
 - Fixed a numerical warning on final result when the denominator could happen to be zero
 
+**v0.7.5**:
+
+- Fixed a small bug in vanilla policy gradient and proximal policy optimization with continuous acton spaces
+
+**v0.7.6**:
+
+- Updated the agent to be able to be restored when there is no need to save the model itself
+
 **CREDITS**
 
 Luca Pasqualini at `SAILab <http://sailab.diism.unisi.it/people/luca-pasqualini/>`_ - University of Siena.
