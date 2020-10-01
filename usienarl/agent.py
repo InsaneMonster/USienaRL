@@ -130,6 +130,9 @@ class Agent:
         assert(path is not None and path)
         # Get checkpoint from path
         checkpoint = tensorflow.train.get_checkpoint_state(path)
+        # If no saver is defined, define one to restore from checkpoint
+        if self._saver is None:
+            self._saver = tensorflow.train.Saver(self.saved_variables)
         # If checkpoint exists restore from checkpoint
         if checkpoint and checkpoint.model_checkpoint_path:
             self._saver.restore(session, tensorflow.train.latest_checkpoint(path))
@@ -147,8 +150,8 @@ class Agent:
         :param logger: the logger used to print the agent information, warnings and errors
         :param session: the session of tensorflow currently running
         """
-        # Check if the saver exists
-        if self._saver is None:
+        # Check if the saver exists or something has to be saved
+        if self._saver is None or self._save_path is None or not self._save_path or self._saves_to_keep <= 0:
             return
         logger.info("Saving the agent " + self._name + " metagraph at path " + self._save_path + "...")
         self._saver.save(session, self._save_path, self._save_counter)
