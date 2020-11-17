@@ -74,25 +74,37 @@ class Experiment:
         self._warmup_volley: StepVolley or None = None
         self._training_volley: EpisodeVolley or None = None
         self._validation_volley: EpisodeVolley or None = None
+        self._training_rewards: [] or None = None
+        self._training_total_rewards: [] or None = None
         self._training_avg_total_rewards: [] or None = None
+        self._training_scaled_rewards: [] or None = None
         self._training_avg_scaled_rewards: [] or None = None
         self._training_std_total_rewards: [] or None = None
         self._training_std_scaled_rewards: [] or None = None
+        self._training_episode_lengths: [] or None = None
         self._training_avg_episode_lengths: [] or None = None
+        self._validation_rewards: [] or None = None
+        self._validation_total_rewards: [] or None = None
         self._validation_avg_total_rewards: [] or None = None
+        self._validation_scaled_rewards: [] or None = None
         self._validation_avg_scaled_rewards: [] or None = None
         self._validation_std_total_rewards: [] or None = None
         self._validation_std_scaled_rewards: [] or None = None
+        self._validation_episode_lengths: [] or None = None
         self._validation_avg_episode_lengths: [] or None = None
         self._training_validation_volley_counter: int or None = None
         self._trained_steps: int or None = None
         self._trained_episodes: int or None = None
         self._validated: bool or None = None
+        self._test_rewards: [] or None = None
+        self._test_total_rewards: [] or None = None
         self._test_volley: EpisodeVolley or None = None
         self._test_avg_total_rewards: [] or None = None
+        self._test_scaled_rewards: [] or None = None
         self._test_avg_scaled_rewards: [] or None = None
         self._test_std_total_rewards: [] or None = None
         self._test_std_scaled_rewards: [] or None = None
+        self._test_episode_lengths: [] or None = None
         self._test_avg_episode_lengths: [] or None = None
         self._test_volley_counter: int or None = None
         self._avg_test_avg_total_reward: float or None = None
@@ -108,7 +120,7 @@ class Experiment:
 
     def setup(self,
               logger: logging.Logger,
-              plots_path: str, plots_dpi: int = 150,
+              plots_path: str or None = None, plots_dpi: int = 150,
               parallel: int = 1,
               summary_path: str = None, save_path: str = None, saves_to_keep: int = 0,
               iteration: int = -1) -> bool:
@@ -117,8 +129,8 @@ class Experiment:
         test. Until the experiment is not setup, most of its properties will return None.
 
         :param logger: the logger used to print the experiment information, warnings and errors
-        :param plots_path: the string path of the plots to save (both for the entire experiment and each one of its volleys)
-        :param plots_dpi: the dpi of each plot graph (reduce it to reduce plots size and quality)
+        :param plots_path: the optional string path of the plots to save (both for the entire experiment and each one of its volleys), it's required for validation and training volleys.
+        :param plots_dpi: the dpi of each plot graph (lower it to reduce plots size and quality)
         :param parallel: the amount of parallel episodes run for the experiment, must be greater than zero
         :param summary_path: the optional string path of the tensorboard summary directory to save during model training
         :param save_path: the optional string path of the metagraph agent directory to save at the end of each train volley
@@ -145,11 +157,13 @@ class Experiment:
             return False
         logger.info("Environment setup is successful")
         logger.info("Agent setup...")
+        # Note: the agent save path could be None
+        agent_save_path: str or None = save_path + "/" + self._id if save_path is not None else None
         if not self._agent.setup(logger,
                                  self._id, self._parallel,
                                  self._interface.observation_space_type, self._interface.observation_space_shape,
                                  self._interface.agent_action_space_type, self._interface.agent_action_space_shape,
-                                 summary_path, save_path + "/" + self._id, saves_to_keep):
+                                 summary_path, agent_save_path, saves_to_keep):
             logger.info("Agent setup failed. Cannot setup the experiment!")
             return False
         logger.info("Agent setup is successful")
@@ -168,25 +182,37 @@ class Experiment:
         self._warmup_volley = None
         self._training_volley = None
         self._validation_volley = None
+        self._training_rewards = []
+        self._training_total_rewards = []
         self._training_avg_total_rewards = []
+        self._training_scaled_rewards = []
         self._training_avg_scaled_rewards = []
         self._training_std_total_rewards = []
         self._training_std_scaled_rewards = []
+        self._training_episode_lengths = []
         self._training_avg_episode_lengths = []
+        self._validation_rewards = []
+        self._validation_total_rewards = []
         self._validation_avg_total_rewards = []
+        self._validation_scaled_rewards = []
         self._validation_avg_scaled_rewards = []
         self._validation_std_total_rewards = []
         self._validation_std_scaled_rewards = []
+        self._validation_episode_lengths = []
         self._validation_avg_episode_lengths = []
         self._training_validation_volley_counter = 0
         self._trained_steps = 0
         self._trained_episodes = 0
         self._validated = False
         self._test_volley = None
+        self._test_rewards = []
+        self._test_total_rewards = []
         self._test_avg_total_rewards = []
+        self._test_scaled_rewards = []
         self._test_avg_scaled_rewards = []
         self._test_std_total_rewards = []
         self._test_std_scaled_rewards = []
+        self._test_episode_lengths = []
         self._test_avg_episode_lengths = []
         self._test_volley_counter = 0
         self._avg_test_avg_total_reward = None
@@ -213,6 +239,8 @@ class Experiment:
         # If test volley avoid saving plots
         if episode_volley_type == EpisodeVolleyType.test:
             return
+        # Make sure there is a plots path
+        assert (self._plots_path is not None and self._plots_path)
         # Save plots according to the requested type
         if episode_volley_type == EpisodeVolleyType.training:
             plot.plot(list(range(len(self._training_avg_total_rewards))), self._training_avg_total_rewards, 'r-')
@@ -357,10 +385,14 @@ class Experiment:
                 self._trained_steps += self._training_volley.steps
                 self._trained_episodes += self._training_volley.episodes
                 # Store training volley statistics
+                self._training_rewards.append(self._training_volley.rewards.copy())
+                self._training_total_rewards.append(self._training_volley.total_rewards.copy())
                 self._training_avg_total_rewards.append(self._training_volley.avg_total_reward)
+                self._training_scaled_rewards.append(self._training_volley.scaled_rewards.copy())
                 self._training_avg_scaled_rewards.append(self._training_volley.avg_scaled_reward)
                 self._training_std_total_rewards.append(self._training_volley.std_total_reward)
                 self._training_std_scaled_rewards.append(self._training_volley.std_scaled_reward)
+                self._training_episode_lengths.append(self._training_volley.episode_lengths.copy())
                 self._training_avg_episode_lengths.append(self._training_volley.avg_episode_length)
                 # Print training volley results
                 logger.info("Training volley " + str(self._training_validation_volley_counter) + " is completed")
@@ -386,10 +418,14 @@ class Experiment:
                 logger.info("Setup of validation volley " + str(self._training_validation_volley_counter) + " completed")
                 self._validation_volley.run(logger, session, render_validation)
                 # Store validation volley statistics
+                self._validation_rewards.append(self._validation_volley.rewards.copy())
+                self._validation_total_rewards.append(self._validation_volley.total_rewards.copy())
                 self._validation_avg_total_rewards.append(self._validation_volley.avg_total_reward)
+                self._validation_scaled_rewards.append(self._validation_volley.scaled_rewards.copy())
                 self._validation_avg_scaled_rewards.append(self._validation_volley.avg_scaled_reward)
                 self._validation_std_total_rewards.append(self._validation_volley.std_total_reward)
                 self._validation_std_scaled_rewards.append(self._validation_volley.std_scaled_reward)
+                self._validation_episode_lengths.append(self._validation_volley.episode_lengths.copy())
                 self._validation_avg_episode_lengths.append(self._validation_volley.avg_episode_length)
                 # Print validation volley results
                 logger.info("Validation volley " + str(self._training_validation_volley_counter) + " is completed")
@@ -472,10 +508,14 @@ class Experiment:
                     return
                 self._test_volley.run(logger, session, render)
                 # Store test volley statistics
+                self._test_rewards.append(self._test_volley.rewards.copy())
+                self._test_total_rewards.append(self._test_volley.total_rewards.copy())
                 self._test_avg_total_rewards.append(self._test_volley.avg_total_reward)
+                self._test_scaled_rewards.append(self._test_volley.scaled_rewards.copy())
                 self._test_avg_scaled_rewards.append(self._test_volley.avg_scaled_reward)
                 self._test_std_total_rewards.append(self._test_volley.std_total_reward)
                 self._test_std_scaled_rewards.append(self._test_volley.std_scaled_reward)
+                self._test_episode_lengths.append(self._test_volley.episode_lengths.copy())
                 self._test_avg_episode_lengths.append(self._test_volley.avg_episode_length)
                 # Increase test volley counter
                 self._test_volley_counter += 1
@@ -616,13 +656,48 @@ class Experiment:
         return self._validation_volley
 
     @property
+    def test_volley(self) -> EpisodeVolley or None:
+        """
+        The test volley of the testing phase.
+        It is None if testing is not started yet.
+        """
+        return self._test_volley
+
+    @property
+    def training_rewards(self) -> [] or None:
+        """
+        The list of all rewards (step by step) of each volley of all the training volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no training volley has finished execution.
+        """
+        return self._training_rewards
+
+    @property
+    def training_total_rewards(self) -> [] or None:
+        """
+        The list of all total rewards of each volley of all the training volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no training volley has finished execution.
+        """
+        return self._training_total_rewards
+
+    @property
     def training_avg_total_rewards(self) -> [] or None:
         """
         The list of average total rewards of each volley of all the training volleys already executed.
-       It is None if experiment is not setup.
+        It is None if experiment is not setup.
         It is empty if no training volley has finished execution.
         """
         return self._training_avg_total_rewards
+
+    @property
+    def training_scaled_rewards(self) -> [] or None:
+        """
+        The list of all scaled rewards of each volley of all the training volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no training volley has finished execution.
+        """
+        return self._training_scaled_rewards
 
     @property
     def training_avg_scaled_rewards(self) -> [] or None:
@@ -652,6 +727,15 @@ class Experiment:
         return self._training_std_scaled_rewards
 
     @property
+    def training_episode_lengths(self) -> [] or None:
+        """
+        The list of all episode lengths of each volley of all the training volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no training volley has finished execution.
+        """
+        return self._training_episode_lengths
+
+    @property
     def training_avg_episode_lengths(self) -> [] or None:
         """
         The list of average episode lengths of each volley of all the training volleys already executed.
@@ -661,6 +745,24 @@ class Experiment:
         return self._training_avg_episode_lengths
 
     @property
+    def validation_rewards(self) -> [] or None:
+        """
+        The list of all rewards (step by step) of each volley of all the validation volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no validation volley has finished execution.
+        """
+        return self._validation_rewards
+
+    @property
+    def validation_total_rewards(self) -> [] or None:
+        """
+        The list of all total rewards of each volley of all the validation volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no validation volley has finished execution.
+        """
+        return self._validation_total_rewards
+
+    @property
     def validation_avg_total_rewards(self) -> [] or None:
         """
         The list of average total rewards of each volley of all the validation volleys already executed.
@@ -668,6 +770,15 @@ class Experiment:
         It is empty if no validation volley has finished execution.
         """
         return self._validation_avg_total_rewards
+
+    @property
+    def validation_scaled_rewards(self) -> [] or None:
+        """
+        The list of all scaled rewards of each volley of all the validation volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no validation volley has finished execution.
+        """
+        return self._validation_scaled_rewards
 
     @property
     def validation_avg_scaled_rewards(self) -> [] or None:
@@ -697,6 +808,15 @@ class Experiment:
         return self._validation_std_scaled_rewards
 
     @property
+    def validation_episode_lengths(self) -> [] or None:
+        """
+        The list of all episode lengths of each volley of all the validation volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no validation volley has finished execution.
+        """
+        return self._validation_episode_lengths
+
+    @property
     def validation_avg_episode_lengths(self) -> [] or None:
         """
         The list of average episode lengths of each volley of all the validation volleys already executed.
@@ -706,6 +826,24 @@ class Experiment:
         return self._validation_avg_episode_lengths
 
     @property
+    def test_rewards(self) -> [] or None:
+        """
+        The list of all rewards (step by step) of each volley of all the test volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no test volley has finished execution.
+        """
+        return self._test_rewards
+
+    @property
+    def test_total_rewards(self) -> [] or None:
+        """
+        The list of all total rewards of each volley of all the test volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no test volley has finished execution.
+        """
+        return self._test_total_rewards
+
+    @property
     def test_avg_total_rewards(self) -> [] or None:
         """
         The list of average total rewards of each volley of all the test volleys already executed.
@@ -713,6 +851,15 @@ class Experiment:
         It is empty if no test volley has finished execution.
         """
         return self._test_avg_total_rewards
+
+    @property
+    def test_scaled_rewards(self) -> [] or None:
+        """
+        The list of all scaled rewards of each volley of all the test volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no test volley has finished execution.
+        """
+        return self._test_scaled_rewards
 
     @property
     def test_avg_scaled_rewards(self) -> [] or None:
@@ -740,6 +887,15 @@ class Experiment:
         It is empty if no test volley has finished execution.
         """
         return self._test_std_scaled_rewards
+
+    @property
+    def test_episode_lengths(self) -> [] or None:
+        """
+        The list of all episode lengths of each volley of all the test volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no test volley has finished execution.
+        """
+        return self._test_episode_lengths
 
     @property
     def test_avg_episode_lengths(self) -> [] or None:
