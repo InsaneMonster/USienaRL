@@ -43,20 +43,22 @@ class EpisodeVolley(Volley):
                  interface: Interface,
                  parallel: int,
                  episode_volley_type: EpisodeVolleyType,
-                 plots_path: str, plots_dpi: int,
+                 plots_path: str or None, plots_dpi: int or None,
                  episodes_required: int, episode_length: int):
         # Generate base volley
         super(EpisodeVolley, self).__init__(environment, agent, interface, parallel)
         # Make sure additional parameters are correct
         assert(episode_volley_type is not None)
-        assert(plots_path is not None and plots_path)
-        assert(plots_dpi > 0)
+        # Note: plots path and DPI are required only if the volley is not a test one
+        if episode_volley_type != EpisodeVolleyType.test:
+            assert(plots_path is not None and plots_path)
+            assert(plots_dpi is not None and plots_dpi > 0)
         assert(episodes_required > 0 and episode_length > 0)
         assert(parallel > 0)
         assert(episodes_required % parallel == 0)
         # Define internal attributes
         self._episode_volley_type: EpisodeVolleyType = episode_volley_type
-        self._plots_path: str = plots_path
+        self._plots_path: str or None = plots_path
         self._plots_dpi: int = plots_dpi
         self._episodes_required: int = episodes_required
         self._episode_length: int = episode_length
@@ -215,6 +217,8 @@ class EpisodeVolley(Volley):
         # If this is a test volley return
         if self._episode_volley_type == EpisodeVolleyType.test:
             return
+        # Make sure there is a plots path
+        assert (self._plots_path is not None and self._plots_path)
         # Make sure all lengths are the same
         assert (len(self._total_rewards) == len(self._scaled_rewards) == len(self._episode_lengths))
         # Print info
@@ -367,7 +371,11 @@ class EpisodeVolley(Volley):
         """
         The list of rewards per step grouped by episode of all episodes already executed.
         """
-        return self._rewards
+        reward_list: [] = []
+        reward_tensor: numpy.ndarray = numpy.array(self._rewards)
+        for reward_matrix in reward_tensor:
+            reward_list += [row.tolist() for row in reward_matrix.T]
+        return reward_list
 
     @property
     def total_rewards(self) -> []:
