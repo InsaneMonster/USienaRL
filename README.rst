@@ -142,6 +142,14 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 
 - Updated the agent to be able to be restored when there is no need to save the model itself
 
+**v0.7.7**:
+
+- Updated the agent, the experiment and the episode volley to not require plots path and save path anymore when only inference (test) is run
+- Updated the experiment with a property to get the last test volley
+- Updated the experiment and the episode volley with properties to keep track of all steps rewards for all executed volleys (of any type)
+- Updated the experiment and the episode volley with properties to keep track of all episodes total and scaled rewards for all executed volleys (of any type)
+- Updated the experiment and the episode volley with properties to keep track of all episodes lengths for all executed volleys (of any type)
+
 **CREDITS**
 
 Luca Pasqualini at `SAILab <http://sailab.diism.unisi.it/people/luca-pasqualini/>`_ - University of Siena.
