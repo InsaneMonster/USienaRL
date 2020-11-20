@@ -372,9 +372,14 @@ class EpisodeVolley(Volley):
         The list of rewards per step grouped by episode of all episodes already executed.
         """
         reward_list: [] = []
-        reward_tensor: numpy.ndarray = numpy.array(self._rewards)
-        for reward_matrix in reward_tensor:
-            reward_list += [row.tolist() for row in reward_matrix.T]
+        # Note: each reward block consists in a set of arrays for each parallel step in an episode
+        for reward_block in self._rewards:
+            for i in range(len(reward_block[0])):
+                episode_rewards: [] = []
+                for parallel_step in reward_block:
+                    if not numpy.isnan(parallel_step[i]):
+                        episode_rewards.append(parallel_step[i])
+                reward_list.append(episode_rewards)
         return reward_list
 
     @property
