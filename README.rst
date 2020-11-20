@@ -150,6 +150,10 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 - Updated the experiment and the episode volley with properties to keep track of all episodes total and scaled rewards for all executed volleys (of any type)
 - Updated the experiment and the episode volley with properties to keep track of all episodes lengths for all executed volleys (of any type)
 
+**v0.7.8**:
+
+- Fixed a bug with reward computation when validating/testing when episode lengths are not the same across all episodes
+
 **CREDITS**
 
 Luca Pasqualini at `SAILab <http://sailab.diism.unisi.it/people/luca-pasqualini/>`_ - University of Siena.
