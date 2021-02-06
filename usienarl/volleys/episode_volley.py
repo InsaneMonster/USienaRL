@@ -16,6 +16,7 @@ import logging
 import matplotlib.pyplot as plot
 import matplotlib.ticker as mticker
 import enum
+import time
 
 # Import required src
 
@@ -70,10 +71,12 @@ class EpisodeVolley(Volley):
         self._std_total_reward: float or None = None
         self._std_scaled_reward: float or None = None
         self._avg_episode_length: int or None = None
+        self._avg_action_duration: float or None = None
         self._rewards: [] = []
         self._total_rewards: [] = []
         self._scaled_rewards: [] = []
         self._episode_lengths: [] = []
+        self._actions_durations: [] = []
 
     def _initialize(self) -> bool:
         # Reset empty attributes
@@ -84,10 +87,12 @@ class EpisodeVolley(Volley):
         self._std_total_reward = None
         self._std_scaled_reward = None
         self._avg_episode_length = None
+        self._avg_action_duration = None
         self._rewards = []
         self._total_rewards = []
         self._scaled_rewards = []
         self._episode_lengths = []
+        self._actions_durations = []
         # This initialization always succeed
         return True
 
@@ -119,16 +124,21 @@ class EpisodeVolley(Volley):
             self._last_episode_done = numpy.zeros(self._environment.parallel, dtype=bool)
             # Execute actions until the all parallel step batches are completed or the maximum episode length is exceeded
             episode_rewards: [] = []
+            episode_actions_durations: [] = []
             state_current: numpy.ndarray = self._environment.reset(logger, session)
             for parallel_step_batch in range(self._episode_length):
                 # Get the action decided by the agent
                 observation_current: numpy.ndarray = self._interface.environment_state_to_observation(logger, session, state_current)
+                time_before_action = time.clock()
                 if self._episode_volley_type == EpisodeVolleyType.training:
                     agent_action: numpy.ndarray = self._agent.act_train(logger, session, self._interface, observation_current,
                                                                         self._start_steps + self._steps, self._start_episodes + self._episodes)
                 else:
                     agent_action: numpy.ndarray = self._agent.act_inference(logger, session, self._interface, observation_current,
                                                                             self._start_steps + self._steps, self._start_episodes + self._episodes)
+                time_after_action = time.clock()
+                # Save the time, converted to milliseconds
+                episode_actions_durations.append((time_after_action - time_before_action) * 1000)
                 # Get the next state with relative reward and episode done flag
                 environment_action: numpy.ndarray = self._interface.agent_action_to_environment_action(logger, session, agent_action)
                 state_next, reward, episode_done = self._environment.step(logger, session, environment_action)
@@ -178,6 +188,8 @@ class EpisodeVolley(Volley):
             self._rewards.append(episode_rewards.copy())
             self._total_rewards += numpy.nansum(numpy.array(episode_rewards), axis=0).tolist()
             self._scaled_rewards += numpy.nanmean(numpy.array(episode_rewards), axis=0).tolist()
+            # Save the average actions duration for the episode
+            self._actions_durations.append(round(numpy.average(numpy.array(episode_actions_durations)), 3))
             # Complete the episode and send back information to the agent
             if self._episode_volley_type == EpisodeVolleyType.training:
                 self._agent.complete_episode_train(logger, session, self._interface,
@@ -193,6 +205,7 @@ class EpisodeVolley(Volley):
         self._std_total_reward = numpy.round(numpy.std(numpy.array(self._total_rewards)), 3)
         self._std_scaled_reward = numpy.round(numpy.std(numpy.array(self._scaled_rewards)), 3)
         self._avg_episode_length = numpy.rint(numpy.average(numpy.array(self._episode_lengths)))
+        self._avg_action_duration = numpy.round(numpy.average(numpy.array(self._actions_durations)), 3)
         # Print results
         if self._episode_volley_type == EpisodeVolleyType.training:
             logger.info("Training for " + str(self._episodes_required) + " episodes finished with following result:")
@@ -205,6 +218,7 @@ class EpisodeVolley(Volley):
         logger.info("Average scaled reward: " + str(self._avg_scaled_reward))
         logger.info("Standard deviation of scaled reward: " + str(self._std_scaled_reward))
         logger.info("Average episode length: " + str(self._avg_episode_length) + " steps")
+        logger.info("Average action duration: " + str(self._avg_action_duration) + " msec")
         # Save the episodes plots
         self._save_plots(logger)
 
@@ -325,7 +339,6 @@ class EpisodeVolley(Volley):
     def avg_total_reward(self) -> float or None:
         """
         The average total reward of all episodes of the volley.
-        It is wrapped in a numpy array.
         It is None if volley is not setup or if volley has not finished execution.
         """
         return self._avg_total_reward
@@ -334,7 +347,6 @@ class EpisodeVolley(Volley):
     def avg_scaled_reward(self) -> float or None:
         """
         The average scaled reward of all episodes of the volley.
-        It is wrapped in a numpy array.
         It is None if volley is not setup or if volley has not finished execution.
         """
         return self._avg_scaled_reward
@@ -343,7 +355,6 @@ class EpisodeVolley(Volley):
     def std_total_reward(self) -> float or None:
         """
         The standard deviation of total reward of all episodes of the volley.
-        It is wrapped in a numpy array.
         It is None if volley is not setup or if volley has not finished execution.
         """
         return self._std_total_reward
@@ -352,7 +363,6 @@ class EpisodeVolley(Volley):
     def std_scaled_reward(self) -> float or None:
         """
         The standard deviation of scaled reward of all episodes of the volley.
-        It is wrapped in a numpy array.
         It is None if volley is not setup or if volley has not finished execution.
         """
         return self._std_scaled_reward
@@ -361,10 +371,17 @@ class EpisodeVolley(Volley):
     def avg_episode_length(self) -> float or None:
         """
         The average episode length of all episodes of the volley.
-        It is wrapped in a numpy array.
         It is None if volley is not setup or if volley has not finished execution.
         """
         return self._avg_episode_length
+
+    @property
+    def avg_action_duration(self) -> float or None:
+        """
+        The average action duration in millisecond (msec) of all episodes of the volley.
+        It is None if volley is not setup or if volley has not finished execution.
+        """
+        return self._avg_action_duration
 
     @property
     def rewards(self) -> []:
@@ -402,3 +419,10 @@ class EpisodeVolley(Volley):
         The list of episode lengths of all episodes already executed.
         """
         return self._episode_lengths
+
+    @property
+    def action_durations(self) -> []:
+        """
+        The list of average action durations of all episodes already executed.
+        """
+        return self._actions_durations
