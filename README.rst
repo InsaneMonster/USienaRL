@@ -154,6 +154,12 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 
 - Fixed a bug with reward computation when validating/testing when episode lengths are not the same across all episodes
 
+**v0.7.9**:
+
+- Added time metrics for agent decision (it computes the time the agent requires to compute a set of actions)
+- Now it's possible to restore agents without checkpoint paths, to better support heuristics
+
+
 **CREDITS**
 
 Luca Pasqualini at `SAILab <http://sailab.diism.unisi.it/people/luca-pasqualini/>`_ - University of Siena.
