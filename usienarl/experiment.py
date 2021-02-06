@@ -83,6 +83,7 @@ class Experiment:
         self._training_std_scaled_rewards: [] or None = None
         self._training_episode_lengths: [] or None = None
         self._training_avg_episode_lengths: [] or None = None
+        self._training_avg_actions_durations: [] or None = None
         self._validation_rewards: [] or None = None
         self._validation_total_rewards: [] or None = None
         self._validation_avg_total_rewards: [] or None = None
@@ -92,6 +93,7 @@ class Experiment:
         self._validation_std_scaled_rewards: [] or None = None
         self._validation_episode_lengths: [] or None = None
         self._validation_avg_episode_lengths: [] or None = None
+        self._validation_avg_actions_durations: [] or None = None
         self._training_validation_volley_counter: int or None = None
         self._trained_steps: int or None = None
         self._trained_episodes: int or None = None
@@ -106,6 +108,7 @@ class Experiment:
         self._test_std_scaled_rewards: [] or None = None
         self._test_episode_lengths: [] or None = None
         self._test_avg_episode_lengths: [] or None = None
+        self._test_avg_actions_durations: [] or None = None
         self._test_volley_counter: int or None = None
         self._avg_test_avg_total_reward: float or None = None
         self._max_test_avg_total_reward: float or None = None
@@ -116,6 +119,9 @@ class Experiment:
         self._avg_test_std_scaled_reward: float or None = None
         self._min_test_std_scaled_reward: float or None = None
         self._avg_test_avg_episode_length: int or None = None
+        self._min_test_avg_actions_duration: float or None = None
+        self._max_test_avg_actions_duration: float or None = None
+        self._avg_test_avg_actions_duration: float or None = None
         self._successful: bool or None = None
 
     def setup(self,
@@ -191,6 +197,7 @@ class Experiment:
         self._training_std_scaled_rewards = []
         self._training_episode_lengths = []
         self._training_avg_episode_lengths = []
+        self._training_avg_actions_durations = []
         self._validation_rewards = []
         self._validation_total_rewards = []
         self._validation_avg_total_rewards = []
@@ -200,6 +207,7 @@ class Experiment:
         self._validation_std_scaled_rewards = []
         self._validation_episode_lengths = []
         self._validation_avg_episode_lengths = []
+        self._validation_avg_actions_durations = []
         self._training_validation_volley_counter = 0
         self._trained_steps = 0
         self._trained_episodes = 0
@@ -214,6 +222,7 @@ class Experiment:
         self._test_std_scaled_rewards = []
         self._test_episode_lengths = []
         self._test_avg_episode_lengths = []
+        self._test_avg_actions_durations = []
         self._test_volley_counter = 0
         self._avg_test_avg_total_reward = None
         self._max_test_avg_total_reward = None
@@ -224,6 +233,9 @@ class Experiment:
         self._avg_test_std_scaled_reward = None
         self._min_test_std_scaled_reward = None
         self._avg_test_avg_episode_length = None
+        self._min_test_avg_actions_duration = None
+        self._max_test_avg_actions_duration = None
+        self._avg_test_avg_actions_duration = None
         self._successful = False
         # Setup is successful
         logger.info("Experiment setup is successful")
@@ -394,6 +406,7 @@ class Experiment:
                 self._training_std_scaled_rewards.append(self._training_volley.std_scaled_reward)
                 self._training_episode_lengths.append(self._training_volley.episode_lengths.copy())
                 self._training_avg_episode_lengths.append(self._training_volley.avg_episode_length)
+                self._training_avg_actions_durations.append(self._training_volley.avg_action_duration)
                 # Print training volley results
                 logger.info("Training volley " + str(self._training_validation_volley_counter) + " is completed")
                 logger.info("Training steps up to now: " + str(self._trained_steps))
@@ -427,6 +440,7 @@ class Experiment:
                 self._validation_std_scaled_rewards.append(self._validation_volley.std_scaled_reward)
                 self._validation_episode_lengths.append(self._validation_volley.episode_lengths.copy())
                 self._validation_avg_episode_lengths.append(self._validation_volley.avg_episode_length)
+                self._validation_avg_actions_durations.append(self._validation_volley.avg_action_duration)
                 # Print validation volley results
                 logger.info("Validation volley " + str(self._training_validation_volley_counter) + " is completed")
                 # Save/update plots for all training volleys up to now (except at first volley, just one volley is not enough to plot anything)
@@ -485,12 +499,11 @@ class Experiment:
             logger.info("Initializing the agent..")
             self._agent.initialize(logger, session)
             logger.info("Agent initialized")
-            # Load the pre-trained model at given checkpoint path
+            # Load the pre-trained model at given checkpoint path (if defined) and restore the agent
             if restore_path is None or not restore_path:
-                logger.error("A checkpoint path is required to test!")
-                return
-            # Restore the agent model
-            logger.info("Restoring agent graph with checkpoint path: " + restore_path)
+                logger.info("Restoring agent graph without checkpoint path")
+            else:
+                logger.info("Restoring agent graph with checkpoint path: " + restore_path)
             if not self._agent.restore(logger, session, restore_path):
                 return
             logger.info("Agent restored")
@@ -517,6 +530,7 @@ class Experiment:
                 self._test_std_scaled_rewards.append(self._test_volley.std_scaled_reward)
                 self._test_episode_lengths.append(self._test_volley.episode_lengths.copy())
                 self._test_avg_episode_lengths.append(self._test_volley.avg_episode_length)
+                self._test_avg_actions_durations.append(self._test_volley.avg_action_duration)
                 # Increase test volley counter
                 self._test_volley_counter += 1
             logger.info("End of test")
@@ -532,6 +546,10 @@ class Experiment:
             self._min_test_std_scaled_reward = numpy.round(numpy.min(self._test_std_scaled_rewards), 3)
             # Store the average episode length over all test volleys
             self._avg_test_avg_episode_length = numpy.rint(numpy.average(self._test_avg_episode_lengths))
+            # Store the max, min and average action duration in milliseconds (msec) over all test volleys
+            self._max_test_avg_actions_duration = numpy.round(numpy.max(self._test_avg_actions_durations), 3)
+            self._min_test_avg_actions_duration = numpy.round(numpy.min(self._test_avg_actions_durations), 3)
+            self._avg_test_avg_actions_duration = numpy.round(numpy.average(self._test_avg_actions_durations), 3)
             # Print test results
             logger.info("Results over " + str(volleys) + " test volleys of " + str(episodes) + " episodes each are:")
             logger.info("Average test total reward: " + str(self._avg_test_avg_total_reward))
@@ -543,6 +561,9 @@ class Experiment:
             logger.info("Min test standard deviation of total reward: " + str(self._min_test_std_total_reward))
             logger.info("Min test standard deviation of scaled reward: " + str(self._min_test_std_scaled_reward))
             logger.info("Average test episode length: " + str(self._avg_test_avg_episode_length))
+            logger.info("Max test average action duration: " + str(self._max_test_avg_actions_duration) + " msec")
+            logger.info("Min test average action duration: " + str(self._min_test_avg_actions_duration) + " msec")
+            logger.info("Average test action duration: " + str(self._avg_test_avg_actions_duration) + " msec")
             # Check if test is successful
             self._successful = self._is_successful(logger)
             if self._successful:
@@ -745,6 +766,15 @@ class Experiment:
         return self._training_avg_episode_lengths
 
     @property
+    def training_avg_actions_durations(self) -> [] or None:
+        """
+        The list of average actions durations of each volley of all the training volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no training volley has finished execution.
+        """
+        return self._training_avg_actions_durations
+
+    @property
     def validation_rewards(self) -> [] or None:
         """
         The list of all rewards (step by step) of each volley of all the validation volleys already executed.
@@ -826,6 +856,15 @@ class Experiment:
         return self._validation_avg_episode_lengths
 
     @property
+    def validation_avg_actions_durations(self) -> [] or None:
+        """
+        The list of average actions durations of each volley of all the validation volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no validation volley has finished execution.
+        """
+        return self._validation_avg_actions_durations
+
+    @property
     def test_rewards(self) -> [] or None:
         """
         The list of all rewards (step by step) of each volley of all the test volleys already executed.
@@ -905,6 +944,15 @@ class Experiment:
         It is empty if no test volley has finished execution.
         """
         return self._test_avg_episode_lengths
+
+    @property
+    def test_avg_actions_durations(self) -> [] or None:
+        """
+        The list of average actions durations of each volley of all the test volleys already executed.
+        It is None if experiment is not setup.
+        It is empty if no test volley has finished execution.
+        """
+        return self._test_avg_actions_durations
 
     @property
     def trained_steps(self) -> int or None:
@@ -1009,6 +1057,30 @@ class Experiment:
         It is None if test phase has not finished execution.
         """
         return self._avg_test_avg_episode_length
+
+    @property
+    def max_test_avg_action_duration(self) -> int or None:
+        """
+        The max action duration in milliseconds (msec) among all test volleys.
+        It is None if test phase has not finished execution.
+        """
+        return self._max_test_avg_actions_duration
+
+    @property
+    def min_test_avg_action_duration(self) -> int or None:
+        """
+        The minimum action duration in milliseconds (msec) among all test volleys.
+        It is None if test phase has not finished execution.
+        """
+        return self._min_test_avg_actions_duration
+
+    @property
+    def avg_test_avg_action_duration(self) -> int or None:
+        """
+        The average action duration in milliseconds (msec) among all test volleys.
+        It is None if test phase has not finished execution.
+        """
+        return self._avg_test_avg_actions_duration
 
     @property
     def validated(self) -> bool or None:
