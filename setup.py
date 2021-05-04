@@ -23,7 +23,7 @@ def readme():
 # Set all package values
 
 name: str = "usienarl"
-version: str = "0.7.9"
+version: str = "0.7.10"
 requirements: [] = ["numpy>=1.14.5", "scipy>=1.2.1", "pandas", "matplotlib"]
 extras_require: {} = {"tensorflow": ["tensorflow>=1.8.0,<=1.13.1"], "tensorflow_gpu": ["tensorflow-gpu>=1.8.0,<=1.13.1"]}
 packages: [] = find_packages()

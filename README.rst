@@ -159,6 +159,9 @@ Experiment iterations are not implemented as well as they could be. I'm still th
 - Added time metrics for agent decision (it computes the time the agent requires to compute a set of actions)
 - Now it's possible to restore agents without checkpoint paths, to better support heuristics
 
+**v0.7.10**:
+
+- Fixed min advantage to clipped ratio to better respect original PPO paper
 
 **CREDITS**
 

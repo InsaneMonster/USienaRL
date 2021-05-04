@@ -250,7 +250,7 @@ class ProximalPolicyOptimization(Model):
         self._previous_log_likelihoods = None
         self._value_predicted = None
         self._ratio = None
-        self._min_advantage = None
+        self._clipped_ratio = None
         self._value_stream_loss = None
         self._policy_stream_loss = None
         self._value_stream_optimizer = None
@@ -321,9 +321,9 @@ class ProximalPolicyOptimization(Model):
                 # Define the ratio between the current log-likelihood and the previous one (when using exponential, minus is a division)
                 self._ratio = tensorflow.exp(self._log_likelihood_actions - self._previous_log_likelihoods)
                 # Define the minimum advantage with respect to clip ratio
-                self._min_advantage = tensorflow.where(self._advantages > 0, (1 + self._clip_ratio) * self._advantages, (1 - self._clip_ratio) * self._advantages)
-                # Define the policy stream loss as the mean of minimum between the advantages multiplied the ratio and the minimum advantage
-                self._policy_stream_loss = -tensorflow.reduce_mean(tensorflow.minimum(self._ratio * self._advantages, self._min_advantage), name="policy_stream_loss")
+                self._clipped_ratio = tensorflow.clip_by_value(self._ratio, 1 - self._clip_ratio, 1 + self._clip_ratio)
+                # Define the policy stream loss as the mean of minimum between the advantages multiplied the ratio and the clipped ratio multiplied the advantages
+                self._policy_stream_loss = -tensorflow.reduce_mean(tensorflow.minimum(self._ratio * self._advantages, self._clipped_ratio * self._advantages), name="policy_stream_loss")
                 # Define the optimizer for the policy stream
                 self._policy_stream_optimizer = tensorflow.train.AdamOptimizer(self.learning_rate_policy).minimize(self._policy_stream_loss)
             # Define the value stream
